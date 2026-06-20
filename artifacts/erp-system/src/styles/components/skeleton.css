@@ -1,0 +1,131 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Skeleton & Shimmer
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   SHIMMER — professional loading skeleton
+   ══════════════════════════════════════════════════ */
+@keyframes erp-shimmer-wave {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.erp-shimmer,
+.skeleton-layer,
+.skeleton-layer-dim {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-alt) 25%,
+    rgba(255, 255, 255, 0.06) 50%,
+    var(--bg-surface-alt) 75%
+  ) !important;
+  background-size: 400% 100% !important;
+  animation: erp-shimmer-wave 1.6s ease infinite !important;
+  border-radius: 6px;
+  display: block;
+}
+
+html.light .erp-shimmer,
+html.light .skeleton-layer,
+html.light .skeleton-layer-dim {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 25%,
+    #f1f5f9 50%,
+    #e2e8f0 75%
+  ) !important;
+  background-size: 400% 100% !important;
+  animation: erp-shimmer-wave 1.6s ease infinite !important;
+}
+
+   CARD SKELETON — loading state
+   ══════════════════════════════════════════════════ */
+.erp-card-skeleton {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  overflow: hidden !important;
+}
+
+.erp-kpi-skeleton {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  padding: 20px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  overflow: hidden !important;
+}
+
+/* Shared shimmer line utility */
+.erp-skeleton-line {
+  height: 12px !important;
+  border-radius: 6px !important;
+  background: var(--bg-surface-alt) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.erp-skeleton-line::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  ) !important;
+  animation: erp-shimmer-wave 1.4s ease-in-out infinite !important;
+  background-size: 200% 100% !important;
+}
+
+html.light .erp-skeleton-line::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+.erp-skeleton-line--sm  { height: 10px !important; }
+.erp-skeleton-line--lg  { height: 32px !important; border-radius: 8px !important; }
+.erp-skeleton-line--xl  { height: 44px !important; border-radius: 10px !important; }
+.erp-skeleton-box       { height: 36px !important; width: 36px !important; border-radius: 10px !important; }
+
+/* ══════════════════════════════════════════════════
+   OVERRIDE — kill db-kpi decorative elements
+   These existed in index.css, keeping them quiet.
+   ══════════════════════════════════════════════════ */
+.db-kpi-shimmer,
+.db-kpi-glow,
+.db-kpi-dots {
+  display: none !important;
+}
+
+.db-kpi-card {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.db-kpi-card:hover {
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.db-kpi-value {
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.02em !important;
+}

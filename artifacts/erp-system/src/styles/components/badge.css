@@ -1,0 +1,175 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Status Badges
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   STATUS BADGES — 24px pill, soft tinted
+   ══════════════════════════════════════════════════ */
+.erp-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  border: 1px solid transparent;
+  line-height: 1 !important;
+}
+
+/* Paid — soft green */
+.erp-status-paid {
+  background: rgba(5, 150, 105, 0.10) !important;
+  border-color: rgba(5, 150, 105, 0.22) !important;
+  color: #34D399 !important;
+}
+
+/* Unpaid / Overdue — soft red */
+.erp-status-unpaid,
+.erp-status-overdue {
+  background: rgba(220, 38, 38, 0.10) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: #F87171 !important;
+}
+
+/* Pending / In-progress — soft orange */
+.erp-status-pending {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border-color: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
+}
+
+/* Partial — soft amber */
+.erp-status-partial {
+  background: rgba(217, 119, 6, 0.10) !important;
+  border-color: rgba(217, 119, 6, 0.22) !important;
+  color: #FBBF24 !important;
+}
+
+/* Cancelled — soft slate */
+.erp-status-cancelled {
+  background: rgba(100, 116, 139, 0.10) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  color: #94A3B8 !important;
+}
+
+/* Draft — soft gray */
+.erp-status-draft {
+  background: rgba(71, 85, 105, 0.12) !important;
+  border-color: rgba(71, 85, 105, 0.22) !important;
+  color: #94A3B8 !important;
+}
+
+/* Posted — soft teal (brand) */
+.erp-status-posted {
+  background: var(--brand-muted) !important;
+  border-color: var(--brand-border) !important;
+  color: var(--brand) !important;
+}
+
+/* Active — soft green */
+.erp-status-active {
+  background: rgba(5, 150, 105, 0.10) !important;
+  border-color: rgba(5, 150, 105, 0.22) !important;
+  color: #34D399 !important;
+}
+
+/* Inactive — soft gray */
+.erp-status-inactive {
+  background: rgba(71, 85, 105, 0.12) !important;
+  border-color: rgba(71, 85, 105, 0.22) !important;
+  color: #64748B !important;
+}
+
+/* Info — soft blue */
+.erp-status-info {
+  background: rgba(59, 130, 246, 0.10) !important;
+  border-color: rgba(59, 130, 246, 0.22) !important;
+  color: #60A5FA !important;
+}
+
+/* Light mode overrides */
+html.light .erp-status-paid    { color: #059669 !important; }
+html.light .erp-status-unpaid,
+html.light .erp-status-overdue { color: #DC2626 !important; }
+html.light .erp-status-pending  { color: #EA580C !important; }
+html.light .erp-status-partial  { color: #B45309 !important; }
+html.light .erp-status-cancelled { color: #64748B !important; }
+html.light .erp-status-draft    { color: #64748B !important; }
+html.light .erp-status-posted   { color: #0F766E !important; }
+html.light .erp-status-active   { color: #059669 !important; }
+html.light .erp-status-inactive { color: #475569 !important; }
+html.light .erp-status-info     { color: #2563EB !important; }
+
+/* ── Legacy erp-badge aliases — forward to new erp-status ── */
+.erp-badge-success { @extend .erp-status-paid; }
+
+.erp-badge-success {
+  background: rgba(5, 150, 105, 0.10) !important;
+  border-color: rgba(5, 150, 105, 0.22) !important;
+  color: #34D399 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-danger {
+  background: rgba(220, 38, 38, 0.10) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: #F87171 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-warning {
+  background: rgba(217, 119, 6, 0.10) !important;
+  border-color: rgba(217, 119, 6, 0.22) !important;
+  color: #FBBF24 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-pending {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border-color: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-info {
+  background: rgba(59, 130, 246, 0.10) !important;
+  border-color: rgba(59, 130, 246, 0.22) !important;
+  color: #60A5FA !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-neutral {
+  background: rgba(71, 85, 105, 0.12) !important;
+  border-color: rgba(71, 85, 105, 0.22) !important;
+  color: #94A3B8 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+html.light .erp-badge-success { color: #059669 !important; }
+html.light .erp-badge-danger  { color: #DC2626 !important; }
+html.light .erp-badge-warning { color: #B45309 !important; }
+html.light .erp-badge-pending { color: #EA580C !important; }
+html.light .erp-badge-info    { color: #2563EB !important; }

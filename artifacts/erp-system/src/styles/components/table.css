@@ -1,0 +1,318 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Tables & Data
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   TABLE ROW HOVER — neutral (no amber tint in light mode)
+   ══════════════════════════════════════════════════ */
+html.light .erp-table-row:hover {
+  background: var(--table-row-hover) !important;
+}
+html.light .erp-table-row:nth-child(even):hover {
+  background: var(--table-row-hover) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE CONTAINER — wrapper defaults
+   ══════════════════════════════════════════════════ */
+.glass-panel table,
+.erp-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE HEADER
+   ══════════════════════════════════════════════════ */
+.erp-table-head,
+.glass-panel table thead,
+.glass-panel table thead tr {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  background: var(--bg-surface-alt) !important;
+}
+
+.erp-table-th,
+.glass-panel table thead th {
+  height: 48px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-3) !important;
+  background: var(--bg-surface-alt) !important;
+  border-bottom: 1px solid var(--edge) !important;
+  white-space: nowrap;
+  vertical-align: middle !important;
+  letter-spacing: 0;
+  text-transform: none !important;
+}
+
+html.light .erp-table-th,
+html.light .glass-panel table thead th {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-3) !important;
+  border-bottom-color: var(--edge) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE ROWS
+   ══════════════════════════════════════════════════ */
+.erp-table-row {
+  border-bottom: 1px solid var(--edge) !important;
+  transition: background 0.12s ease !important;
+  background: transparent !important;
+}
+
+.erp-table-row:last-child {
+  border-bottom: none !important;
+}
+
+.erp-table-row:hover {
+  background: var(--table-row-hover) !important;
+}
+
+.erp-table-row:nth-child(even) {
+  background: var(--bg-row-alt) !important;
+}
+
+.erp-table-row:nth-child(even):hover {
+  background: var(--table-row-hover) !important;
+}
+
+/* Selected row */
+.erp-table-row--selected,
+.erp-table-row[data-selected="true"] {
+  background: var(--brand-muted) !important;
+  border-right: 3px solid var(--brand) !important;
+}
+
+html.light .erp-table-row {
+  border-bottom-color: var(--edge) !important;
+  background: transparent !important;
+}
+html.light .erp-table-row:hover {
+  background: var(--table-row-hover) !important;
+}
+html.light .erp-table-row:nth-child(even) {
+  background: rgba(0, 0, 0, 0.016) !important;
+}
+html.light .erp-table-row:nth-child(even):hover {
+  background: var(--table-row-hover) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE CELLS
+   ══════════════════════════════════════════════════ */
+.erp-table-td,
+.glass-panel table tbody td {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--text-2) !important;
+  padding: 12px 16px !important;
+  vertical-align: middle !important;
+  min-height: 52px;
+}
+
+/* Desktop: 52px rows */
+.erp-table-row td {
+  height: 52px;
+  vertical-align: middle !important;
+}
+
+/* Compact mode */
+.erp-table--compact .erp-table-row td {
+  height: 44px !important;
+}
+
+html.light .erp-table-td,
+html.light .glass-panel table tbody td {
+  color: var(--text-2) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   COLUMN ALIGNMENT HELPERS
+   ══════════════════════════════════════════════════ */
+.erp-col-num,
+.erp-col-money {
+  text-align: left !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" !important;
+  direction: ltr !important;
+}
+
+.erp-col-status,
+.erp-col-action {
+  text-align: center !important;
+}
+
+th.erp-col-num,
+th.erp-col-money {
+  text-align: left !important;
+}
+
+th.erp-col-status,
+th.erp-col-action {
+  text-align: center !important;
+}
+
+/* ══════════════════════════════════════════════════
+   ACTION BUTTONS — 36×36, radius 10, icon-only
+   ══════════════════════════════════════════════════ */
+.erp-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--edge) !important;
+  background: transparent !important;
+  color: var(--text-3) !important;
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease,
+    border-color 0.14s ease !important;
+  flex-shrink: 0;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.erp-action-btn:hover {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.erp-action-btn:active {
+  opacity: 0.7 !important;
+  transform: none !important;
+}
+.erp-action-btn:focus-visible {
+  outline: none !important;
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* Danger variant */
+.erp-action-btn--danger {
+  color: rgba(248, 113, 113, 0.5) !important;
+  border-color: rgba(220, 38, 38, 0.12) !important;
+  background: rgba(220, 38, 38, 0.04) !important;
+}
+.erp-action-btn--danger:hover {
+  background: rgba(220, 38, 38, 0.12) !important;
+  color: #F87171 !important;
+  border-color: rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Primary variant */
+.erp-action-btn--primary {
+  color: var(--brand) !important;
+  border-color: var(--brand-border) !important;
+  background: var(--brand-muted) !important;
+}
+.erp-action-btn--primary:hover {
+  background: rgba(45, 212, 191, 0.16) !important;
+  border-color: var(--brand-dim) !important;
+}
+
+html.light .erp-action-btn {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+html.light .erp-action-btn:hover {
+  background: var(--bg-surface-alt) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SEARCH BAR — Spotlight feel
+   ══════════════════════════════════════════════════ */
+.erp-search-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  padding: 0 14px !important;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-1) !important;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease !important;
+  backdrop-filter: none !important;
+}
+.erp-search-bar:focus-within {
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+  background: var(--bg-surface) !important;
+}
+.erp-search-bar input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: var(--text-1) !important;
+  font-size: 14px !important;
+  width: 100%;
+  caret-color: var(--caret-color) !important;
+}
+.erp-search-bar input::placeholder {
+  color: var(--text-4) !important;
+}
+
+html.light .erp-search-bar {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+html.light .erp-search-bar:focus-within {
+  background: #ffffff !important;
+  border-color: var(--focus-edge) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   FILTER DROPDOWNS — consistent sizing
+   ══════════════════════════════════════════════════ */
+.erp-filter-select {
+  height: 40px !important;
+  padding: 0 12px !important;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-1) !important;
+  font-size: 14px !important;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+.erp-filter-select:focus {
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+  outline: none !important;
+}
+
+
+/* ══════════════════════════════════════════════════
+   SELECTION CHECKBOXES — 18px, brand color
+   ══════════════════════════════════════════════════ */
+.erp-table-checkbox {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 5px !important;
+  border: 1px solid var(--edge-md) !important;
+  background: var(--bg-input) !important;
+  cursor: pointer;
+  accent-color: var(--brand) !important;
+  transition: border-color 0.12s ease !important;
+}
+.erp-table-checkbox:checked {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+.erp-table-checkbox:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+  border-color: var(--focus-edge) !important;
+}

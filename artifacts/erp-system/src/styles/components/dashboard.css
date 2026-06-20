@@ -1,0 +1,95 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Dashboard & Page Layout
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   PAGE CONTAINER CLASSES — standardised layout
+   Use on every main page to keep spacing uniform
+   ══════════════════════════════════════════════════ */
+.erp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.erp-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.erp-page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.25;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .erp-page-title {
+    font-size: 20px;
+  }
+}
+
+.erp-page-subtitle {
+  font-size: 14px;
+  color: var(--text-2);
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+.erp-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+
+/* ══════════════════════════════════════════════════
+   DASHBOARD GRID LAYOUTS
+   ══════════════════════════════════════════════════ */
+
+/* KPI grid: 4-col → 2-col → 1-col */
+.erp-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 16px !important;
+}
+
+@media (max-width: 1200px) {
+  .erp-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  .erp-kpi-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Card grid: 2-col → 1-col */
+.erp-card-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 20px !important;
+}
+
+@media (max-width: 900px) {
+  .erp-card-grid { grid-template-columns: 1fr !important; }
+}
+
+/* 3-col card grid */
+.erp-card-grid--3 {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px !important;
+}
+
+@media (max-width: 1100px) {
+  .erp-card-grid--3 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  .erp-card-grid--3 { grid-template-columns: 1fr !important; }
+}
+

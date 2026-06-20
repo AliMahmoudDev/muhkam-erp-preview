@@ -1,0 +1,116 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Empty States
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   EMPTY STATE — full treatment
+   ══════════════════════════════════════════════════ */
+.erp-empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: 100%;
+  padding: 40px 24px !important;
+}
+
+.erp-empty-state--rich {
+  gap: 12px !important;
+  padding: 56px 24px !important;
+}
+
+.erp-empty-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 14px !important;
+  background: var(--bg-surface-alt) !important;
+  border: 1px solid var(--edge) !important;
+  color: var(--text-4) !important;
+  margin-bottom: 4px !important;
+}
+
+.erp-empty-headline {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+  margin: 0 !important;
+  text-align: center !important;
+}
+
+.erp-empty-label {
+  font-size: 13px !important;
+  color: var(--text-4) !important;
+  margin: 0 !important;
+  text-align: center !important;
+  max-width: 320px;
+  line-height: 1.6 !important;
+}
+
+.erp-empty-action {
+  margin-top: 8px !important;
+}
+
+html.light .erp-empty-icon {
+  background: var(--bg-surface-alt) !important;
+  border-color: var(--edge) !important;
+  color: var(--text-3) !important;
+}
+html.light .erp-empty-label {
+  color: var(--text-3) !important;
+}
+html.light .erp-empty-headline {
+  color: var(--text-1) !important;
+}
+
+
+/* ══════════════════════════════════════════════════
+   EMPTY PANEL — whitespace + message + action
+   ══════════════════════════════════════════════════ */
+.erp-empty-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  padding: 48px 24px !important;
+  text-align: center !important;
+}
+
+.erp-empty-panel-icon {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  background: var(--bg-surface-alt) !important;
+  border: 1px solid var(--edge) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text-4) !important;
+}
+
+.erp-empty-panel-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.erp-empty-panel-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--text-2) !important;
+  margin: 0 !important;
+}
+
+.erp-empty-panel-desc {
+  font-size: 13px !important;
+  color: var(--text-4) !important;
+  margin: 0 !important;
+  max-width: 280px !important;
+  line-height: 1.5 !important;
+}
+
+/* ══════════════════════════════════════════════════

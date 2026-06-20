@@ -1,0 +1,500 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Card System, KPI & Panels
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   GLASS-PANEL — flat solid surface (no blur)
+   ══════════════════════════════════════════════════ */
+.glass-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-lg);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.light .glass-panel {
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   STAT-CARD VARIANTS — flat tinted surfaces (no gradient, no glow)
+   ══════════════════════════════════════════════════ */
+.stat-card-amber {
+  background: rgba(245, 158, 11, 0.07) !important;
+  border: 1px solid rgba(245, 158, 11, 0.14) !important;
+  box-shadow: none !important;
+}
+.stat-card-emerald {
+  background: rgba(16, 185, 129, 0.06) !important;
+  border: 1px solid rgba(16, 185, 129, 0.14) !important;
+  box-shadow: none !important;
+}
+.stat-card-red {
+  background: rgba(239, 68, 68, 0.06) !important;
+  border: 1px solid rgba(239, 68, 68, 0.14) !important;
+  box-shadow: none !important;
+}
+.stat-card-blue {
+  background: rgba(59, 130, 246, 0.06) !important;
+  border: 1px solid rgba(59, 130, 246, 0.14) !important;
+  box-shadow: none !important;
+}
+.stat-card-violet {
+  background: rgba(139, 92, 246, 0.06) !important;
+  border: 1px solid rgba(139, 92, 246, 0.14) !important;
+  box-shadow: none !important;
+}
+html.light .stat-card-amber,
+html.light .stat-card-emerald,
+html.light .stat-card-red,
+html.light .stat-card-blue,
+html.light .stat-card-violet {
+  background: #ffffff !important;
+  box-shadow: var(--shadow-card) !important;
+}
+html.light .stat-card-amber  { border: 1px solid rgba(245, 158, 11, 0.22) !important; }
+html.light .stat-card-emerald { border: 1px solid rgba(16, 185, 129, 0.22) !important; }
+html.light .stat-card-red    { border: 1px solid rgba(239, 68, 68, 0.20) !important; }
+html.light .stat-card-blue   { border: 1px solid rgba(59, 130, 246, 0.20) !important; }
+html.light .stat-card-violet { border: 1px solid rgba(139, 92, 246, 0.20) !important; }
+
+/* stat-card hover: border stronger, no lift */
+.stat-card:hover {
+  border-color: var(--edge-md) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   CARD-PREMIUM — flat surface (no gradient border)
+   ══════════════════════════════════════════════════ */
+.card-premium {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  backdrop-filter: none !important;
+}
+.card-premium::before {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   ERP-CARD — consistent flat card
+   ══════════════════════════════════════════════════ */
+.erp-card {
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  backdrop-filter: none;
+}
+html.light .erp-card {
+  background: #ffffff;
+  border-color: var(--edge);
+  box-shadow: var(--shadow-card);
+}
+.erp-card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--edge-md) !important;
+}
+html.light .erp-card-lift:hover {
+  box-shadow: var(--shadow-hover);
+  border-color: var(--edge-md) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   RS-GLOW & RS-MESH — remove decorative glow/mesh
+   ══════════════════════════════════════════════════ */
+.rs-glow,
+.rs-glow--amber,
+.rs-glow--violet,
+.rs-glow--cyan {
+  display: none !important;
+}
+.rs-mesh-bg {
+  background: var(--bg-surface) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   INTERACTIVE CARD — border stronger, no lift/float
+   ══════════════════════════════════════════════════ */
+.glass-card:hover,
+.erp-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--edge-md) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   POS CARD FLASH — brand teal
+   ══════════════════════════════════════════════════ */
+@keyframes pos-flash-brand {
+  0%   { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0);    background-color: transparent; }
+  25%  { box-shadow: 0 0 0 5px rgba(45, 212, 191, 0.15); background-color: rgba(45, 212, 191, 0.08); }
+  100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0);    background-color: transparent; }
+}
+html.light .pos-card-flash {
+  animation: pos-flash-brand 0.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1 — SPRINT 06
+ *  Card System, KPI Components & Dashboard Foundations
+ *  ─────────────────────────────────────────────────────────────
+ *  Philosophy: Quiet. Professional. The data is the hero.
+ *  No gradient. No glow. No glass. No heavy shadow. No lift.
+ *  Surface: bg-surface | Border: 1px edge | Radius: 16px
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   CARD — base surface
+   ══════════════════════════════════════════════════ */
+.erp-card {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition:
+    border-color 0.18s ease,
+    background   0.18s ease !important;
+  transform: none !important;
+}
+
+html.light .erp-card {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Hover: border slightly stronger, never lift/float */
+.erp-card:hover {
+  border-color: var(--edge-md) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html.light .erp-card:hover {
+  border-color: var(--edge-md) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Selected state */
+.erp-card--selected,
+.erp-card[data-selected="true"] {
+  border-color: var(--brand) !important;
+  background: var(--brand-muted) !important;
+}
+
+/* Disabled state */
+.erp-card--disabled,
+.erp-card[data-disabled="true"] {
+  opacity: 0.45 !important;
+  pointer-events: none !important;
+}
+
+/* Collapsed state */
+.erp-card--collapsed .erp-card-body {
+  display: none !important;
+}
+
+/* Loading state — shimmer applied by JS */
+.erp-card--loading {
+  pointer-events: none !important;
+}
+
+/* Compact variant */
+.erp-card--compact {
+  border-radius: 12px !important;
+}
+
+/* Clickable card */
+.erp-card--clickable {
+  cursor: pointer !important;
+}
+.erp-card--clickable:active {
+  opacity: 0.85 !important;
+}
+
+/* ── Card Header ─────────────────────────────────── */
+.erp-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 20px 24px 0 !important;
+}
+
+.erp-card-header--bordered {
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid var(--edge) !important;
+}
+
+/* ── Card Title ──────────────────────────────────── */
+.erp-card-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+/* ── Card Subtitle ───────────────────────────────── */
+.erp-card-subtitle {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: var(--text-3) !important;
+  margin: 2px 0 0 !important;
+  line-height: 1.4 !important;
+}
+
+/* Title + subtitle stacked */
+.erp-card-title-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+
+/* Header actions (buttons/icons on the right/left in RTL) */
+.erp-card-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Card Body ───────────────────────────────────── */
+.erp-card-body {
+  padding: 20px 24px !important;
+}
+
+.erp-card-body--flush {
+  padding: 0 !important;
+}
+
+.erp-card-body--compact {
+  padding: 16px !important;
+}
+
+.erp-card-body--large {
+  padding: 32px !important;
+}
+
+/* ── Card Footer ─────────────────────────────────── */
+.erp-card-footer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 24px 20px !important;
+  border-top: 1px solid var(--edge) !important;
+  padding-top: 16px !important;
+  margin-top: auto !important;
+}
+
+/* ══════════════════════════════════════════════════
+   KPI CARD — metric / statistic display
+   ══════════════════════════════════════════════════ */
+.erp-kpi {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  padding: 20px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transition: border-color 0.18s ease !important;
+  transform: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.erp-kpi:hover {
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html.light .erp-kpi {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* KPI header: label + icon on opposite sides */
+.erp-kpi-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+/* KPI label */
+.erp-kpi-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text-3) !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+/* KPI icon container */
+.erp-kpi-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  background: var(--brand-muted) !important;
+  color: var(--brand) !important;
+}
+
+.erp-kpi-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* KPI value — the number */
+.erp-kpi-value {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: var(--text-1) !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 1280px) {
+  .erp-kpi-value { font-size: 28px !important; }
+}
+@media (max-width: 768px) {
+  .erp-kpi-value { font-size: 24px !important; }
+}
+
+/* KPI trend badge */
+.erp-kpi-trend {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 3px 8px !important;
+  border-radius: 20px !important;
+  width: fit-content !important;
+}
+
+.erp-kpi-trend--up {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: var(--status-success) !important;
+  border: 1px solid rgba(52, 211, 153, 0.22) !important;
+}
+
+.erp-kpi-trend--down {
+  background: rgba(248, 113, 113, 0.15) !important;
+  color: var(--status-danger) !important;
+  border: 1px solid rgba(248, 113, 113, 0.22) !important;
+}
+
+.erp-kpi-trend--neutral {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-3) !important;
+  border: 1px solid var(--edge) !important;
+}
+
+.erp-kpi-trend svg {
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   PANEL — section container, slightly elevated
+   ══════════════════════════════════════════════════ */
+.erp-panel {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  box-shadow: none !important;
+}
+
+html.light .erp-panel {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Flush panel (no padding — for tables/lists) */
+.erp-panel--flush {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.erp-panel--compact {
+  padding: 16px !important;
+  border-radius: 10px !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SECTION — page layout section
+   ══════════════════════════════════════════════════ */
+.erp-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.erp-section-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.erp-section-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.erp-section-subtitle,
+.erp-section-sub {
+  font-size: 13px !important;
+  color: var(--text-3) !important;
+  margin: 2px 0 0 !important;
+}
+
+html.light .erp-section-title { color: var(--text-1) !important; }
+html.light .erp-section-sub   { color: var(--text-3) !important; }
+
+/* ══════════════════════════════════════════════════
+   WIDGET — small functional unit
+   ══════════════════════════════════════════════════ */
+.erp-widget {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  box-shadow: none !important;
+}
+
+html.light .erp-widget {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+

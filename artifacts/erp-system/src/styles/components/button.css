@@ -1,0 +1,594 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Buttons & Interactive Controls
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   BTN-ICON-PRIMARY — brand teal instead of amber
+   ══════════════════════════════════════════════════ */
+.btn-icon-primary {
+  color: rgba(45, 212, 191, 0.65) !important;
+}
+.btn-icon-primary:hover {
+  color: var(--brand) !important;
+  background: var(--brand-muted) !important;
+}
+html.light .btn-icon-primary {
+  color: rgba(15, 118, 110, 0.65) !important;
+}
+html.light .btn-icon-primary:hover {
+  color: var(--brand) !important;
+  background: var(--brand-muted) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1 — SPRINT 05
+ *  Buttons, Actions & Interactive Controls
+ *  ─────────────────────────────────────────────────────────────
+ *  Philosophy: Confidence, clarity, restraint.
+ *  No glow. No gradient. No glass. No neon. No scale > 1.01.
+ *  Transition: 180ms ease. Brand ring focus-visible.
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   BASE — .erp-btn
+   All buttons inherit from here.
+   ══════════════════════════════════════════════════ */
+.erp-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  border-radius: var(--radius-md) !important;   /* 12px */
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  border: 1px solid transparent !important;
+  text-decoration: none !important;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    opacity 0.18s ease !important;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Kill all existing hover-elevate / active-elevate on buttons */
+.erp-btn:hover,
+.erp-btn:active,
+.erp-btn:focus {
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.erp-btn:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+  border-color: var(--focus-edge) !important;
+}
+
+.erp-btn:disabled,
+.erp-btn[disabled] {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+/* Icons inside buttons */
+.erp-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ── Size variants ──────────────────────────────── */
+.erp-btn-sm {
+  height: 36px !important;
+  padding: 0 14px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
+}
+.erp-btn-sm svg { width: 16px !important; height: 16px !important; }
+
+.erp-btn-md {
+  height: 40px !important;
+  padding: 0 18px !important;
+}
+
+.erp-btn-lg {
+  height: 44px !important;
+  padding: 0 22px !important;
+  font-size: 15px !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   PRIMARY — var(--brand) teal, dark text
+   ══════════════════════════════════════════════════ */
+.erp-btn-primary,
+.btn-primary {
+  background: var(--brand) !important;
+  color: var(--btn-primary-text) !important;
+  border-color: transparent !important;
+  font-weight: 700 !important;
+  /* Inherit erp-btn sizes unless overridden */
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    opacity 0.18s ease !important;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.erp-btn-primary:hover:not(:disabled):not([disabled]),
+.btn-primary:hover:not(:disabled):not([disabled]) {
+  background: var(--brand-hover) !important;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.erp-btn-primary:active:not(:disabled),
+.btn-primary:active:not(:disabled) {
+  background: #28b8a5 !important;  /* slightly darker */
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.erp-btn-primary:disabled,
+.erp-btn-primary[disabled],
+.btn-primary:disabled,
+.btn-primary[disabled] {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.erp-btn-primary:focus-visible,
+.btn-primary:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* Kill ::after pseudo-element that some old styles use */
+.erp-btn-primary::after,
+.btn-primary::after {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SECONDARY — transparent + edge border
+   ══════════════════════════════════════════════════ */
+.erp-btn-secondary,
+.btn-secondary {
+  background: transparent !important;
+  color: var(--text-1) !important;
+  border: 1px solid var(--edge) !important;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.erp-btn-secondary:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.erp-btn-secondary:active:not(:disabled),
+.btn-secondary:active:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+  opacity: 0.8 !important;
+  transform: none !important;
+}
+
+.erp-btn-secondary:disabled,
+.erp-btn-secondary[disabled],
+.btn-secondary:disabled,
+.btn-secondary[disabled] {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.erp-btn-secondary:focus-visible,
+.btn-secondary:focus-visible {
+  outline: none !important;
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+html.light .erp-btn-secondary,
+html.light .btn-secondary {
+  background: #ffffff !important;
+  border-color: var(--edge-md) !important;
+  color: var(--text-1) !important;
+}
+html.light .erp-btn-secondary:hover:not(:disabled),
+html.light .btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   GHOST — no border, transparent
+   ══════════════════════════════════════════════════ */
+.erp-btn-ghost {
+  background: transparent !important;
+  color: var(--text-2) !important;
+  border-color: transparent !important;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.erp-btn-ghost:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+  transform: none !important;
+}
+
+.erp-btn-ghost:active:not(:disabled) {
+  opacity: 0.7 !important;
+  transform: none !important;
+}
+
+.erp-btn-ghost:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   DANGER — soft enterprise red
+   ══════════════════════════════════════════════════ */
+.erp-btn-danger {
+  background: rgba(220, 38, 38, 0.12) !important;
+  color: #F87171 !important;
+  border: 1px solid rgba(220, 38, 38, 0.22) !important;
+  font-weight: 600 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.erp-btn-danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.18) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+  transform: none !important;
+}
+
+.erp-btn-danger:active:not(:disabled) {
+  background: rgba(220, 38, 38, 0.22) !important;
+  transform: none !important;
+}
+
+.erp-btn-danger:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18) !important;
+}
+
+.erp-btn-danger:disabled,
+.erp-btn-danger[disabled] {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+html.light .erp-btn-danger {
+  background: rgba(220, 38, 38, 0.08) !important;
+  color: #DC2626 !important;
+  border-color: rgba(220, 38, 38, 0.20) !important;
+}
+html.light .erp-btn-danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.14) !important;
+  color: #B91C1C !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SUCCESS — soft enterprise green
+   ══════════════════════════════════════════════════ */
+.erp-btn-success {
+  background: rgba(5, 150, 105, 0.12) !important;
+  color: #34D399 !important;
+  border: 1px solid rgba(5, 150, 105, 0.22) !important;
+  font-weight: 600 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.erp-btn-success:hover:not(:disabled) {
+  background: rgba(5, 150, 105, 0.18) !important;
+  color: #6EE7B7 !important;
+  border-color: rgba(5, 150, 105, 0.35) !important;
+  transform: none !important;
+}
+
+.erp-btn-success:active:not(:disabled) {
+  background: rgba(5, 150, 105, 0.22) !important;
+  transform: none !important;
+}
+
+.erp-btn-success:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.18) !important;
+}
+
+html.light .erp-btn-success {
+  background: rgba(5, 150, 105, 0.08) !important;
+  color: #059669 !important;
+  border-color: rgba(5, 150, 105, 0.20) !important;
+}
+html.light .erp-btn-success:hover:not(:disabled) {
+  color: #047857 !important;
+  background: rgba(5, 150, 105, 0.14) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   ICON BUTTON — 36×36, radius 10px
+   ══════════════════════════════════════════════════ */
+.erp-btn-icon {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--text-3) !important;
+  border: 1px solid var(--edge) !important;
+  flex-shrink: 0;
+  transform: none !important;
+  box-shadow: none !important;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease !important;
+}
+
+.erp-btn-icon:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.erp-btn-icon:active:not(:disabled) {
+  opacity: 0.7 !important;
+  transform: none !important;
+}
+
+.erp-btn-icon:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+  border-color: var(--focus-edge) !important;
+}
+
+.erp-btn-icon:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.erp-btn-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Danger icon btn */
+.erp-btn-icon--danger {
+  color: rgba(248, 113, 113, 0.55) !important;
+  border-color: rgba(220, 38, 38, 0.14) !important;
+  background: rgba(220, 38, 38, 0.05) !important;
+}
+.erp-btn-icon--danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.14) !important;
+  color: #F87171 !important;
+  border-color: rgba(220, 38, 38, 0.28) !important;
+}
+
+/* Primary icon btn */
+.erp-btn-icon--primary {
+  color: var(--brand) !important;
+  border-color: var(--brand-border) !important;
+  background: var(--brand-muted) !important;
+}
+.erp-btn-icon--primary:hover:not(:disabled) {
+  background: rgba(45, 212, 191, 0.16) !important;
+  border-color: var(--brand-dim) !important;
+}
+
+html.light .erp-btn-icon {
+  background: #ffffff !important;
+  border-color: var(--edge-md) !important;
+  color: var(--text-3) !important;
+}
+html.light .erp-btn-icon:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   LOADING STATE — spinner + stable width
+   ══════════════════════════════════════════════════ */
+@keyframes erp-btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+.erp-btn-loading {
+  position: relative !important;
+  cursor: not-allowed !important;
+  opacity: 0.75 !important;
+  pointer-events: none !important;
+}
+
+.erp-btn-spinner {
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid currentColor !important;
+  border-top-color: transparent !important;
+  border-radius: 50% !important;
+  animation: erp-btn-spin 0.65s linear infinite !important;
+  flex-shrink: 0 !important;
+}
+
+.erp-btn-loading-text {
+  opacity: 0.7 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   BUTTON GROUPS
+   ══════════════════════════════════════════════════ */
+.erp-btn-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+.erp-btn-group .erp-btn {
+  border-radius: 0 !important;
+}
+
+.erp-btn-group .erp-btn:first-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
+}
+.erp-btn-group .erp-btn:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+}
+
+.erp-btn-group .erp-btn + .erp-btn {
+  margin-right: -1px !important;
+}
+
+/* RTL: first = rightmost */
+[dir="rtl"] .erp-btn-group .erp-btn:first-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+}
+[dir="rtl"] .erp-btn-group .erp-btn:last-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
+}
+
+/* Loose group (with gap) */
+.erp-btn-group--gap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TOOLBAR ACTIONS
+   ══════════════════════════════════════════════════ */
+.erp-toolbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+/* Primary action always first in RTL (rightmost) */
+.erp-toolbar-actions .erp-btn-primary {
+  order: -1 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   DIALOG FOOTER ACTIONS
+   ══════════════════════════════════════════════════ */
+.erp-dialog-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  padding-top: 20px !important;
+  border-top: 1px solid var(--edge) !important;
+}
+
+/* Cancel/secondary sits last in RTL (leftmost visually) */
+.erp-dialog-actions .erp-btn-secondary,
+.erp-dialog-actions .erp-btn-ghost {
+  order: 1 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   KILL HOVER-ELEVATE / ACTIVE-ELEVATE on any button
+   (removes the Replit-injected elevation effects)
+   ══════════════════════════════════════════════════ */
+button.hover-elevate,
+button.active-elevate-2,
+a.hover-elevate,
+.hover-elevate.erp-btn,
+.active-elevate-2.erp-btn {
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+button.hover-elevate:hover,
+button.active-elevate-2:active {
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SHADCN BUTTON — map CVA classes → erp-btn system
+   Applied to the shadcn Button component
+   ══════════════════════════════════════════════════ */
+
+/* Default button (primary) via shadcn */
+button[class*="bg-primary"],
+a[class*="bg-primary"] {
+  background: var(--brand) !important;
+  color: var(--btn-primary-text) !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Focus ring override for all buttons */
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* Prevent scale on any interactive element buttons */
+button:hover,
+[role="button"]:hover {
+  transform: none !important;
+}
+

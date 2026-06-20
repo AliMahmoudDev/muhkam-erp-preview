@@ -1,0 +1,85 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Pagination
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   PAGINATION — minimal, 36×36 boxes
+   ══════════════════════════════════════════════════ */
+.erp-pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 20px !important;
+  border-top: 1px solid var(--edge) !important;
+}
+
+.erp-pagination-info {
+  font-size: 12px !important;
+  color: var(--text-4) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.erp-pagination-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.erp-pagination-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  padding: 0 6px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--edge) !important;
+  background: transparent !important;
+  color: var(--text-3) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.erp-pagination-btn:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+}
+.erp-pagination-btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+.erp-pagination-btn:focus-visible {
+  outline: none !important;
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.erp-pagination-btn--active {
+  background: var(--brand) !important;
+  color: var(--btn-primary-text) !important;
+  border-color: var(--brand) !important;
+  font-weight: 700 !important;
+}
+.erp-pagination-btn--active:hover {
+  background: var(--brand-hover) !important;
+  border-color: var(--brand-hover) !important;
+  color: var(--btn-primary-text) !important;
+}
+
+html.light .erp-pagination-btn {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+html.light .erp-pagination-btn:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+}
+

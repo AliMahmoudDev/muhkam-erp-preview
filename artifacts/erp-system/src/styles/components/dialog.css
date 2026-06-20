@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1
+ *  Dialog & Modal
+ * ═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   DIALOG / MODAL
+   ══════════════════════════════════════════════════ */
+.erp-dialog-overlay {
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+html.light .erp-dialog-overlay {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+
+.erp-dialog-content {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge-md) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-modal) !important;
+  padding: 28px !important;
+  gap: 0 !important;
+  backdrop-filter: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+html.light .erp-dialog-content {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+
+.erp-dialog-header {
+  padding-bottom: 4px !important;
+  border-bottom: 1px solid var(--edge) !important;
+  padding-bottom: 16px !important;
+}
+
+.erp-dialog-title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--text-1) !important;
+  line-height: 1.3 !important;
+}
+
+.erp-dialog-description {
+  font-size: 13px !important;
+  color: var(--text-3) !important;
+  margin-top: 4px !important;
+  line-height: 1.5 !important;
+}
+
+.erp-dialog-footer {
+  padding-top: 16px !important;
+  border-top: 1px solid var(--edge) !important;
+  margin-top: 4px !important;
+}
+
+/* Close button — RTL: start = right side visually */
+.erp-dialog-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  color: var(--text-3) !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background 0.12s ease, color 0.12s ease !important;
+  opacity: 1 !important;
+}
+.erp-dialog-close:hover {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+}
+.erp-dialog-close:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   MODAL CARDS (existing .modal-panel, .glass-panel
+   inside modal overlays) — flat, no blur
+   ══════════════════════════════════════════════════ */
+.modal-overlay {
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+
+html.light .modal-overlay {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
