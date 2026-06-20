@@ -1,4 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
+import { AlertTriangle } from "lucide-react";
 
 interface Props { children: ReactNode; fallback?: ReactNode }
 interface State { hasError: boolean; error: Error | null }
@@ -38,7 +39,9 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
       return (
         <div dir="rtl" className="flex flex-col items-center justify-center min-h-[40vh] gap-4 p-8 text-center">
-          <div className="text-5xl">⚠️</div>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-red-500/10 border border-red-500/20">
+            <AlertTriangle className="w-8 h-8 text-red-400" />
+          </div>
           <h2 className="text-xl font-bold text-red-400">حدث خطأ غير متوقع</h2>
           <p className="text-sm text-zinc-400 max-w-md">
             {this.state.error?.message ?? "يرجى إعادة المحاولة. إذا استمرت المشكلة، تواصل مع الدعم الفني."}

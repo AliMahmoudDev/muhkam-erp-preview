@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { authFetch } from '@/lib/auth-fetch';
-import { LogOut, RefreshCw, Phone, Mail } from 'lucide-react';
+import { LogOut, RefreshCw, Phone, Mail, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const FONT = "'Cairo', 'Tajawal', sans-serif";
@@ -100,10 +100,9 @@ export default function SubscriptionExpired() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '40px',
           }}
         >
-          ⏰
+          <Clock size={40} color="rgba(249,115,22,0.85)" />
         </div>
 
         {/* Headline */}
