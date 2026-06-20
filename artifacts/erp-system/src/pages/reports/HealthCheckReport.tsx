@@ -266,7 +266,7 @@ export default function HealthCheckReport() {
           },
         ].map((c) => (
           <div key={c.label} className={`rounded-xl border p-4 text-center ${c.bg} ${c.border}`}>
-            <div className={`text-3xl font-black tabular-nums ${c.color}`}>{c.value}</div>
+            <div className={`text-2xl font-black tabular-nums ${c.color}`}>{c.value}</div>
             <div className="text-ink/50 text-xs mt-1">{c.label}</div>
           </div>
         ))}

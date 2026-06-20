@@ -304,10 +304,10 @@ html.light .erp-card:hover {
   background: var(--bg-surface) !important;
   border: 1px solid var(--edge) !important;
   border-radius: 16px !important;
-  padding: 20px 24px !important;
+  padding: 16px 20px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 10px !important;
+  gap: 8px !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
   transition: border-color 0.18s ease !important;
@@ -364,7 +364,7 @@ html.light .erp-kpi {
 
 /* KPI value — the number */
 .erp-kpi-value {
-  font-size: 32px !important;
+  font-size: 28px !important;
   font-weight: 700 !important;
   color: var(--text-1) !important;
   line-height: 1 !important;
@@ -374,9 +374,6 @@ html.light .erp-kpi {
   margin: 0 !important;
 }
 
-@media (max-width: 1280px) {
-  .erp-kpi-value { font-size: 28px !important; }
-}
 @media (max-width: 768px) {
   .erp-kpi-value { font-size: 24px !important; }
 }

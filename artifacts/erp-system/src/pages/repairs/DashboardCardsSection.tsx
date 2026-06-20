@@ -110,7 +110,7 @@ export default function DashboardCardsSection({
                 </span>
               </div>
               <div
-                className="text-3xl font-black leading-none tracking-tight"
+                className="text-2xl font-black leading-none tracking-tight"
                 style={{ color: card.color }}
               >
                 {card.count}
