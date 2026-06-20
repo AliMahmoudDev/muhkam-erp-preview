@@ -111,14 +111,14 @@ export function CustomerList({
                       {isMaintenanceCustomer(customer) && (
                         <span
                           title="عميل صيانة"
-                          className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/40 shrink-0"
+                          className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0"
                         >
                           <Smartphone className="w-3.5 h-3.5" />
                         </span>
                       )}
                       {customer.name}
                       {isMaintenanceCustomer(customer) && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-500/15 text-violet-300 border border-violet-500/30 shrink-0">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
                           عميل صيانة
                         </span>
                       )}
@@ -188,7 +188,7 @@ export function CustomerList({
                               balance: Number(customer.balance),
                             });
                           }}
-                          className="flex items-center gap-1.5 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-cyan-500/30"
+                          className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-emerald-500/30"
                         >
                           <CreditCard className="w-3.5 h-3.5" /> تسديد دفعة
                         </button>

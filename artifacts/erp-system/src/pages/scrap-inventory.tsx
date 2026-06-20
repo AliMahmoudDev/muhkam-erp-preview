@@ -129,7 +129,7 @@ export default function ScrapInventory({ embedded = false }: { embedded?: boolea
                   <td className="px-3 py-2 text-xs text-ink/50">{it.reason ?? '—'}</td>
                   <td className="px-3 py-2 text-xs text-ink/50">
                     {it.source_repair_job_id ? (
-                      <span className="text-violet-300">صيانة #{it.source_repair_job_id}</span>
+                      <span className="text-ink/60">صيانة #{it.source_repair_job_id}</span>
                     ) : (
                       'يدوي'
                     )}

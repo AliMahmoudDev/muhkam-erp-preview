@@ -25,12 +25,12 @@ export function PartialProductSelector({
   loadingProducts: boolean;
 }) {
   return (
-    <div className="bg-[#111827] border border-violet-500/20 rounded-2xl p-5 space-y-3">
+    <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-violet-300 flex items-center gap-2">
+        <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
           <Filter className="w-4 h-4" /> اختر المنتجات للجرد
           {selectedProductIds.size > 0 && (
-            <span className="px-2 py-0.5 rounded-lg bg-violet-500/30 text-violet-200 text-xs font-bold">
+            <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-bold">
               {selectedProductIds.size} محدد
             </span>
           )}
@@ -38,7 +38,7 @@ export function PartialProductSelector({
         <div className="flex gap-2">
           <button
             onClick={() => setSelectedProductIds(new Set(allProducts.map((p) => p.id)))}
-            className="text-xs text-violet-400 hover:text-violet-200 transition-colors"
+            className="text-xs text-ink/50 hover:text-ink transition-colors"
           >
             تحديد الكل
           </button>
@@ -99,7 +99,7 @@ export function PartialProductSelector({
             return (
               <label
                 key={p.id}
-                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isChecked ? 'bg-violet-500/10' : 'hover:bg-surface'}`}
+                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isChecked ? 'bg-amber-500/8' : 'hover:bg-surface'}`}
               >
                 <input
                   type="checkbox"

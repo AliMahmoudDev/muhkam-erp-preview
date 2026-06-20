@@ -244,13 +244,13 @@ function TransferTab({
         <div className="flex gap-2">
           <button
             onClick={() => setView('new')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'new' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'new' ? 'bg-amber-500 text-black' : 'bg-surface text-ink/60 hover:text-ink'}`}
           >
             تحويل جديد
           </button>
           <button
             onClick={() => setView('history')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'history' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'history' ? 'bg-amber-500 text-black' : 'bg-surface text-ink/60 hover:text-ink'}`}
           >
             سجل التحويلات ({transfers.length})
           </button>
@@ -277,7 +277,7 @@ function TransferTab({
         <div className="space-y-5">
           <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
-              <Truck className="w-4 h-4 text-violet-400" /> بيانات التحويل
+              <Truck className="w-4 h-4 text-ink/50" /> بيانات التحويل
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
               <div>
@@ -287,7 +287,7 @@ function TransferTab({
                 <select
                   value={fromWH}
                   onChange={(e) => setFromWH(Number(e.target.value))}
-                  className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                  className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:border-amber-500/40"
                 >
                   {warehouses.map((w) => (
                     <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
@@ -297,8 +297,8 @@ function TransferTab({
                 </select>
               </div>
               <div className="flex items-center justify-center pb-1">
-                <div className="w-10 h-10 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
-                  <ArrowLeft className="w-4 h-4 text-violet-400" />
+                <div className="w-10 h-10 rounded-full bg-surface border border-line flex items-center justify-center">
+                  <ArrowLeft className="w-4 h-4 text-ink/40" />
                 </div>
               </div>
               <div>
@@ -422,7 +422,7 @@ function TransferTab({
               onClick={() =>
                 setLines((prev) => [...prev, { product_id: 0, product_name: '', quantity: '' }])
               }
-              className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-200 transition-colors"
+              className="flex items-center gap-2 text-sm text-ink/50 hover:text-ink transition-colors"
             >
               <Plus className="w-4 h-4" /> إضافة منتج
             </button>
@@ -436,7 +436,7 @@ function TransferTab({
               fromWH === toWH ||
               hasAnyInsufficientQty
             }
-            className="w-full py-3 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-ink font-bold text-sm transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm transition-colors flex items-center justify-center gap-2"
           >
             {transferMutation.isPending ? (
               <>
@@ -465,7 +465,7 @@ function TransferTab({
               <p className="text-ink/25 text-xs mb-4">قم بنقل المخزون بين المخازن لتظهر هنا</p>
               <button
                 onClick={() => setView('new')}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-all"
               >
                 <ArrowRightLeft className="w-4 h-4" /> إنشاء تحويل جديد
               </button>
@@ -501,7 +501,7 @@ function TransferTab({
                         </span>
                       )}
                       {t.total_qty > 0 && (
-                        <span className="px-2 py-0.5 rounded-lg text-xs bg-violet-500/10 text-violet-300">
+                        <span className="px-2 py-0.5 rounded-lg text-xs bg-surface text-ink/50 border border-line">
                           {t.total_qty.toFixed(2)} وحدة إجمالاً
                         </span>
                       )}

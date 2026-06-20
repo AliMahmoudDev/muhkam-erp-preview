@@ -42,8 +42,8 @@ export default function FixedAssetsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-violet-400" />
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+            <Building2 className="w-6 h-6 text-amber-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-ink">الأصول الثابتة</h1>
@@ -101,7 +101,7 @@ export default function FixedAssetsPage() {
           <button
             key={s}
             onClick={() => setFilterStatus(s)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterStatus === s ? 'bg-violet-500/30 text-violet-300 border border-violet-500/40' : 'bg-surface text-ink/50 hover:bg-surface'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterStatus === s ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-surface text-ink/50 hover:bg-surface'}`}
           >
             {s === 'all' ? 'الكل' : s === 'active' ? 'نشطة' : 'مستبعدة'}
             <span className="mr-2 text-xs opacity-60">
@@ -164,8 +164,8 @@ export default function FixedAssetsPage() {
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
-                          <Building2 className="w-4 h-4 text-violet-400" />
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                          <Building2 className="w-4 h-4 text-amber-400" />
                         </div>
                         <div>
                           <p className="text-ink font-semibold">{asset.name}</p>

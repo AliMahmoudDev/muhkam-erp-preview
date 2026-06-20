@@ -119,7 +119,7 @@ export const movementTypeLabel: Record<string, { label: string; color: string }>
   sale: { label: 'مبيعات', color: 'bg-red-500/20 text-red-300' },
   sale_return: { label: 'مرتجع مبيعات', color: 'bg-teal-500/20 text-teal-300' },
   purchase_return: { label: 'مرتجع مشتريات', color: 'bg-orange-500/20 text-orange-300' },
-  adjustment: { label: 'تسوية يدوية', color: 'bg-violet-500/20 text-violet-300' },
+  adjustment: { label: 'تسوية يدوية', color: 'bg-surface text-ink/60' },
   transfer_out: { label: 'تحويل خروج', color: 'bg-amber-500/20 text-amber-300' },
   transfer_in: { label: 'تحويل دخول', color: 'bg-cyan-500/20 text-cyan-300' },
 };

@@ -56,8 +56,8 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
       <div className="glass-panel rounded-3xl w-full max-w-2xl border border-line shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center px-6 py-4 border-b border-line sticky top-0 bg-black/40 backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-violet-400" />
+            <div className="w-10 h-10 rounded-2xl bg-surface border border-line flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-ink/50" />
             </div>
             <h3 className="text-lg font-bold text-ink">إضافة أصل ثابت جديد</h3>
           </div>
@@ -167,13 +167,13 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
           </div>
 
           {monthlyCost && (
-            <div className="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center gap-3">
-              <TrendingDown className="w-5 h-5 text-violet-400 shrink-0" />
+            <div className="p-4 rounded-2xl bg-surface border border-line flex items-center gap-3">
+              <TrendingDown className="w-5 h-5 text-ink/50 shrink-0" />
               <div>
                 <p className="text-xs text-ink/50">
                   الإهلاك الشهري المقدر ({METHODS[form.depreciation_method]})
                 </p>
-                <p className="text-violet-300 font-bold text-lg">
+                <p className="text-ink font-bold text-lg">
                   {formatCurrency(Number(monthlyCost))}
                 </p>
               </div>

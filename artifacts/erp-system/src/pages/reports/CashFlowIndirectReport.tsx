@@ -186,7 +186,7 @@ export default function CashFlowIndirectReport() {
             indent
           />
           <Divider />
-          <div className="bg-purple-500/10 border-t border-purple-500/20">
+          <div className="bg-surface border-t border-line">
             <Row
               label="صافي التدفق النقدي من الأنشطة الاستثمارية"
               value={data.investing_activities.net_cash_from_investing}

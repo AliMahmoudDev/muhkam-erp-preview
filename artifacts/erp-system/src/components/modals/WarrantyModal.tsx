@@ -91,11 +91,11 @@ export default function WarrantyModal({
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{
-                background: 'rgba(139,92,246,0.2)',
-                border: '1px solid rgba(139,92,246,0.35)',
+                background: 'rgba(16,185,129,0.15)',
+                border: '1px solid rgba(16,185,129,0.3)',
               }}
             >
-              <ShieldCheck className="w-4.5 h-4.5 text-violet-400" />
+              <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />
             </div>
             <div>
               <h3 className="text-sm font-black text-ink">فتح طلب ضمان</h3>
@@ -125,7 +125,7 @@ export default function WarrantyModal({
               <p className="text-ink font-black text-base">تم فتح بطاقة الضمان</p>
               <p className="text-ink/50 text-xs mt-1">
                 رقم البطاقة الجديدة:{' '}
-                <span className="text-violet-300 font-bold">{created.job_no}</span>
+                <span className="text-emerald-300 font-bold">{created.job_no}</span>
               </p>
             </div>
             <div className="flex gap-2 mt-4">
@@ -216,16 +216,16 @@ export default function WarrantyModal({
             <div
               className="rounded-xl p-3 flex items-start gap-2"
               style={{
-                background: 'rgba(139,92,246,0.08)',
-                border: '1px solid rgba(139,92,246,0.2)',
+                background: 'rgba(16,185,129,0.06)',
+                border: '1px solid rgba(16,185,129,0.18)',
               }}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-violet-400 mt-0.5 shrink-0" />
-              <p className="text-[10px] text-violet-300/80 leading-relaxed">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+              <p className="text-[10px] text-ink/60 leading-relaxed">
                 ستُنشأ بطاقة صيانة جديدة مرتبطة بالبطاقة الأصلية برقم <strong>{jobNo}/W1</strong>.
                 ستمر البطاقة بالمسار المعتاد من الاستقبال.
                 <br />
-                <span className="text-[10px] text-violet-200/70">
+                <span className="text-[10px] text-ink/40">
                   مدة الضمان الافتراضية: <strong>{warrantyDays}</strong> يوم من تاريخ التسليم
                   الأصلي.
                 </span>

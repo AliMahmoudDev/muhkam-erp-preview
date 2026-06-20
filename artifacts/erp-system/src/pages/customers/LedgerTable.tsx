@@ -54,7 +54,7 @@ export function LedgerTable({
           }}
           className="bg-surface rounded-2xl p-4 border border-line space-y-3"
         >
-          <p className="font-bold text-cyan-400">💳 تسجيل سداد مباشر في دفتر الأستاذ</p>
+          <p className="font-bold text-ink">تسجيل سداد مباشر في دفتر الأستاذ</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-ink/60 mb-1 block">المبلغ (ج.م)</label>

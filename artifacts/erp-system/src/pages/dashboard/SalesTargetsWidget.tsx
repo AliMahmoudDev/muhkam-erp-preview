@@ -101,7 +101,7 @@ export function SalesTargetsWidget() {
                   style={{ background: 'var(--erp-bg-hover)' }}
                 >
                   <div
-                    className="h-full rounded-full transition-all duration-700"
+                    className="h-full rounded-full transition-all duration-300"
                     style={{ width: `${pct}%`, background: color }}
                   />
                 </div>

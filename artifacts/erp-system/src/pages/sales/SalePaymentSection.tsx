@@ -337,7 +337,7 @@ export function SalePaymentSection({
             style={{ background: 'var(--erp-bg-hover)' }}
           >
             <div
-              className="h-full rounded-full transition-all duration-500"
+              className="h-full rounded-full transition-all duration-300"
               style={{
                 width: `${payPct}%`,
                 background: payIsDone
@@ -363,7 +363,7 @@ export function SalePaymentSection({
                   <X className="w-3 h-3" />
                 </button>
                 <span
-                  className={`text-xs shrink-0 flex items-center gap-1 ${row.type === 'credit' ? 'text-indigo-400' : 'text-emerald-400'}`}
+                  className={`text-xs shrink-0 flex items-center gap-1 ${row.type === 'credit' ? 'text-blue-400' : 'text-emerald-400'}`}
                 >
                   {row.type === 'cash' ? (
                     <Coins className="w-3 h-3" />

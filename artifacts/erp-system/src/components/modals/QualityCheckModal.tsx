@@ -367,8 +367,8 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
         {/* ── Header ── */}
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center">
-              <ShieldCheck className="w-4.5 h-4.5 text-purple-300" />
+            <div className="w-9 h-9 rounded-xl bg-surface border border-line flex items-center justify-center">
+              <ShieldCheck className="w-4.5 h-4.5 text-ink/50" />
             </div>
             <div>
               <h3 className="text-sm font-black text-ink">فحص مراقبة الجودة (QC)</h3>
@@ -411,8 +411,8 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── القطع المستخدمة في الإصلاح (للمراجعة فقط) ── */}
         {job.parts && job.parts.length > 0 && (
-          <div className="px-5 py-2.5 border-b border-line bg-cyan-500/[0.03]">
-            <p className="text-[10px] font-black text-cyan-300/80 mb-2 flex items-center gap-1.5">
+          <div className="px-5 py-2.5 border-b border-line bg-surface/50">
+            <p className="text-[10px] font-black text-ink/50 mb-2 flex items-center gap-1.5">
               <Package className="w-3.5 h-3.5" />
               القطع المستخدمة في الإصلاح ({job.parts.length})
             </p>
@@ -423,12 +423,12 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                 return (
                   <div
                     key={p.id}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.05] text-[10.5px]"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-line bg-surface text-[10.5px]"
                   >
                     <span className="text-ink/80 font-bold">{p.product_name}</span>
                     <span className="text-ink/35">×{qty}</span>
                     {price > 0 && (
-                      <span className="text-cyan-300/70">
+                      <span className="text-ink/50">
                         {(qty * price).toLocaleString('ar-EG')} ر.س
                       </span>
                     )}
@@ -442,9 +442,9 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                 0
               );
               return total > 0 ? (
-                <p className="mt-1.5 text-[10px] text-cyan-300/60">
+                <p className="mt-1.5 text-[10px] text-ink/40">
                   إجمالي تكلفة القطع:{' '}
-                  <span className="font-bold text-cyan-200">
+                  <span className="font-bold text-ink/70">
                     {total.toLocaleString('ar-EG')} ر.س
                   </span>
                 </p>
@@ -456,7 +456,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
         {/* ── Two-column layout: intake (right) ↔ QC decisions (left) ── */}
         {templateLoading ? (
           <div className="px-5 py-10 text-center">
-            <Loader2 className="w-8 h-8 text-purple-400/60 mx-auto mb-3 animate-spin" />
+            <Loader2 className="w-8 h-8 text-ink/30 mx-auto mb-3 animate-spin" />
             <p className="text-sm text-ink/60">جارٍ تحميل بنود القالب للجهاز...</p>
           </div>
         ) : items.length === 0 ? (
@@ -473,22 +473,18 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
             dir="rtl"
           >
             {/* ═══ العمود الأيمن: بنود الاستلام أو القالب (للقراءة فقط) ═══ */}
-            <div className="border-l border-line bg-indigo-500/[0.03]">
-              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-indigo-500/10 backdrop-blur">
+            <div className="border-l border-line">
+              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-surface/80 backdrop-blur">
                 <div className="flex items-center gap-2">
                   {isFallback ? (
-                    <Package className="w-4 h-4 text-violet-300" />
+                    <Package className="w-4 h-4 text-ink/40" />
                   ) : (
-                    <ClipboardList className="w-4 h-4 text-indigo-300" />
+                    <ClipboardList className="w-4 h-4 text-ink/40" />
                   )}
-                  <p
-                    className={`text-[12px] font-black ${isFallback ? 'text-violet-200' : 'text-indigo-200'}`}
-                  >
+                  <p className="text-[12px] font-black text-ink">
                     {isFallback ? 'بنود القالب (مرجع)' : 'بنود الاستلام (مرجع)'}
                   </p>
-                  <span
-                    className={`text-[10px] ${isFallback ? 'text-violet-200/60' : 'text-indigo-200/60'}`}
-                  >
+                  <span className="text-[10px] text-ink/40">
                     {isFallback
                       ? '— لا يوجد فحص أولي، تم استخدام قالب الجهاز'
                       : '— حالة الجهاز عند الاستلام'}
@@ -537,11 +533,11 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
             </div>
 
             {/* ═══ العمود الأيسر: قرار الفني ═══ */}
-            <div className="bg-purple-500/[0.03]">
-              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-purple-500/10 backdrop-blur">
+            <div>
+              <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-surface/80 backdrop-blur">
                 <div className="flex items-center gap-2">
-                  <ClipboardCheck className="w-4 h-4 text-purple-300" />
-                  <p className="text-[12px] font-black text-purple-200">
+                  <ClipboardCheck className="w-4 h-4 text-ink/50" />
+                  <p className="text-[12px] font-black text-ink">
                     قرار الفني (مراقبة الجودة)
                   </p>
                 </div>
@@ -574,7 +570,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                             hasNote
                               ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
                               : notesOpen
-                                ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                                ? 'bg-surface text-ink/60 border border-line'
                                 : 'bg-surface text-ink/40 border border-line hover:text-ink/70 hover:bg-surface',
                           ].join(' ')}
                         >
@@ -627,7 +623,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                               'w-full px-2.5 py-1 rounded-md text-[10.5px] text-ink placeholder:text-ink/25 focus:outline-none transition-colors',
                               it.status === 'fail'
                                 ? 'bg-red-500/8 border border-red-500/25 focus:border-red-400/45'
-                                : 'bg-surface border border-line focus:border-purple-400/35',
+                                : 'bg-surface border border-line focus:border-amber-500/30',
                             ].join(' ')}
                           />
                         </div>
@@ -666,7 +662,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── تقرير مراقبة الجودة + فاحص الجودة (من RepairExtensions) ── */}
         {!rejectMode && (
-          <div className="px-5 py-3 border-t border-line bg-purple-500/[0.02]">
+          <div className="px-5 py-3 border-t border-line">
             <QAReportFields
               qaReport={qaReport}
               inspectorName={inspectorName}
@@ -688,8 +684,8 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
 
         {/* ── تقرير المهندس (إجباري دائماً) ── */}
         {!rejectMode && (
-          <div className="px-5 py-3 border-t border-line bg-violet-500/[0.03]">
-            <label className="text-[11px] font-black text-violet-300 mb-1.5 flex items-center gap-1.5">
+          <div className="px-5 py-3 border-t border-line">
+            <label className="text-[11px] font-black text-ink/60 mb-1.5 flex items-center gap-1.5">
               <ClipboardList className="w-3.5 h-3.5" />
               تقرير المهندس
               <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/25 px-1.5 py-0.5 rounded-full">
@@ -702,7 +698,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               rows={3}
               disabled={loading}
               autoFocus={items.length === 0}
-              className="w-full px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/20 text-[12px] text-ink placeholder:text-ink/25 focus:outline-none focus:border-violet-400/45 resize-y"
+              className="w-full px-3 py-2 rounded-lg bg-surface border border-line text-[12px] text-ink placeholder:text-ink/25 focus:outline-none focus:border-amber-500/35 resize-y"
               placeholder="صِف ما تم إصلاحه — مثلاً: تم تغيير الشاشة وإصلاح منفذ الشحن..."
             />
             {engineerNote.trim().length > 0 && engineerNote.trim().length < 5 && (
@@ -718,7 +714,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
               <span className="text-ink/70 font-bold">ملاحظة:</span> القبول لن يُسمح به ما لم
               يُتَّخذ قرار لكل بند ولا يوجد أي بند مرفوض. في حالة وجود بند مرفوض، استخدم زر{' '}
               <span className="text-red-300 font-bold">«رفض الفحص»</span> لإعادة البطاقة لـ{' '}
-              <span className="text-cyan-300 font-bold">«جارٍ الإصلاح»</span>.
+              <span className="text-ink font-bold">«جارٍ الإصلاح»</span>.
             </div>
             <div>
               <label className="block text-[10px] font-bold text-ink/55 mb-1">
@@ -731,7 +727,7 @@ export default function QualityCheckModal({ job, onClose, onSaved, technicians =
                 value={score}
                 onChange={(e) => setScore(e.target.value)}
                 disabled={loading}
-                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-purple-400/40"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-amber-500/35"
                 placeholder="—"
               />
             </div>

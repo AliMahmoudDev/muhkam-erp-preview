@@ -256,7 +256,7 @@ export default function BankReconciliationPage() {
                   reconciliation.safe_balance !== null
                     ? formatCurrency(reconciliation.safe_balance)
                     : 'غير مرتبط',
-                color: 'text-purple-400',
+                color: 'text-ink/50',
               },
               {
                 label: 'الفرق',

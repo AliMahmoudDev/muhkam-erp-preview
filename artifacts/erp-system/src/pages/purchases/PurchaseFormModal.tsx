@@ -536,7 +536,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                 onClick={() => importFileRef.current?.click()}
                 disabled={importLoading}
                 title="استيراد بنود الفاتورة من ملف Excel أو CSV"
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/25 rounded-xl text-violet-400 text-[11px] font-bold transition-all disabled:opacity-40"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-surface hover:bg-raised border border-line rounded-xl text-ink/50 text-[11px] font-bold transition-all disabled:opacity-40"
               >
                 {importLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                 {importLoading ? '...' : 'استيراد'}
@@ -592,13 +592,13 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               {search && filteredProducts.length === 0 && (
                 <button
                   onClick={() => setShowCreateProduct(true)}
-                  className="glass-panel rounded-2xl p-3 text-right border border-dashed border-violet-500/40 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/60 transition-all flex flex-col items-center justify-center gap-2 min-h-[110px]"
+                  className="glass-panel rounded-2xl p-3 text-right border border-dashed border-amber-500/30 bg-amber-500/[0.03] hover:bg-amber-500/[0.07] hover:border-amber-500/50 transition-all flex flex-col items-center justify-center gap-2 min-h-[110px]"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
-                    <Plus className="w-5 h-5 text-violet-400" />
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                    <Plus className="w-5 h-5 text-amber-400" />
                   </div>
                   <div className="text-center">
-                    <p className="text-violet-300 text-xs font-bold">إضافة منتج جديد</p>
+                    <p className="text-amber-300 text-xs font-bold">إضافة منتج جديد</p>
                     <p className="text-ink/30 text-xs mt-0.5 truncate max-w-[120px]">«{search}»</p>
                   </div>
                 </button>
@@ -818,7 +818,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               onClick={() => setIsConsignment((v) => !v)}
               className={`w-full py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
                 isConsignment
-                  ? 'bg-violet-500/20 text-violet-300 border-violet-500/40'
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                   : 'bg-surface text-ink/40 border-line hover:bg-surface hover:text-ink/60'
               }`}
             >
@@ -845,7 +845,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
             )}
 
             {isConsignment && (
-              <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2 text-[10px] text-violet-300/90">
+              <div className="bg-amber-500/8 border border-amber-500/15 rounded-xl px-3 py-2 text-[10px] text-amber-300/90">
                 <p className="font-bold">📋 ائتمان — البضاعة في مخزن المورد حتى تُباع</p>
               </div>
             )}

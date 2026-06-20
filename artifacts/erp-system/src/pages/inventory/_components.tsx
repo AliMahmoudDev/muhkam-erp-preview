@@ -19,7 +19,7 @@ export function TabBtn({
       onClick={() => onClick(id)}
       className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px whitespace-nowrap ${
         isActive
-          ? 'border-violet-400 text-violet-300'
+          ? 'border-amber-400 text-amber-300'
           : 'border-transparent text-ink/50 hover:text-ink/80'
       }`}
     >

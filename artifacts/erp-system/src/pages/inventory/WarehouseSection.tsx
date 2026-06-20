@@ -129,7 +129,7 @@ export default function WarehouseSection({
                   setWhForm(() => ({ name: '', address: '', branch_id: '' }));
                   setShowAddWH(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-all"
               >
                 <Plus className="w-4 h-4" /> إضافة مخزن
               </button>
@@ -156,7 +156,7 @@ export default function WarehouseSection({
                   setWhForm(() => ({ name: '', address: '', branch_id: '' }));
                   setShowAddWH(true);
                 }}
-                className="mt-3 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+                className="mt-3 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-all"
               >
                 إضافة أول مخزن
               </button>
@@ -179,8 +179,8 @@ export default function WarehouseSection({
                   title="انقر لتعيين كمخزن نشط"
                   className={`group relative rounded-2xl p-5 transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] select-none ${
                     isSelected
-                      ? 'bg-violet-500/10 border border-violet-500/40 shadow-[0_0_20px_rgba(139,92,246,0.15)]'
-                      : 'bg-[#111827] border border-line hover:border-violet-500/20'
+                      ? 'bg-amber-500/8 border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                      : 'bg-[#111827] border border-line hover:border-amber-500/15'
                   }`}
                 >
                   {isAdmin && (
@@ -195,15 +195,15 @@ export default function WarehouseSection({
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center mb-3">
-                    <Warehouse className="w-5 h-5 text-violet-400" />
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3">
+                    <Warehouse className="w-5 h-5 text-amber-400" />
                   </div>
                   <p className="text-ink font-bold text-sm mb-1">{w.name}</p>
                   {w.address && <p className="text-ink/40 text-xs truncate">{w.address}</p>}
                   {/* الفرع */}
                   {isAdmin && branches.length > 0 ? (
                     <select
-                      className="mt-1.5 mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-surface border border-line text-ink/50 hover:border-violet-500/30 transition-colors outline-none cursor-pointer"
+                      className="mt-1.5 mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-surface border border-line text-ink/50 hover:border-amber-500/25 transition-colors outline-none cursor-pointer"
                       value={w.branch_id ?? ''}
                       onClick={(e) => e.stopPropagation()}
                       onChange={async (e) => {
@@ -226,7 +226,7 @@ export default function WarehouseSection({
                       ))}
                     </select>
                   ) : w.branch_id ? (
-                    <p className="text-violet-400/70 text-[10px] mb-2">
+                    <p className="text-ink/40 text-[10px] mb-2">
                       {branches.find((b) => b.id === w.branch_id)?.name ?? ''}
                     </p>
                   ) : (
@@ -248,13 +248,13 @@ export default function WarehouseSection({
                         <div className="mt-1.5">
                           <div className="flex items-center justify-between mb-0.5">
                             <span className="text-ink/30 text-xs">من الإجمالي</span>
-                            <span className="text-violet-300 text-xs font-bold">
+                            <span className="text-ink/50 text-xs font-bold">
                               {ws.pct_of_total}%
                             </span>
                           </div>
                           <div className="h-1 bg-surface rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-violet-400 rounded-full transition-all"
+                              className="h-full bg-amber-400 rounded-full transition-all"
                               style={{ width: `${ws.pct_of_total}%` }}
                             />
                           </div>
@@ -263,7 +263,7 @@ export default function WarehouseSection({
                     </div>
                   )}
                   {isSelected && (
-                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-lg text-xs bg-violet-500/25 text-violet-300 font-bold border border-violet-500/30">
+                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-lg text-xs bg-amber-500/20 text-amber-300 font-bold border border-amber-500/25">
                       <svg
                         className="w-3 h-3"
                         fill="none"
@@ -287,7 +287,7 @@ export default function WarehouseSection({
                         e.stopPropagation();
                         setWarehouseDetailId(w.id);
                       }}
-                      className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg text-[11px] bg-surface hover:bg-violet-500/15 text-ink/50 hover:text-violet-300 border border-line hover:border-violet-500/20 transition-all"
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg text-[11px] bg-surface hover:bg-raised text-ink/50 hover:text-ink border border-line transition-all"
                     >
                       <Eye className="w-3 h-3" /> عرض المنتجات
                     </button>
@@ -311,7 +311,7 @@ export default function WarehouseSection({
           >
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-bold text-ink flex items-center gap-2">
-                <Warehouse className="w-5 h-5 text-violet-400" /> إضافة مخزن جديد
+                <Warehouse className="w-5 h-5 text-amber-400" /> إضافة مخزن جديد
               </h3>
               <button
                 onClick={() => setShowAddWH(false)}
@@ -392,7 +392,7 @@ export default function WarehouseSection({
                     });
                   }
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-ink font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm transition-colors flex items-center justify-center gap-2"
               >
                 {createWH.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -485,7 +485,7 @@ export default function WarehouseSection({
             {/* رأس الـ modal */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-ink flex items-center gap-2">
-                <Warehouse className="w-5 h-5 text-violet-400" />
+                <Warehouse className="w-5 h-5 text-amber-400" />
                 {warehouses.find((w) => w.id === warehouseDetailId)?.name ?? 'تفاصيل المخزن'}
               </h3>
               <button
@@ -499,7 +499,7 @@ export default function WarehouseSection({
             {/* المحتوى */}
             {whDetailLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+                <Loader2 className="w-8 h-8 animate-spin text-ink/30" />
               </div>
             ) : whDetailProducts.length === 0 ? (
               <div className="text-center py-16 text-ink/30">

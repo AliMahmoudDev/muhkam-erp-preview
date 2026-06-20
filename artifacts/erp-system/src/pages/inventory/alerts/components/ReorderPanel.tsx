@@ -46,11 +46,11 @@ export function ReorderPanel({
   refetchReorder,
 }: ReorderPanelProps) {
   return (
-    <div className="bg-[#111827] border border-violet-500/20 rounded-2xl p-5 space-y-4">
+    <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center">
-            <ShoppingCart className="w-4 h-4 text-violet-300" />
+          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center">
+            <ShoppingCart className="w-4 h-4 text-amber-400" />
           </div>
           <div>
             <h3 className="text-ink font-bold text-sm">مقترحات إعادة الطلب</h3>
@@ -63,20 +63,20 @@ export function ReorderPanel({
         <div className="flex items-center gap-2 flex-wrap">
           {reorderSuggestions.length > 0 && (
             <>
-              <span className="px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-bold">
+              <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold">
                 إجمالي مقدّر: {formatCurrency(reorderData?.total_cost ?? 0)}
               </span>
               {poSelectedCount > 0 ? (
                 <button
                   onClick={() => setShowPOModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500 hover:bg-violet-400 text-ink text-xs rounded-xl font-bold border border-violet-400 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs rounded-xl font-bold border border-amber-400 transition-colors"
                 >
                   <ClipboardList className="w-3 h-3" /> إنشاء أمر شراء ({poSelectedCount})
                 </button>
               ) : (
                 <button
                   onClick={selectAllPO}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 text-xs rounded-xl border border-violet-500/20 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs rounded-xl border border-amber-500/20 transition-colors"
                 >
                   <ClipboardList className="w-3 h-3" /> تحديد الكل لأمر الشراء
                 </button>
@@ -116,7 +116,7 @@ export function ReorderPanel({
       ) : (
         <>
           {poSelectedCount > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-xl text-xs text-violet-300">
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
               <ClipboardList className="w-3.5 h-3.5" />
               <span>
                 تم تحديد {poSelectedCount} صنف · إجمالي مقدّر:{' '}
@@ -128,7 +128,7 @@ export function ReorderPanel({
               </span>
               <button
                 onClick={() => setShowPOModal(true)}
-                className="ms-auto underline font-bold hover:text-violet-200"
+                className="ms-auto underline font-bold hover:text-amber-200"
               >
                 إنشاء أمر الشراء الآن
               </button>
@@ -165,7 +165,7 @@ export function ReorderPanel({
                   return (
                     <tr
                       key={s.product_id}
-                      className={`border-b border-line erp-table-row cursor-pointer ${isChecked ? 'bg-violet-500/5' : ''}`}
+                      className={`border-b border-line erp-table-row cursor-pointer ${isChecked ? 'bg-amber-500/5' : ''}`}
                       onClick={() => toggleSelectPO(s.product_id)}
                     >
                       <td className="p-2.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -206,7 +206,7 @@ export function ReorderPanel({
                         </span>
                       </td>
                       <td className="p-2.5">
-                        <span className="px-2 py-1 rounded-lg bg-violet-500/10 text-violet-300 font-bold font-mono text-sm">
+                        <span className="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-300 font-bold font-mono text-sm">
                           {s.suggested_qty}
                         </span>
                       </td>

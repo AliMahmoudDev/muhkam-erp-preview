@@ -206,7 +206,7 @@ export function OnboardingPanel() {
           <div className="flex items-center gap-2 mb-5">
             <div className="flex-1 h-1.5 rounded-full bg-surface overflow-hidden">
               <div
-                className="h-full rounded-full bg-[var(--brand)] transition-all duration-500"
+                className="h-full rounded-full bg-[var(--brand)] transition-all duration-300"
                 style={{ width: `${(doneCount / 3) * 100}%` }}
               />
             </div>
@@ -261,7 +261,7 @@ export function OnboardingPanel() {
                     ) : (
                       <button
                         onClick={step.action}
-                        className="w-full py-2 rounded-xl text-xs font-bold bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 border border-violet-500/25 transition-all"
+                        className="w-full py-2 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/25 transition-all"
                       >
                         {step.actionLabel}
                       </button>

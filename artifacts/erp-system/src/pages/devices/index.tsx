@@ -218,7 +218,7 @@ export function RowMenu({
                 setOpen(false);
                 printSaleReceipt(device, settings.companyName);
               },
-              cls: 'text-violet-300',
+              cls: 'text-ink/60',
             },
             {
               label: 'إرجاع من العميل',
@@ -269,7 +269,7 @@ export function RowMenu({
           onDetail();
         }}
         title="تفاصيل الجهاز"
-        className="p-1.5 rounded-lg text-ink/25 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
+        className="p-1.5 rounded-lg text-ink/25 hover:text-ink hover:bg-surface transition-all"
       >
         <Eye className="w-3.5 h-3.5" />
       </button>
@@ -430,8 +430,8 @@ export default function Devices() {
       {/* ── Page header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
-            <Smartphone className="w-4 h-4 text-violet-400" />
+          <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+            <Smartphone className="w-4 h-4 text-amber-400" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-ink leading-tight">الأجهزة المستعملة</h1>
@@ -441,7 +441,7 @@ export default function Devices() {
         {pageView === 'devices' && (
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 text-sm font-bold hover:bg-amber-500/25 transition-all"
           >
             <Plus className="w-4 h-4" /> إضافة جهاز
           </button>
@@ -461,7 +461,7 @@ export default function Devices() {
               pageView === id
                 ? id === 'warranty'
                   ? 'border-amber-500 text-amber-300'
-                  : 'border-violet-500 text-violet-300'
+                  : 'border-amber-500/50 text-amber-400/70'
                 : 'border-transparent text-ink/40 hover:text-ink/70'
             }`}
           >
@@ -517,12 +517,12 @@ export default function Devices() {
 
           {/* ── Stats cards — Row 2: Financial ── */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="glass-panel rounded-xl border border-violet-500/15 p-3">
+            <div className="glass-panel rounded-xl border border-line p-3">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] text-ink/30">قيمة المخزون (شراء)</span>
-                <Package className="w-3.5 h-3.5 text-violet-400/60" />
+                <Package className="w-3.5 h-3.5 text-ink/30" />
               </div>
-              <p className="text-lg font-bold text-violet-300">
+              <p className="text-lg font-bold text-ink">
                 {(stats?.stock_purchase_value ?? 0).toLocaleString('ar-EG')}
                 <span className="text-[10px] font-normal text-ink/25 mr-1">ج.م</span>
               </p>

@@ -104,7 +104,7 @@ export default function TransferModal({ onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-md rounded-3xl p-7 space-y-5 shadow-2xl border border-violet-500/30 bg-[var(--erp-bg-card)] max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-md rounded-3xl p-7 space-y-5 shadow-2xl border border-line bg-[var(--erp-bg-card)] max-h-[90vh] overflow-y-auto"
       >
         {/* Close */}
         <button
@@ -117,29 +117,29 @@ export default function TransferModal({ onClose }: Props) {
 
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-violet-500/15 border border-violet-500/30">
-            <ArrowLeftRight className="w-6 h-6 text-violet-400" />
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-amber-500/15 border border-amber-500/25">
+            <ArrowLeftRight className="w-6 h-6 text-amber-400" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-violet-400">تحويل بين الخزائن</h3>
+            <h3 className="text-lg font-black text-amber-400">تحويل بين الخزائن</h3>
             <p className="text-ink/30 text-xs">نقل رصيد من خزينة إلى أخرى</p>
           </div>
         </div>
 
         {/* Transfer visualization */}
         {(fromSafe || toSafe) && (
-          <div className="flex items-center gap-3 bg-violet-500/10 border border-violet-500/20 rounded-2xl px-4 py-3">
+          <div className="flex items-center gap-3 bg-amber-500/8 border border-amber-500/20 rounded-2xl px-4 py-3">
             <div className="flex-1 text-center">
               <p className="text-ink/40 text-xs">من</p>
-              <p className="text-violet-400 font-bold text-sm">{fromSafe?.name || '—'}</p>
+              <p className="text-amber-400 font-bold text-sm">{fromSafe?.name || '—'}</p>
               {fromSafe && (
                 <p className="text-ink/30 text-xs">{formatCurrency(Number(fromSafe.balance))}</p>
               )}
             </div>
-            <ArrowRight className="w-5 h-5 text-violet-500 shrink-0" />
+            <ArrowRight className="w-5 h-5 text-amber-400 shrink-0" />
             <div className="flex-1 text-center">
               <p className="text-ink/40 text-xs">إلى</p>
-              <p className="text-violet-400 font-bold text-sm">{toSafe?.name || '—'}</p>
+              <p className="text-amber-400 font-bold text-sm">{toSafe?.name || '—'}</p>
               {toSafe && (
                 <p className="text-ink/30 text-xs">{formatCurrency(Number(toSafe.balance))}</p>
               )}
@@ -290,7 +290,7 @@ export default function TransferModal({ onClose }: Props) {
         <button
           type="submit"
           disabled={transferMut.isPending || !isValid}
-          className="w-full py-3.5 rounded-2xl font-black text-sm transition-all bg-violet-500 text-ink hover:bg-violet-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20"
+          className="w-full py-3.5 rounded-2xl font-black text-sm transition-all bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
         >
           {transferMut.isPending ? 'جاري التحويل...' : 'تنفيذ التحويل'}
         </button>

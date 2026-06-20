@@ -315,29 +315,29 @@ export default function DeliveryGateForm({
             {/* الصف الأول: بيانات الإصلاح + تكلفة العميل */}
             <div className="flex flex-wrap gap-2 items-end">
               <div className="flex-1 min-w-[150px]">
-                <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">
+                <label className="text-[10px] font-bold text-ink/50 mb-1 block">
                   وصف الإصلاح
                 </label>
                 <input
                   value={extDesc}
                   onChange={(e) => setExtDesc(e.target.value)}
                   placeholder="مثلاً: تغيير شاشة"
-                  className="w-full px-2 py-1.5 rounded-lg bg-surface border border-purple-400/25 text-[11px] text-ink focus:outline-none focus:border-purple-400/50"
+                  className="w-full px-2 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-amber-500/30"
                 />
               </div>
               <div className="flex-1 min-w-[120px]">
-                <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">
+                <label className="text-[10px] font-bold text-ink/50 mb-1 block">
                   اسم الورشة (اختياري)
                 </label>
                 <input
                   value={extVendor}
                   onChange={(e) => setExtVendor(e.target.value)}
                   placeholder="ورشة الأمل"
-                  className="w-full px-2 py-1.5 rounded-lg bg-surface border border-purple-400/25 text-[11px] text-ink focus:outline-none focus:border-purple-400/50"
+                  className="w-full px-2 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-amber-500/30"
                 />
               </div>
               <div style={{ width: 110 }}>
-                <label className="text-[10px] font-bold text-purple-200/70 mb-1 block">
+                <label className="text-[10px] font-bold text-ink/50 mb-1 block">
                   تكلفة العميل (ج.م)
                 </label>
                 <input
@@ -348,19 +348,19 @@ export default function DeliveryGateForm({
                   onChange={(e) => setExtPrice(e.target.value)}
                   placeholder="0.00"
                   dir="ltr"
-                  className="w-full px-2 py-1.5 rounded-lg bg-surface border border-purple-400/25 text-[11px] text-ink focus:outline-none focus:border-purple-400/50"
+                  className="w-full px-2 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-amber-500/30"
                 />
               </div>
             </div>
 
             {/* الصف الثاني: تكلفة الورشة + طريقة الدفع */}
-            <div className="pt-2 border-t border-purple-400/15">
-              <p className="text-[10px] text-purple-200/50 mb-1.5">
+            <div className="pt-2 border-t border-line">
+              <p className="text-[10px] text-ink/40 mb-1.5">
                 تكلفة الورشة (ما ستدفعه أنت للورشة)
               </p>
               <div className="flex flex-wrap gap-2 items-end">
                 <div style={{ width: 110 }}>
-                  <label className="text-[10px] font-bold text-purple-200/60 mb-1 block">
+                  <label className="text-[10px] font-bold text-ink/50 mb-1 block">
                     تكلفة الورشة (ج.م)
                   </label>
                   <input
@@ -377,7 +377,7 @@ export default function DeliveryGateForm({
                 {parseFloat(extVendorCost) > 0 && (
                   <>
                     <div>
-                      <label className="text-[10px] font-bold text-purple-200/60 mb-1 block">
+                      <label className="text-[10px] font-bold text-ink/50 mb-1 block">
                         طريقة الدفع للورشة
                       </label>
                       <div className="flex gap-1">
@@ -391,7 +391,7 @@ export default function DeliveryGateForm({
                         <button
                           type="button"
                           onClick={() => setExtVendorPayType('credit')}
-                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${extVendorPayType === 'credit' ? 'bg-indigo-500/25 text-indigo-300 border border-indigo-500/45' : 'bg-surface text-ink/50 border border-line'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${extVendorPayType === 'credit' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-surface text-ink/50 border border-line'}`}
                         >
                           آجل (لاحقاً)
                         </button>
@@ -399,7 +399,7 @@ export default function DeliveryGateForm({
                     </div>
                     {extVendorPayType === 'cash' && safes.length > 0 && (
                       <div className="flex-1 min-w-[130px]">
-                        <label className="text-[10px] font-bold text-purple-200/60 mb-1 block">
+                        <label className="text-[10px] font-bold text-ink/50 mb-1 block">
                           الخزنة
                         </label>
                         <select
@@ -417,7 +417,7 @@ export default function DeliveryGateForm({
                       </div>
                     )}
                     {extVendorPayType === 'credit' && (
-                      <p className="text-[10px] text-indigo-300/70 flex items-center gap-1">
+                      <p className="text-[10px] text-ink/40 flex items-center gap-1">
                         سيُسجَّل في المصروفات الآجلة وتدفعه للورشة لاحقاً
                       </p>
                     )}
@@ -428,9 +428,9 @@ export default function DeliveryGateForm({
                   onClick={addExternalLine}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 mr-auto"
                   style={{
-                    background: 'rgba(168,85,247,0.25)',
-                    border: '1px solid rgba(192,132,252,0.4)',
-                    color: 'var(--status-external-repair)',
+                    background: 'rgba(245,158,11,0.12)',
+                    border: '1px solid rgba(245,158,11,0.3)',
+                    color: 'rgb(251,191,36)',
                   }}
                 >
                   <Plus className="w-3.5 h-3.5" /> إضافة البند
@@ -481,7 +481,7 @@ export default function DeliveryGateForm({
                       {l.quantity} × {fmtCurrency(l.unit_price)}
                     </span>
                     <span
-                      className={`text-[11px] font-bold shrink-0 ${isExt ? 'text-purple-300' : 'text-blue-300'}`}
+                      className={`text-[11px] font-bold shrink-0 ${isExt ? 'text-amber-300' : 'text-blue-300'}`}
                     >
                       {fmtCurrency(lineNet(l))}
                     </span>
@@ -535,11 +535,7 @@ export default function DeliveryGateForm({
           </h4>
           {!payIsDone && grandTotal > 0 && payRows.length === 0 && (
             <span
-              className="text-[10px] text-indigo-300/70 px-2 py-0.5 rounded-lg"
-              style={{
-                background: 'rgba(99,102,241,0.08)',
-                border: '1px solid rgba(99,102,241,0.2)',
-              }}
+              className="text-[10px] text-ink/40 px-2 py-0.5 rounded-lg border border-line bg-surface"
             >
               بدون دفع = كل المبلغ آجل
             </span>
@@ -551,7 +547,7 @@ export default function DeliveryGateForm({
             {payRows.map((row) => (
               <div
                 key={row.id}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${row.type === 'credit' ? 'bg-indigo-500/8 border border-indigo-500/20' : 'bg-emerald-500/8 border border-emerald-500/20'}`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${row.type === 'credit' ? 'bg-amber-500/8 border border-amber-500/20' : 'bg-emerald-500/8 border border-emerald-500/20'}`}
               >
                 <button
                   type="button"
@@ -562,7 +558,7 @@ export default function DeliveryGateForm({
                   <X className="w-3 h-3" />
                 </button>
                 <span
-                  className={`text-[11px] font-bold shrink-0 flex items-center gap-1 ${row.type === 'credit' ? 'text-indigo-400' : 'text-emerald-400'}`}
+                  className={`text-[11px] font-bold shrink-0 flex items-center gap-1 ${row.type === 'credit' ? 'text-amber-400' : 'text-emerald-400'}`}
                 >
                   {row.type === 'cash' ? (
                     <Coins className="w-3 h-3" />
@@ -612,7 +608,7 @@ export default function DeliveryGateForm({
               </button>
               <button
                 onClick={() => setPayType('credit')}
-                className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === 'credit' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'bg-surface text-ink/50 border border-line'}`}
+                className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === 'credit' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-surface text-ink/50 border border-line'}`}
               >
                 <Clock className="w-3 h-3" /> آجل
               </button>
@@ -631,7 +627,7 @@ export default function DeliveryGateForm({
                   ))}
                 </select>
               ) : (
-                <div className="flex-1 flex items-center justify-end text-[11px] text-indigo-300/70 px-2 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
+                <div className="flex-1 flex items-center justify-end text-[11px] text-ink/40 px-2 rounded-lg bg-surface border border-line">
                   ائتمان العميل
                 </div>
               )}
@@ -690,7 +686,7 @@ export default function DeliveryGateForm({
       {/* ④ الوسيط (اختياري) */}
       <div className="px-5 pt-3 pb-4">
         <h4 className="text-[12px] font-black text-ink/80 mb-2.5 flex items-center gap-2">
-          <UserCog className="w-3.5 h-3.5 text-violet-400" />
+          <UserCog className="w-3.5 h-3.5 text-ink/40" />
           الوسيط
           <span className="text-[10px] font-normal text-ink/35">(اختياري)</span>
         </h4>

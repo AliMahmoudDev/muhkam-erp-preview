@@ -30,7 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_COLORS: Record<string, string> = {
   asset: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
   liability: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
-  equity: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+  equity: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
   revenue: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
   expense: 'text-red-400 bg-red-500/10 border-red-500/20',
 };

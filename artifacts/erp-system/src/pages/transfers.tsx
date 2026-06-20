@@ -74,7 +74,7 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 const STATUS_COLOR: Record<string, string> = {
   pending: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
   approved: 'bg-blue-500/15 text-blue-300 border-blue-500/25',
-  shipped: 'bg-violet-500/15 text-violet-300 border-violet-500/25',
+  shipped: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
   received: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
   cancelled: 'bg-red-500/15 text-red-300 border-red-500/25',
 };
@@ -173,7 +173,7 @@ function RequestModal({
       <div className="bg-[#0f1623] border border-line rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-line">
           <span className="font-bold text-ink flex items-center gap-2">
-            <ArrowRightLeft className="w-4 h-4 text-violet-400" /> طلب تحويل جديد
+            <ArrowRightLeft className="w-4 h-4 text-ink/50" /> طلب تحويل جديد
           </span>
           <button onClick={onClose} className="text-ink/40 hover:text-ink transition-colors">
             <X className="w-4 h-4" />
@@ -189,7 +189,7 @@ function RequestModal({
             <select
               value={form.product_id}
               onChange={(e) => setForm((f) => ({ ...f, product_id: e.target.value }))}
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50"
             >
               <option value="">— اختر منتجاً —</option>
               {products.map((p) => (
@@ -209,7 +209,7 @@ function RequestModal({
               <select
                 value={form.from_branch_id}
                 onChange={(e) => setForm((f) => ({ ...f, from_branch_id: e.target.value }))}
-                className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50"
               >
                 <option value="">— اختر —</option>
                 {branches.map((b) => (
@@ -226,7 +226,7 @@ function RequestModal({
               <select
                 value={form.to_branch_id}
                 onChange={(e) => setForm((f) => ({ ...f, to_branch_id: e.target.value }))}
-                className={`w-full bg-surface border rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 ${
+                className={`w-full bg-surface border rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50 ${
                   form.from_branch_id &&
                   form.to_branch_id &&
                   form.from_branch_id === form.to_branch_id
@@ -261,7 +261,7 @@ function RequestModal({
               value={form.quantity}
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
               placeholder="0"
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-violet-400/50 font-mono"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-amber-400/50 font-mono"
             />
           </div>
 
@@ -273,14 +273,14 @@ function RequestModal({
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="سبب التحويل..."
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
             />
           </div>
 
           <button
             onClick={() => mutation.mutate()}
             disabled={!valid || mutation.isPending}
-            className="w-full py-3 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-40 disabled:cursor-not-allowed text-ink font-bold text-sm transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-sm transition-colors flex items-center justify-center gap-2"
           >
             {mutation.isPending ? (
               <>
@@ -513,7 +513,7 @@ export default function Transfers() {
           )}
           {/* التحويلات — التبويب النشط حالياً */}
           {canManage && (
-            <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-violet-400 text-violet-300 whitespace-nowrap">
+            <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px border-amber-400 text-amber-300 whitespace-nowrap">
               <Truck className="w-4 h-4" />
               التحويلات بين الفروع
             </button>
@@ -558,7 +558,7 @@ export default function Transfers() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-xl font-bold flex items-center gap-2">
-              <ArrowRightLeft className="w-5 h-5 text-violet-400" />
+              <ArrowRightLeft className="w-5 h-5 text-ink/50" />
               تحويل المخزون بين الفروع
             </h1>
             <p className="text-ink/40 text-xs mt-1">
@@ -568,7 +568,7 @@ export default function Transfers() {
           {canManage && (
             <button
               onClick={() => setShowRequest(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-400 rounded-xl text-sm font-bold transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 rounded-xl text-sm font-bold text-black transition-colors"
             >
               <Plus className="w-4 h-4" /> طلب تحويل جديد
             </button>
@@ -583,7 +583,7 @@ export default function Transfers() {
               onClick={() => setFilterStatus(s)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
                 filterStatus === s
-                  ? 'bg-violet-500 text-ink border-violet-500'
+                  ? 'bg-amber-500 text-black border-amber-500'
                   : 'bg-surface text-ink/50 border-line hover:text-ink hover:border-line'
               }`}
             >
@@ -595,7 +595,7 @@ export default function Transfers() {
         {/* ── القائمة ── */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-ink/30 animate-spin" />
           </div>
         ) : transfers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center bg-surface border border-line rounded-2xl">
@@ -604,7 +604,7 @@ export default function Transfers() {
             {canManage && (
               <button
                 onClick={() => setShowRequest(true)}
-                className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+                className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-all"
               >
                 <Plus className="w-4 h-4" /> إنشاء أول طلب
               </button>
@@ -676,7 +676,7 @@ export default function Transfers() {
                             <button
                               onClick={() => shipMut.mutate(t.id)}
                               disabled={acting}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/25 disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 disabled:opacity-40 transition-colors flex items-center gap-1.5"
                             >
                               {shipMut.isPending ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />

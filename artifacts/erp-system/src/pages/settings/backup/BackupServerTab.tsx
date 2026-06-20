@@ -41,7 +41,7 @@ function triggerBadge(trigger: string) {
     trigger === 'login'
       ? 'bg-blue-500/15 text-blue-400'
       : trigger === 'logout'
-        ? 'bg-purple-500/15 text-purple-400'
+        ? 'bg-rose-500/15 text-rose-400'
         : trigger === 'sale_post' || trigger === 'purchase_post'
           ? 'bg-emerald-500/15 text-emerald-400'
           : trigger === 'scheduled'
@@ -161,7 +161,7 @@ export default function BackupServerTab({
           </div>
           <div className="flex items-center justify-between p-3 rounded-xl bg-surface border border-line">
             <div className="flex items-center gap-2.5">
-              <LogOut className="w-4 h-4 text-purple-400" />
+              <LogOut className="w-4 h-4 text-rose-400" />
               <div>
                 <p className="text-ink text-xs font-bold">تسجيل الخروج</p>
                 <p className="text-ink/30 text-[10px]">نسخة تلقائية قبل كل خروج</p>

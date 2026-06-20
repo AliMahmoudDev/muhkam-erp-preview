@@ -287,7 +287,7 @@ export default function Repairs() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-black text-ink flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-violet-400" />
+            <Wrench className="w-5 h-5 text-amber-400" />
             بطاقات الصيانة
           </h1>
           <div className="flex items-center gap-1.5">
@@ -303,7 +303,7 @@ export default function Repairs() {
                 setShowNewForm(true);
                 setSelectedJob(null);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-300 text-xs font-bold transition-all"
             >
               <Plus className="w-3.5 h-3.5" /> بطاقة جديدة
             </button>
@@ -348,7 +348,7 @@ export default function Repairs() {
             <button
               onClick={() => setShowScanner(true)}
               title="مسح QR"
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-ink/30 hover:text-violet-400 transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-ink/30 hover:text-amber-400 transition-colors"
             >
               <ScanLine className="w-3.5 h-3.5" />
             </button>
@@ -370,14 +370,14 @@ export default function Repairs() {
               <button
                 onClick={() => setViewMode('list')}
                 title="عرض قائمة"
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-300' : 'text-ink/30 hover:text-ink/60'}`}
               >
                 <List className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setViewMode('grid')}
                 title="عرض شبكة"
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-300' : 'text-ink/30 hover:text-ink/60'}`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -455,7 +455,7 @@ export default function Repairs() {
                   }}
                   className={`relative rounded-2xl border cursor-pointer transition-all duration-150 overflow-hidden group ${
                     isActive
-                      ? `${STATUS_BORDER[job.status] ?? 'border-violet-500/40'} bg-surface shadow-lg`
+                      ? `${STATUS_BORDER[job.status] ?? 'border-line'} bg-surface shadow-lg`
                       : 'border-line hover:border-line hover:bg-surface'
                   }`}
                 >

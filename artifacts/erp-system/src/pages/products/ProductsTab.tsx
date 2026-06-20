@@ -224,7 +224,7 @@ export function ProductsTab() {
               <button
                 onClick={() => prodRef.current?.click()}
                 disabled={prodImporting}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/40 text-violet-400 hover:bg-violet-500/30 transition-all whitespace-nowrap disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all whitespace-nowrap disabled:opacity-50"
                 title="استيراد من Excel"
               >
                 {prodImporting ? (
@@ -443,7 +443,7 @@ export function ProductsTab() {
                               setQrProduct({ id: product.id, name: product.name, sku: product.sku })
                             }
                             title="رمز QR"
-                            className="p-2 rounded-lg text-purple-400 hover:text-purple-300 hover:bg-purple-400/10 transition-colors"
+                            className="p-2 rounded-lg text-ink/40 hover:text-ink/70 hover:bg-surface transition-colors"
                           >
                             <QrCode className="w-4 h-4" />
                           </button>

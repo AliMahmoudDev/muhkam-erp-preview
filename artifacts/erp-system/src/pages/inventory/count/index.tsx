@@ -278,13 +278,13 @@ function CountTab({ warehouses, currentWarehouseId, qc, toast }: CountTabProps) 
       <div className="flex gap-2">
         <button
           onClick={() => setSessionView('new')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'new' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'new' ? 'bg-amber-500 text-black' : 'bg-surface text-ink/60 hover:text-ink'}`}
         >
           جرد جديد
         </button>
         <button
           onClick={() => setSessionView('history')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'history' ? 'bg-violet-500 text-ink' : 'bg-surface text-ink/60 hover:text-ink'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${sessionView === 'history' ? 'bg-amber-500 text-black' : 'bg-surface text-ink/60 hover:text-ink'}`}
         >
           سجل الجرد ({sessions.length})
         </button>
@@ -344,15 +344,15 @@ function CountTab({ warehouses, currentWarehouseId, qc, toast }: CountTabProps) 
           {selectedWarehouse > 0 && countMode !== 'partial' && (
             <div className="flex items-center justify-between gap-3 bg-surface border border-line rounded-xl px-4 py-2.5">
               <div className="flex items-center gap-2 text-xs text-ink/50">
-                <Camera className="w-3.5 h-3.5 text-violet-400" />
+                <Camera className="w-3.5 h-3.5 text-ink/40" />
                 <span>استخدم الماسح الضوئي لإضافة الكميات بسرعة</span>
                 {lastScanned && (
-                  <span className="font-mono text-violet-300">آخر مسح: {lastScanned}</span>
+                  <span className="font-mono text-amber-300">آخر مسح: {lastScanned}</span>
                 )}
               </div>
               <button
                 onClick={() => setScannerOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-xs font-bold transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 rounded-lg text-xs font-bold transition-colors"
               >
                 <Camera className="w-3.5 h-3.5" /> فتح ماسح الباركود
               </button>

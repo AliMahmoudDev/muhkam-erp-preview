@@ -176,13 +176,13 @@ export function SaleProductPicker({
           {search && filteredProducts.length === 0 && (
             <button
               onClick={onCreateProduct}
-              className="rounded-2xl p-3.5 text-right border border-dashed border-violet-500/40 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/60 transition-all flex flex-col items-center justify-center gap-2 min-h-[140px]"
+              className="rounded-2xl p-3.5 text-right border border-dashed border-line bg-surface hover:bg-raised hover:border-amber-500/30 transition-all flex flex-col items-center justify-center gap-2 min-h-[140px]"
             >
-              <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
-                <Plus className="w-5 h-5 text-violet-400" />
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <Plus className="w-5 h-5 text-amber-400" />
               </div>
               <div className="text-center">
-                <p className="text-violet-300 text-xs font-bold">إضافة منتج جديد</p>
+                <p className="text-amber-400 text-xs font-bold">إضافة منتج جديد</p>
                 <p className="sale-muted-text text-xs mt-0.5 truncate max-w-[120px] opacity-70">
                   «{search}»
                 </p>

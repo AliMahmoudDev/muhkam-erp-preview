@@ -253,7 +253,7 @@ function AlertsTab({
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
                 showReorder
-                  ? 'bg-violet-500/20 border-violet-500/30 text-violet-300'
+                  ? 'bg-amber-500/15 border-amber-500/25 text-amber-300'
                   : 'bg-surface border-line text-ink/60 hover:text-ink'
               }`}
             >

@@ -174,7 +174,7 @@ const LEDGER_TYPE_AR: Record<string, { label: string; color: string }> = {
   commission_earned: { label: 'عمولة محققة', color: 'text-emerald-300' },
   payout: { label: 'صرف', color: 'text-red-300' },
   reversal: { label: 'استرداد', color: 'text-orange-300' },
-  bonus: { label: 'حافز', color: 'text-purple-300' },
+  bonus: { label: 'حافز', color: 'text-amber-300' },
   adjustment: { label: 'تعديل', color: 'text-blue-300' },
   incentive: { label: 'إنسنتف', color: 'text-teal-300' },
 };
@@ -501,7 +501,7 @@ function EmployeeMaintenanceTab({
           { label: 'المُسلَّمة', value: String(data.delivered_count), color: 'text-emerald-300' },
           { label: 'عمولات محققة', value: fmt(data.total_earned), color: 'text-emerald-300' },
           { label: 'عمولات معلقة', value: fmt(data.pending_commission), color: 'text-amber-300' },
-          { label: 'متوسط العمولة', value: fmt(data.avg_commission), color: 'text-purple-300' },
+          { label: 'متوسط العمولة', value: fmt(data.avg_commission), color: 'text-ink/60' },
         ].map((card) => (
           <div
             key={card.label}
@@ -1235,7 +1235,7 @@ export function EmployeeDetail({
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
                       <div className="text-ink/70">
                         نسبة العمولة{' '}
-                        <span className="text-purple-300 font-mono">
+                        <span className="text-ink/50 font-mono">
                           ({selected.commission_rate}%)
                         </span>
                       </div>
@@ -1279,7 +1279,7 @@ export function EmployeeDetail({
                   {commBonus > 0 && (
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-line text-xs">
                       <div className="text-ink/70 flex items-center gap-1.5">
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300">
                           حافز
                         </span>
                         حوافز (دفتر العمولات)

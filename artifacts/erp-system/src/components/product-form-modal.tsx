@@ -346,7 +346,7 @@ export function ProductFormModal({
           {/* Category — combobox */}
           <div>
             <label className="flex items-center gap-1 text-ink/70 text-xs mb-1">
-              <Tag className="w-3 h-3 text-violet-400" /> التصنيف *
+              <Tag className="w-3 h-3 text-ink/40" /> التصنيف *
             </label>
             <div className="relative" ref={catRef}>
               <div className="flex gap-1">
@@ -370,7 +370,7 @@ export function ProductFormModal({
                 </div>
                 {catCreating && (
                   <div className="px-3 flex items-center">
-                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-ink/40 animate-spin" />
                   </div>
                 )}
               </div>
@@ -387,7 +387,7 @@ export function ProductFormModal({
                       onClick={() => selectCategory(cat)}
                       className={`w-full text-right px-3 py-2 text-sm hover:bg-surface transition-colors flex items-center justify-between ${
                         form.category_id === cat.id
-                          ? 'text-violet-300 bg-violet-500/10'
+                          ? 'text-amber-300 bg-amber-500/10'
                           : 'text-ink/80'
                       }`}
                     >
@@ -400,7 +400,7 @@ export function ProductFormModal({
                       type="button"
                       onClick={handleCreateCategory}
                       disabled={catCreating}
-                      className="w-full text-right px-3 py-2 text-sm text-violet-400 hover:bg-violet-500/10 transition-colors border-t border-line flex items-center gap-2"
+                      className="w-full text-right px-3 py-2 text-sm text-amber-400 hover:bg-amber-500/8 transition-colors border-t border-line flex items-center gap-2"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       إنشاء «{catInput.trim()}»
@@ -410,7 +410,7 @@ export function ProductFormModal({
               )}
             </div>
             {form.category_id && (
-              <p className="text-violet-400/70 text-xs mt-1 flex items-center gap-1">
+              <p className="text-amber-400/70 text-xs mt-1 flex items-center gap-1">
                 ✓ تم اختيار: {form.category_name}
               </p>
             )}

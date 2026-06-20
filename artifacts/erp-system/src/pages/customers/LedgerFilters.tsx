@@ -41,21 +41,21 @@ export function LedgerFilters({
       <div className="flex gap-1 rounded-xl bg-surface p-1">
         <button
           onClick={() => setActiveTab('ledger')}
-          className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'ledger' ? 'bg-violet-600 text-ink' : 'text-ink/50 hover:text-ink'}`}
+          className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'ledger' ? 'bg-amber-500 text-black' : 'text-ink/50 hover:text-ink'}`}
         >
-          📒 دفتر الأستاذ
+          دفتر الأستاذ
         </button>
         <button
           onClick={() => setActiveTab('statement')}
-          className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'statement' ? 'bg-violet-600 text-ink' : 'text-ink/50 hover:text-ink'}`}
+          className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'statement' ? 'bg-amber-500 text-black' : 'text-ink/50 hover:text-ink'}`}
         >
-          📋 كشف تفصيلي
+          كشف تفصيلي
         </button>
         <button
           onClick={() => setActiveTab('report')}
           className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'report' ? 'bg-amber-500 text-black' : 'text-ink/50 hover:text-ink'}`}
         >
-          📊 تقرير بالفترة
+          تقرير بالفترة
         </button>
       </div>
 

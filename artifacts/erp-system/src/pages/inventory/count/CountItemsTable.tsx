@@ -172,7 +172,7 @@ export function CountItemsTable({
               <td colSpan={5} className="py-3 text-center bg-surface">
                 <button
                   onClick={() => setChunkLimit((c) => c + ROWS_PER_CHUNK)}
-                  className="px-4 py-1.5 text-xs bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg transition-colors"
+                  className="px-4 py-1.5 text-xs bg-surface hover:bg-raised text-ink/50 rounded-lg transition-colors border border-line"
                 >
                   عرض المزيد ({countTableProducts.length - chunkLimit} متبقي)
                 </button>

@@ -115,10 +115,9 @@ export default function RepairTrack() {
         {/* Brand header */}
         <div className="text-center mb-6">
           <div
-            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3
-            bg-gradient-to-br from-violet-500/20 to-violet-600/10 border border-violet-500/25"
+            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 bg-surface border border-line"
           >
-            <Wrench className="w-6 h-6 text-violet-300" />
+            <Wrench className="w-6 h-6 text-ink/50" />
           </div>
           <h1 className="text-ink text-xl font-black tracking-tight">متابعة طلب الصيانة</h1>
           <p className="text-ink/40 text-[12px] mt-1">MUHKAM ERP — نظام إدارة الصيانة</p>
@@ -126,7 +125,7 @@ export default function RepairTrack() {
 
         {loading && (
           <div className="rounded-2xl border border-line bg-surface p-10 flex flex-col items-center gap-3">
-            <Loader2 className="w-7 h-7 text-violet-300 animate-spin" />
+            <Loader2 className="w-7 h-7 text-ink/30 animate-spin" />
             <p className="text-ink/50 text-sm">جارٍ تحميل بيانات الطلب...</p>
           </div>
         )}

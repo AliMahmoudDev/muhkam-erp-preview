@@ -187,8 +187,8 @@ export default function CompanyTab() {
       {/* ═══ Logo Upload ═══ */}
       <div className="bg-[var(--erp-bg-card)] border border-[var(--erp-border-md)] rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-[var(--erp-border)] flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center">
-            <ImagePlus className="w-4 h-4 text-violet-400" />
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <ImagePlus className="w-4 h-4 text-amber-400" />
           </div>
           <div>
             <p className="font-bold text-[var(--erp-text-1)] text-sm">شعار الشركة</p>
@@ -225,7 +225,7 @@ export default function CompanyTab() {
             <button
               type="button"
               onClick={() => logoInputRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/25 text-violet-300 font-bold text-xs transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-300 font-bold text-xs transition-all"
             >
               <ImagePlus className="w-3.5 h-3.5" />
               {form.company_logo ? 'تغيير الشعار' : 'رفع شعار'}

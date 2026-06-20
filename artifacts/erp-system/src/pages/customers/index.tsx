@@ -552,7 +552,7 @@ export default function Customers() {
                 setShowReports(true);
                 setReportData(null);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/40 text-violet-400 hover:bg-violet-500/30 transition-all whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all whitespace-nowrap"
             >
               <BarChart2 className="w-4 h-4" /> تقارير العملاء
             </button>
@@ -643,16 +643,16 @@ export default function Customers() {
                 className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
                 style={{
                   borderColor:
-                    typeFilter === 'suppliers' ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.15)',
-                  background: typeFilter === 'suppliers' ? 'rgba(99,102,241,0.08)' : undefined,
+                    typeFilter === 'suppliers' ? 'rgba(245,158,11,0.4)' : 'rgba(245,158,11,0.15)',
+                  background: typeFilter === 'suppliers' ? 'rgba(245,158,11,0.06)' : undefined,
                 }}
                 onClick={() => setTypeFilter((f) => (f === 'suppliers' ? 'all' : 'suppliers'))}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <ArrowDownToLine className="w-3.5 h-3.5 text-indigo-400" />
+                  <ArrowDownToLine className="w-3.5 h-3.5 text-ink/50" />
                   <p className="text-ink/40 text-xs font-bold">موردون</p>
                 </div>
-                <p className="text-xl font-black text-indigo-400">{totalSuppliers}</p>
+                <p className="text-xl font-black text-ink/70">{totalSuppliers}</p>
                 <p className="text-ink/30 text-xs mt-0.5">جهة يتم الشراء منها</p>
               </div>
             </div>

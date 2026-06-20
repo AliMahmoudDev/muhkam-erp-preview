@@ -191,7 +191,7 @@ export default function TechPerformanceTab() {
                       style={{ background: 'var(--edge)' }}
                     >
                       <div
-                        className="h-full rounded-full transition-all duration-700"
+                        className="h-full rounded-full transition-all duration-300"
                         style={{
                           width: `${rate}%`,
                           background: rateColor,

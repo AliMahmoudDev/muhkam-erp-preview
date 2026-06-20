@@ -382,7 +382,7 @@ export default function ReadyForDeliveryModal({
               }}
             >
               {phase === 'qc' ? (
-                <ShieldCheck className="w-4 h-4 text-purple-300" />
+                <ShieldCheck className="w-4 h-4 text-rose-300" />
               ) : (
                 <PackageCheck className="w-4 h-4 text-lime-300" />
               )}
@@ -395,7 +395,7 @@ export default function ReadyForDeliveryModal({
                 {!qcOnly && (
                   <span className="flex items-center gap-1 text-[10px] text-ink/40">
                     <span
-                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === 'qc' ? 'bg-purple-500/20 text-purple-300' : 'bg-surface text-ink/40'}`}
+                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${phase === 'qc' ? 'bg-rose-500/15 text-rose-300' : 'bg-surface text-ink/40'}`}
                     >
                       ١
                     </span>

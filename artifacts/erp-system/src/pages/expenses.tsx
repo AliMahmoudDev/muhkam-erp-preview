@@ -278,7 +278,7 @@ export default function Expenses() {
         {activeTab === 'expenses' && (
           <button
             onClick={() => setShowReports(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-violet-500/15 text-violet-300 border border-violet-500/30 hover:bg-violet-500/25 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-surface text-ink/60 border border-line hover:bg-raised transition-colors"
           >
             <BarChart2 className="w-4 h-4" /> تقارير المصروفات
           </button>
@@ -311,7 +311,7 @@ export default function Expenses() {
           onClick={() => changeTab('expenses')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'expenses'
-              ? 'border-violet-400 text-ink'
+              ? 'border-amber-400 text-ink'
               : 'border-transparent text-ink/40 hover:text-ink/70'
           }`}
         >
@@ -321,7 +321,7 @@ export default function Expenses() {
           onClick={() => changeTab('debts')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
             activeTab === 'debts'
-              ? 'border-violet-400 text-ink'
+              ? 'border-amber-400 text-ink'
               : 'border-transparent text-ink/40 hover:text-ink/70'
           }`}
         >

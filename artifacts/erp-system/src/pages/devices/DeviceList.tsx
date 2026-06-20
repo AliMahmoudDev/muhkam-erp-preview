@@ -56,14 +56,14 @@ export function DeviceList({
               onClick={() => setStatusFilter(v)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 statusFilter === v
-                  ? 'bg-violet-500/25 border-violet-500/50 text-violet-200'
+                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                   : 'border-line text-ink/40 hover:text-ink/70 hover:border-line'
               }`}
             >
               {l}
               <span
                 className={`text-[10px] px-1.5 rounded-full ${
-                  statusFilter === v ? 'bg-violet-500/30 text-violet-300' : 'bg-surface text-ink/25'
+                  statusFilter === v ? 'bg-amber-500/25 text-amber-300' : 'bg-surface text-ink/25'
                 }`}
               >
                 {count}
@@ -96,14 +96,14 @@ export function DeviceList({
           <button
             onClick={() => setViewMode('list')}
             title="عرض قائمة"
-            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
+            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-400' : 'text-ink/30 hover:text-ink/60'}`}
           >
             <List className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setViewMode('grid')}
             title="عرض شبكة"
-            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-violet-500/25 text-violet-300' : 'text-ink/30 hover:text-ink/60'}`}
+            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-400' : 'text-ink/30 hover:text-ink/60'}`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
           </button>
@@ -113,7 +113,7 @@ export function DeviceList({
       {/* ── Device List / Grid ── */}
       {isLoading ? (
         <div className="glass-panel rounded-xl border border-line flex items-center justify-center py-16">
-          <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-line border-t-ink/40 rounded-full animate-spin" />
         </div>
       ) : allDevices.length === 0 ? (
         <div className="glass-panel rounded-xl border border-line text-center py-16 space-y-2">
@@ -261,13 +261,13 @@ export function DeviceList({
             return (
               <div
                 key={d.id}
-                className="glass-panel rounded-xl border border-line hover:border-violet-500/25 transition-all group overflow-hidden"
+                className="glass-panel rounded-xl border border-line hover:border-amber-500/25 transition-all group overflow-hidden"
               >
                 {/* Card top */}
                 <div className="p-3 cursor-pointer" onClick={() => setSelected(d)}>
                   <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                      <Smartphone className="w-5 h-5 text-violet-400" />
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                      <Smartphone className="w-5 h-5 text-amber-400" />
                     </div>
                     <StatusBadge status={d.status} />
                   </div>

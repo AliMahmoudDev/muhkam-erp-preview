@@ -138,7 +138,7 @@ function ImportPurchasesTab({
             <button
               onClick={() => purRef.current?.click()}
               disabled={purLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/25 rounded-xl text-violet-400 font-bold text-xs transition-all disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2 bg-surface hover:bg-raised border border-line rounded-xl text-ink/50 font-bold text-xs transition-all disabled:opacity-40"
             >
               {purLoading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -281,7 +281,7 @@ function ImportPurchasesTab({
           <button
             onClick={onPurchaseConfirm}
             disabled={purConfirming || !validRows.length}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/25 rounded-xl text-violet-300 font-bold text-sm transition-all disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-amber-500 hover:bg-amber-400 border border-amber-500/30 rounded-xl text-black font-bold text-sm transition-all disabled:opacity-40"
           >
             {purConfirming ? (
               <Loader2 className="w-4 h-4 animate-spin" />

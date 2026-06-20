@@ -105,12 +105,12 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
         <div className="glass-panel rounded-3xl w-full max-w-4xl border border-line shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <div className="flex justify-between items-center px-6 py-4 border-b border-line bg-surface">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-violet-400" />
+              <div className="w-10 h-10 rounded-2xl bg-surface border border-line flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-ink/50" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-ink">{asset?.name ?? '...'}</h3>
-                {asset && <p className="text-xs text-violet-400 font-mono">{asset.code}</p>}
+                {asset && <p className="text-xs text-ink/40 font-mono">{asset.code}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                     </div>
                     <div className="h-2 rounded-full bg-surface overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-orange-500 transition-all"
+                        className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all"
                         style={{
                           width: `${Math.min(100, (asset.accumulated_depreciation / Math.max(asset.purchase_cost - asset.residual_value, 1)) * 100)}%`,
                         }}
@@ -209,8 +209,8 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                 )}
 
                 {asset.status === 'active' && (
-                  <div className="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20">
-                    <p className="text-sm font-bold text-violet-300 mb-3 flex items-center gap-2">
+                  <div className="p-4 rounded-2xl bg-surface border border-line">
+                    <p className="text-sm font-bold text-ink/70 mb-3 flex items-center gap-2">
                       <TrendingDown className="w-4 h-4" /> تسجيل إهلاك شهري
                     </p>
                     <div className="flex gap-3">
@@ -223,7 +223,7 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                       <button
                         onClick={() => depMutation.mutate()}
                         disabled={depMutation.isPending}
-                        className="px-5 py-2 rounded-xl bg-violet-500/30 text-violet-300 hover:bg-violet-500/40 text-sm font-bold border border-violet-500/30 transition-colors disabled:opacity-50"
+                        className="erp-btn erp-btn-primary px-5 py-2 disabled:opacity-50"
                       >
                         {depMutation.isPending ? '...' : 'تسجيل الإهلاك'}
                       </button>

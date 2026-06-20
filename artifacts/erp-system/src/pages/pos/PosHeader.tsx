@@ -44,7 +44,7 @@ export function PosHeader({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Vault className="w-4 h-4 text-violet-400 shrink-0" />
+          <Vault className="w-4 h-4 text-ink/50 shrink-0" />
           <div>
             <p className="erp-label text-[10px]">الخزينة</p>
             <p className="erp-text font-bold text-sm leading-tight">{safeName}</p>

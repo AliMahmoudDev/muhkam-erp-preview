@@ -155,14 +155,14 @@ export function CustomerStatementModal({
                 </p>
                 <p className="text-ink/50">
                   إجمالي المشتريات منه:{' '}
-                  <span className="text-purple-400 font-bold">
+                  <span className="text-ink/70 font-bold">
                     {formatCurrency(totalPurchases)}
                   </span>
                 </p>
                 {totalPurchaseReturns > 0 && (
                   <p className="text-ink/50">
                     مرتجع مشتريات:{' '}
-                    <span className="text-violet-400 font-bold">
+                    <span className="text-ink/70 font-bold">
                       {formatCurrency(totalPurchaseReturns)}
                     </span>
                   </p>

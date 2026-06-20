@@ -328,7 +328,7 @@ export default function FiscalYears() {
                               closingEntriesMut.mutate(fy.id);
                           }}
                           disabled={closingEntriesMut.isPending}
-                          className="flex items-center gap-1 text-xs px-3 py-1.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-400 rounded-xl font-bold transition-colors border border-purple-500/20"
+                          className="flex items-center gap-1 text-xs px-3 py-1.5 bg-surface hover:bg-raised text-ink/50 rounded-xl font-bold transition-colors border border-line"
                         >
                           <BookMarked className="w-3 h-3" />
                           {closingEntriesMut.isPending ? '...' : 'قيود الإقفال'}

@@ -271,7 +271,7 @@ export function NewJobForm({
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
         <h2 className="font-black text-ink flex items-center gap-2">
-          <Plus className="w-4 h-4 text-violet-400" /> بطاقة صيانة جديدة
+          <Plus className="w-4 h-4 text-ink/50" /> بطاقة صيانة جديدة
         </h2>
         <button onClick={onClose} className="btn-icon text-ink/40 hover:text-ink">
           <XCircle className="w-4 h-4" />
@@ -573,7 +573,7 @@ export function NewJobForm({
                 onClick={() => toggleAccessory(acc.key)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                   selectedAccessories.includes(acc.key)
-                    ? 'bg-violet-500/25 border-violet-500/50 text-violet-300'
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                     : 'border-line text-ink/40 hover:border-line hover:text-ink/60'
                 }`}
               >
@@ -716,7 +716,7 @@ export function NewJobForm({
             devicePowers === null ||
             (devicePowers === 'on' && !checklistComplete)
           }
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 font-bold transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 border border-amber-500/30 text-black font-bold transition-all disabled:opacity-50"
         >
           {submitting ? (
             'جاري الإنشاء...'

@@ -24,7 +24,7 @@ export function CountHistory({
         <p className="text-ink/25 text-xs mb-4">ابدأ جلسة جديدة لتسجيل الكميات الفعلية</p>
         <button
           onClick={onSwitchToNew}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-all"
         >
           <Plus className="w-4 h-4" /> بدء جرد جديد
         </button>

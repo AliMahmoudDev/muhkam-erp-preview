@@ -232,8 +232,8 @@ export default function BackupLocalTab({
       <div className="h-px bg-surface" />
       <div className="space-y-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
-            <Upload className="w-3.5 h-3.5 text-violet-400" />
+          <div className="w-7 h-7 rounded-lg bg-surface border border-line flex items-center justify-center">
+            <Upload className="w-3.5 h-3.5 text-ink/50" />
           </div>
           <div>
             <p className="font-bold text-ink text-sm">استعادة نسخة احتياطية</p>
@@ -258,9 +258,9 @@ export default function BackupLocalTab({
         />
 
         {restoreLoading && (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
-            <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
-            <p className="text-violet-300 text-sm">جاري الاستعادة...</p>
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-line">
+            <Loader2 className="w-4 h-4 text-ink/40 animate-spin" />
+            <p className="text-ink/60 text-sm">جاري الاستعادة...</p>
           </div>
         )}
 
@@ -296,7 +296,7 @@ export default function BackupLocalTab({
         <button
           onClick={() => (restoreFileRef as React.RefObject<HTMLInputElement>).current?.click()}
           disabled={restoreLoading}
-          className="w-full py-3.5 rounded-xl border-2 border-dashed border-violet-500/30 hover:border-violet-500/55 text-violet-400 hover:text-violet-300 transition-all flex items-center justify-center gap-2 text-sm font-bold disabled:opacity-40"
+          className="w-full py-3.5 rounded-xl border-2 border-dashed border-line hover:border-amber-500/30 text-ink/50 hover:text-amber-400 transition-all flex items-center justify-center gap-2 text-sm font-bold disabled:opacity-40"
         >
           <Upload className="w-4 h-4" /> اختر ملف النسخة الاحتياطية (.json)
         </button>

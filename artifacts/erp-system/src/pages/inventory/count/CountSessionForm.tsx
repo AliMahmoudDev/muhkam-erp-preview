@@ -29,7 +29,7 @@ export function CountSessionForm({
   return (
     <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
       <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
-        <ClipboardList className="w-4 h-4 text-violet-400" /> إعدادات جلسة الجرد
+        <ClipboardList className="w-4 h-4 text-ink/50" /> إعدادات جلسة الجرد
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
@@ -39,7 +39,7 @@ export function CountSessionForm({
           <select
             value={selectedWarehouse}
             onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:border-amber-500/40"
           >
             <option value={0} className="bg-[#1a1a2e]">
               — اختر مخزناً —
@@ -59,7 +59,7 @@ export function CountSessionForm({
             type="date"
             value={countDate}
             onChange={(e) => setCountDate(e.target.value)}
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:border-amber-500/40"
           />
         </div>
         <div>
@@ -70,7 +70,7 @@ export function CountSessionForm({
             type="time"
             value={countTime}
             onChange={(e) => setCountTime(e.target.value)}
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:border-amber-500/40"
           />
         </div>
         <div>
@@ -80,7 +80,7 @@ export function CountSessionForm({
             value={sessionNotes}
             onChange={(e) => setSessionNotes(e.target.value)}
             placeholder="مثال: جرد نهاية الشهر"
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:border-amber-500/40"
           />
         </div>
       </div>
@@ -99,7 +99,7 @@ export function CountSessionForm({
                 countMode === opt.v
                   ? opt.v === 'positive'
                     ? 'bg-green-600 text-ink'
-                    : 'bg-violet-500 text-ink'
+                    : 'bg-amber-500 text-black'
                   : 'bg-surface text-ink/50 hover:text-ink'
               }`}
             >

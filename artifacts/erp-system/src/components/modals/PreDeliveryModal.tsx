@@ -254,7 +254,7 @@ export default function PreDeliveryModal({ job, parts: partsProp, onClose, onSav
           {/* اختيار نوع الورشة — مفتاح أساسي يُغيّر شكل البقية */}
           <section>
             <h4 className="text-[11px] font-black text-ink/70 mb-2 flex items-center gap-1.5">
-              <Wrench className="w-3.5 h-3.5 text-violet-300" />
+              <Wrench className="w-3.5 h-3.5 text-ink/50" />
               نوع الورشة التي أصلحت الجهاز
             </h4>
             <div className="grid grid-cols-2 gap-2">

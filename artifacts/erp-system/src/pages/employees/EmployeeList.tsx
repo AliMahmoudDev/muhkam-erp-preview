@@ -116,7 +116,7 @@ export function EmployeeList({
                   {canViewSalary && (
                     <td className="p-3 text-sm font-mono">
                       {emp.commission_rate ? (
-                        <span className="text-purple-300">{emp.commission_rate}%</span>
+                        <span className="text-amber-300">{emp.commission_rate}%</span>
                       ) : emp.salary != null ? (
                         <span className="text-emerald-300">
                           {emp.salary.toLocaleString('ar-EG-u-nu-latn')} {emp.currency}

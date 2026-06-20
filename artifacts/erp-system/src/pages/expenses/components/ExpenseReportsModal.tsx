@@ -51,7 +51,7 @@ export function ExpenseReportsModal({
       <div className="glass-panel rounded-3xl w-full max-w-4xl border border-line flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-line">
           <div className="flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-violet-400" />
+            <BarChart2 className="w-5 h-5 text-ink/50" />
             <h2 className="text-lg font-bold text-ink">تقارير المصروفات</h2>
           </div>
           <button

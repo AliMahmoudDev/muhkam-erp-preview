@@ -93,7 +93,7 @@ export function ChecklistWizard({
       </div>
       <div className="w-full bg-surface rounded-full h-1 mb-4">
         <div
-          className="h-1 rounded-full bg-violet-500 transition-all duration-500"
+          className="h-1 rounded-full bg-amber-500 transition-all duration-300"
           style={{ width: total ? `${(doneCount / total) * 100}%` : '0%' }}
         />
       </div>
@@ -143,7 +143,7 @@ export function ChecklistWizard({
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveWithNotes}
-                  className="flex-1 py-2 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-bold hover:bg-violet-500/30 transition-all flex items-center justify-center gap-1"
+                  className="flex-1 py-2 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 text-xs font-bold hover:bg-amber-500/25 transition-all flex items-center justify-center gap-1"
                 >
                   حفظ والتالي <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -407,7 +407,7 @@ export function JobChecklist({
       </div>
       <div className="w-full bg-surface rounded-full h-1 mb-3">
         <div
-          className="h-1 rounded-full bg-violet-500 transition-all duration-500"
+          className="h-1 rounded-full bg-amber-500 transition-all duration-300"
           style={{ width: total ? `${(doneCount / total) * 100}%` : '0%' }}
         />
       </div>

@@ -174,8 +174,8 @@ export function DeviceDetails({
           {/* ── Header ── */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-line shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                <Smartphone className="w-4.5 h-4.5 text-violet-400" />
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <Smartphone className="w-4.5 h-4.5 text-amber-400" />
               </div>
               <div>
                 <p className="font-bold text-ink text-sm">
@@ -210,7 +210,7 @@ export function DeviceDetails({
                 onClick={() => setTab(id)}
                 className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${
                   tab === id
-                    ? 'border-violet-500 text-violet-300'
+                    ? 'border-amber-500 text-amber-400'
                     : 'border-transparent text-ink/30 hover:text-ink/60'
                 }`}
               >
@@ -554,7 +554,7 @@ export function DeviceDetails({
                   <>
                     <button
                       onClick={() => printSaleReceipt(device, settings.companyName)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-bold hover:bg-violet-500/25 transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-surface border border-line text-ink/70 text-sm font-bold hover:bg-raised transition-all"
                     >
                       <Printer className="w-3.5 h-3.5" /> طباعة الفاتورة
                     </button>

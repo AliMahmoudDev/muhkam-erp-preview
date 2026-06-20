@@ -192,7 +192,7 @@ export default function SalesTargetsTab() {
           </div>
           <div className="h-2 rounded-full bg-surface overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full transition-all duration-300"
               style={{
                 width: `${overallPct}%`,
                 background:
@@ -331,7 +331,7 @@ export default function SalesTargetsTab() {
                     </div>
                     <div className="h-1.5 rounded-full bg-surface overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-300"
                         style={{ width: `${pct}%`, background: color }}
                       />
                     </div>

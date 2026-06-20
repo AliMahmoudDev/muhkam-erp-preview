@@ -41,14 +41,14 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   delete: { label: 'حذف', color: 'text-red-400' },
   cancel: { label: 'إلغاء', color: 'text-red-400' },
   view: { label: 'عرض', color: 'text-blue-400' },
-  login: { label: 'دخول', color: 'text-violet-400' },
+  login: { label: 'دخول', color: 'text-sky-400' },
   logout: { label: 'خروج', color: 'text-ink/40' },
   approve: { label: 'موافقة', color: 'text-emerald-400' },
   reject: { label: 'رفض', color: 'text-red-400' },
   lock: { label: 'قفل', color: 'text-orange-400' },
   unlock: { label: 'فتح', color: 'text-emerald-400' },
   post: { label: 'ترحيل', color: 'text-blue-400' },
-  restore: { label: 'استعادة', color: 'text-violet-400' },
+  restore: { label: 'استعادة', color: 'text-orange-400' },
   export: { label: 'تصدير', color: 'text-cyan-400' },
   reset: { label: 'إعادة تعيين', color: 'text-red-500' },
   close: { label: 'إقفال', color: 'text-orange-400' },
@@ -59,7 +59,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   unlock_period: { label: 'فتح فترة', color: 'text-emerald-400' },
   lock_blocked: { label: 'محاولة إغلاق مرفوضة', color: 'text-orange-400' },
   reversal_created: { label: 'سند عكسي', color: 'text-blue-400' },
-  correction_created: { label: 'سند تصحيحي', color: 'text-purple-400' },
+  correction_created: { label: 'سند تصحيحي', color: 'text-rose-400' },
   /* مخزون وتدقيق */
   INTEGRITY_REPAIR: { label: 'إصلاح محاسبي', color: 'text-rose-400' },
   INVENTORY_ADJUSTMENT: { label: 'تسوية مخزون', color: 'text-cyan-400' },
@@ -71,9 +71,9 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   COMPANY_SUSPENDED: { label: 'إيقاف شركة', color: 'text-amber-400' },
   COMPANY_EXTENDED: { label: 'تمديد اشتراك', color: 'text-sky-400' },
   COMPANY_DELETED: { label: 'حذف شركة', color: 'text-red-500' },
-  ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: 'text-violet-400' },
+  ADMIN_PASSWORD_RESET: { label: 'إعادة كلمة المرور', color: 'text-orange-400' },
   /* النسخ الاحتياطية والاستعادة */
-  RESTORE_STARTED: { label: 'بدء استعادة', color: 'text-violet-400' },
+  RESTORE_STARTED: { label: 'بدء استعادة', color: 'text-orange-400' },
   RESTORE_REJECTED: { label: 'رفض استعادة', color: 'text-red-400' },
   RESTORE_FAILED: { label: 'فشل استعادة', color: 'text-red-500' },
   RESTORE_COMPLETED: { label: 'اكتمال استعادة', color: 'text-emerald-400' },
@@ -96,9 +96,9 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   paid: { label: 'صرف رواتب', color: 'text-emerald-400' },
   transfer: { label: 'تحويل', color: 'text-sky-400' },
   /* وصول المدير العام */
-  SUPER_ADMIN_ACCESS: { label: 'وصول مدير عام', color: 'text-indigo-400' },
-  SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: 'text-indigo-400' },
-  MANAGER_CREATED: { label: 'إنشاء مدير', color: 'text-violet-400' },
+  SUPER_ADMIN_ACCESS: { label: 'وصول مدير عام', color: 'text-rose-400' },
+  SUPER_ADMIN_LIST_VIEW: { label: 'عرض قائمة الشركات', color: 'text-rose-400' },
+  MANAGER_CREATED: { label: 'إنشاء مدير', color: 'text-amber-400' },
 };
 
 const RECORD_LABELS: Record<string, string> = {

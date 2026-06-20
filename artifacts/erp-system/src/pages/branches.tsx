@@ -418,7 +418,7 @@ export default function Branches() {
                   <span className="flex items-center gap-1 text-[10px] text-blue-400/70">
                     <Warehouse className="w-3 h-3" /> {b.warehouse_count ?? 0} مخزن
                   </span>
-                  <span className="flex items-center gap-1 text-[10px] text-purple-400/70">
+                  <span className="flex items-center gap-1 text-[10px] text-ink/40">
                     <Vault className="w-3 h-3" /> {b.safe_count ?? 0} خزينة
                   </span>
                 </div>
@@ -746,7 +746,7 @@ function OverviewTab({ data }: { data: BranchOverview }) {
                 className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-[var(--erp-border)]' : ''}`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Vault className="w-3.5 h-3.5 text-purple-400" />
+                  <Vault className="w-3.5 h-3.5 text-ink/40" />
                   <span className="text-sm text-ink font-medium">{s.name}</span>
                 </div>
                 <span className="font-black text-emerald-400 tabular-nums">
@@ -908,8 +908,8 @@ function SafesTab({ safes }: { safes: SafeRow[] }) {
             className="rounded-xl border border-[var(--erp-border)] bg-[var(--erp-bg-card)] px-4 py-3 flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
-                <Vault className="w-4 h-4 text-purple-400" />
+              <div className="w-9 h-9 rounded-xl bg-surface flex items-center justify-center shrink-0">
+                <Vault className="w-4 h-4 text-ink/40" />
               </div>
               <p className="font-bold text-ink text-sm truncate">{s.name}</p>
             </div>

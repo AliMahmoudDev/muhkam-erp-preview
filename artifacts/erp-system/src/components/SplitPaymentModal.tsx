@@ -258,7 +258,7 @@ export function SplitPaymentModal({
             style={{ background: 'var(--erp-bg-hover)' }}
           >
             <div
-              className="h-full rounded-full transition-all duration-500"
+              className="h-full rounded-full transition-all duration-300"
               style={{
                 width: `${pct}%`,
                 background: isDone

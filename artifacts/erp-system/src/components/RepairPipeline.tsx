@@ -637,7 +637,7 @@ export default function RepairPipeline({
           {/* Progress fill — RTL fills from right to left */}
           {visibleIdx > 0 && (
             <div
-              className="absolute top-[38px] right-10 h-[3px] rounded-full bg-[var(--brand)] transition-all duration-500 ease-out"
+              className="absolute top-[38px] right-10 h-[3px] rounded-full bg-[var(--brand)] transition-all duration-300 ease-out"
               style={{ width: `calc(${progressPct}% - 0px)`, maxWidth: 'calc(100% - 5rem)' }}
             />
           )}

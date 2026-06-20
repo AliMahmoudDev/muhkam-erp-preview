@@ -54,8 +54,8 @@ export function LedgerSummary({
         <p className="text-ink/40 text-xs">{sales.length} فاتورة</p>
       </div>
       {totalPurchases > 0 && (
-        <div className="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-3 text-center">
-          <p className="text-purple-400 text-xs mb-1 flex items-center justify-center gap-1">
+        <div className="bg-surface border border-line rounded-2xl p-3 text-center">
+          <p className="text-ink/50 text-xs mb-1 flex items-center justify-center gap-1">
             <TrendingDown className="w-3 h-3" /> مشترياتنا منه
           </p>
           <p className="text-ink font-black">{formatCurrency(totalPurchases)}</p>
@@ -79,15 +79,15 @@ export function LedgerSummary({
         </div>
       )}
       {totalSupplierPayments > 0 && (
-        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-3 text-center">
-          <p className="text-cyan-400 text-xs mb-1">تسديد دفعة</p>
+        <div className="bg-surface border border-line rounded-2xl p-3 text-center">
+          <p className="text-ink/50 text-xs mb-1">تسديد دفعة</p>
           <p className="text-ink font-black">{formatCurrency(totalSupplierPayments)}</p>
           <p className="text-ink/40 text-xs">{supplierPayments.length} حركة</p>
         </div>
       )}
       {totalPurchaseReturns > 0 && (
-        <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-3 text-center">
-          <p className="text-violet-400 text-xs mb-1">مرتجع مشتريات</p>
+        <div className="bg-surface border border-line rounded-2xl p-3 text-center">
+          <p className="text-ink/50 text-xs mb-1">مرتجع مشتريات</p>
           <p className="text-ink font-black">{formatCurrency(totalPurchaseReturns)}</p>
           <p className="text-ink/40 text-xs">{purchaseReturns.length} مرتجع</p>
         </div>

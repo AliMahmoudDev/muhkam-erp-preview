@@ -114,8 +114,8 @@ export default function ConsignmentPage() {
     <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-3 rounded-2xl bg-violet-500/15 border border-violet-500/30">
-          <Package className="w-6 h-6 text-violet-400" />
+        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+          <Package className="w-6 h-6 text-amber-400" />
         </div>
         <div>
           <h1 className="text-2xl font-black text-ink">تقرير الائتمان</h1>
@@ -174,12 +174,12 @@ export default function ConsignmentPage() {
         return (
           <div
             key={idx}
-            className="glass-panel rounded-2xl overflow-hidden border border-violet-500/20"
+            className="glass-panel rounded-2xl overflow-hidden border border-line"
           >
             {/* Supplier header */}
-            <div className="px-5 py-4 bg-violet-500/10 border-b border-violet-500/20 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-5 py-4 bg-surface border-b border-line flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-black text-sm">
+                <div className="w-9 h-9 rounded-xl bg-raised border border-line flex items-center justify-center text-ink/60 font-black text-sm">
                   {sup.supplier_name.slice(0, 2)}
                 </div>
                 <div>
@@ -274,7 +274,7 @@ export default function ConsignmentPage() {
                   <tbody>
                     {sup.purchases.map((p) => (
                       <tr key={p.id} className="border-b border-line hover:bg-surface">
-                        <td className="py-2 text-violet-300 font-mono font-bold">{p.invoice_no}</td>
+                        <td className="py-2 text-amber-300 font-mono font-bold">{p.invoice_no}</td>
                         <td className="py-2 text-ink/50">{p.date ?? '—'}</td>
                         <td className="py-2 text-left font-bold text-ink/80">
                           {formatCurrency(Number(p.total_amount))}

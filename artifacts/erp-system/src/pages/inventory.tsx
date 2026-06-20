@@ -355,9 +355,9 @@ export default function Inventory() {
                 <StatCard
                   label="إجمالي المنتجات"
                   value={String(gs.total_products)}
-                  icon={<Package className="w-5 h-5 text-violet-400" />}
+                  icon={<Package className="w-5 h-5 text-amber-400" />}
                   color="text-ink"
-                  bg="bg-violet-500/10 border-violet-500/20"
+                  bg="bg-amber-500/10 border-amber-500/20"
                   onClick={() => setActiveTab('reports')}
                   hint="عرض تقارير المخزون"
                 />

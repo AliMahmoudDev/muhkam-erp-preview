@@ -227,7 +227,7 @@ export default function BillingPhase({
               {payRows.map((row) => (
                 <div
                   key={row.id}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${row.type === 'credit' ? 'bg-indigo-500/8 border border-indigo-500/20' : 'bg-emerald-500/8 border border-emerald-500/20'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${row.type === 'credit' ? 'bg-blue-500/8 border border-blue-500/20' : 'bg-emerald-500/8 border border-emerald-500/20'}`}
                 >
                   <button
                     type="button"
@@ -238,7 +238,7 @@ export default function BillingPhase({
                     <X className="w-3 h-3" />
                   </button>
                   <span
-                    className={`text-[11px] font-bold shrink-0 flex items-center gap-1 ${row.type === 'credit' ? 'text-indigo-400' : 'text-emerald-400'}`}
+                    className={`text-[11px] font-bold shrink-0 flex items-center gap-1 ${row.type === 'credit' ? 'text-blue-400' : 'text-emerald-400'}`}
                   >
                     {row.type === 'cash' ? (
                       <Coins className="w-3 h-3" />
@@ -288,7 +288,7 @@ export default function BillingPhase({
                 </button>
                 <button
                   onClick={() => setPayType('credit')}
-                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === 'credit' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'bg-surface text-ink/50 border border-line hover:bg-surface'}`}
+                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${payType === 'credit' ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30' : 'bg-surface text-ink/50 border border-line hover:bg-surface'}`}
                 >
                   <Clock className="w-3 h-3" /> آجل
                 </button>
@@ -307,7 +307,7 @@ export default function BillingPhase({
                     ))}
                   </select>
                 ) : (
-                  <div className="flex-1 flex items-center justify-end text-[11px] text-indigo-300/70 px-2 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
+                  <div className="flex-1 flex items-center justify-end text-[11px] text-blue-300/70 px-2 rounded-lg bg-blue-500/5 border border-blue-500/15">
                     ائتمان العميل
                   </div>
                 )}

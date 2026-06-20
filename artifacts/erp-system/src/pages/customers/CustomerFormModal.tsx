@@ -675,7 +675,7 @@ export function SupplierPaymentModal({
             <h3 className="text-2xl font-bold text-ink">تسديد دفعة</h3>
             <p className="text-ink/50 text-sm mt-1">
               سداد مستحقات{' '}
-              <span className="text-cyan-400 font-bold">{showSupplierPayment.name}</span>
+              <span className="text-amber-400 font-bold">{showSupplierPayment.name}</span>
             </p>
           </div>
           <button
@@ -773,7 +773,7 @@ export function SupplierPaymentModal({
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 bg-cyan-500 text-ink py-3 rounded-xl font-bold hover:bg-cyan-600 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 erp-btn erp-btn-primary py-3 rounded-xl flex items-center justify-center gap-2"
           >
             <CreditCard className="w-4 h-4" />
             {isPending ? 'جاري الحفظ...' : 'تأكيد التسديد'}

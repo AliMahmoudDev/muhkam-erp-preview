@@ -73,7 +73,7 @@ export function AlertsTable({ filtered, showZeroOnly, onTransferPrefill }: Alert
                 </span>
               </td>
               <td className="p-3">
-                <span className="px-2 py-1 rounded-lg text-xs bg-violet-500/10 text-violet-300 font-bold font-mono">
+                <span className="px-2 py-1 rounded-lg text-xs bg-amber-500/10 text-amber-300 font-bold font-mono">
                   {item.suggested_qty} وحدة
                 </span>
               </td>

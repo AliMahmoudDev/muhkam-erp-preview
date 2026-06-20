@@ -144,7 +144,7 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1 rounded-lg text-[11px] font-bold border ${filter === f ? 'bg-violet-500/20 border-violet-500/40 text-violet-300' : 'border-line text-ink/40'}`}
+            className={`px-3 py-1 rounded-lg text-[11px] font-bold border ${filter === f ? 'bg-amber-500/15 border-amber-500/30 text-amber-300' : 'border-line text-ink/40'}`}
           >
             {f === 'all' ? 'الكل' : statusLabel[f]}
           </button>
@@ -185,7 +185,7 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
                       <span className="text-blue-300">فاتورة #{d.source_invoice_id}</span>
                     )}
                     {d.source_repair_job_id && (
-                      <span className="text-violet-300">صيانة #{d.source_repair_job_id}</span>
+                      <span className="text-ink/60">صيانة #{d.source_repair_job_id}</span>
                     )}
                     {!d.source_invoice_id && !d.source_repair_job_id && 'يدوي'}
                   </td>

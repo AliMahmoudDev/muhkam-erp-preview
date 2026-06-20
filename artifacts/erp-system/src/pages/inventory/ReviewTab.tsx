@@ -221,7 +221,7 @@ function ReviewTab({
             { c: 'bg-teal-500/20 text-teal-300', t: '↑ مرتجع مبيعات' },
             { c: 'bg-red-500/20 text-red-300', t: '↓ مبيعات' },
             { c: 'bg-orange-500/20 text-orange-300', t: '↓ مرتجع مشتريات' },
-            { c: 'bg-violet-500/20 text-violet-300', t: '± تسوية' },
+            { c: 'bg-surface text-ink/60', t: '± تسوية' },
             { c: 'bg-amber-500/20 text-amber-300', t: '↓ خروج' },
             { c: 'bg-cyan-500/20 text-cyan-300', t: '↑ دخول' },
           ].map((b) => (
@@ -452,7 +452,7 @@ function ReviewTab({
                               setAdjustQty(String(p.actual_qty));
                               setAdjustNotes('');
                             }}
-                            className="px-2 py-1 text-xs bg-violet-500/20 text-violet-300 rounded-lg hover:bg-violet-500/30 transition-colors"
+                            className="px-2 py-1 text-xs bg-surface text-ink/50 rounded-lg hover:bg-raised transition-colors border border-line"
                           >
                             <Edit3 className="w-3 h-3" />
                           </button>
@@ -467,7 +467,7 @@ function ReviewTab({
                   <td colSpan={12} className="py-3 text-center bg-surface">
                     <button
                       onClick={() => setChunkLimit((c) => c + ROWS_PER_CHUNK)}
-                      className="px-4 py-1.5 text-xs bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg transition-colors"
+                      className="px-4 py-1.5 text-xs bg-surface hover:bg-raised text-ink/50 rounded-lg transition-colors border border-line"
                     >
                       عرض المزيد ({filtered.length - chunkLimit} متبقي)
                     </button>
@@ -489,7 +489,7 @@ function ReviewTab({
                     </p>
                     {!showZeroOnly && !showLowOnly && !showPositiveOnly && (
                       <p className="text-ink/25 text-xs">
-                        أضف منتجات من قسم <span className="text-violet-300">المنتجات</span> لتظهر
+                        أضف منتجات من قسم <span className="text-ink/60">المنتجات</span> لتظهر
                         هنا
                       </p>
                     )}
@@ -617,7 +617,7 @@ function ReviewTab({
                         : allMovements.length}
                     </span>
                     {isDateFiltered && (
-                      <span className="text-xs text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded-md">
+                      <span className="text-xs text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-md">
                         مفلترة
                       </span>
                     )}
@@ -690,7 +690,7 @@ function ReviewTab({
                           });
                         }}
                         disabled={adjustMutation.isPending}
-                        className="flex-1 py-2 bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-ink rounded-xl font-medium transition-colors"
+                        className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black rounded-xl font-medium transition-colors"
                       >
                         {adjustMutation.isPending ? 'جاري الحفظ...' : 'تأكيد التسوية'}
                       </button>

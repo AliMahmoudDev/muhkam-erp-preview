@@ -56,7 +56,7 @@ export default function DashboardCardsSection({
           {barSegments.map((seg, i) => (
             <div
               key={seg.id}
-              className="h-full transition-all duration-500"
+              className="h-full transition-all duration-300"
               style={{
                 width: `${seg.pct}%`,
                 background: seg.color,
@@ -120,7 +120,7 @@ export default function DashboardCardsSection({
                 style={{ background: `${card.color}26` }}
               >
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full transition-all duration-300"
                   style={{ width: `${pct}%`, background: card.color }}
                 />
               </div>

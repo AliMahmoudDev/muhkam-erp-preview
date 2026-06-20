@@ -107,7 +107,7 @@ export default function QcPhase({
 
       {templateLoading ? (
         <div className="px-5 py-12 text-center">
-          <Loader2 className="w-8 h-8 text-purple-400/60 mx-auto mb-3 animate-spin" />
+          <Loader2 className="w-8 h-8 text-ink/30 mx-auto mb-3 animate-spin" />
           <p className="text-[12px] text-ink/50">جارٍ تحميل قالب الفحص...</p>
         </div>
       ) : items.length === 0 ? (
@@ -126,18 +126,18 @@ export default function QcPhase({
       ) : isFallback ? (
         /* ── وضع القالب الافتراضي: عمود واحد للفحص + لافتة إشعار ── */
         <div className="max-h-[55vh] overflow-y-auto" dir="rtl">
-          <div className="mx-4 mt-3 mb-2 px-3 py-2 rounded-xl border border-violet-500/25 bg-violet-500/8 flex items-start gap-2">
-            <Wrench className="w-3.5 h-3.5 text-violet-300 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-violet-200/80">
+          <div className="mx-4 mt-3 mb-2 px-3 py-2 rounded-xl border border-line bg-surface flex items-start gap-2">
+            <Wrench className="w-3.5 h-3.5 text-ink/40 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-ink/60">
               الجهاز استُلم وهو لا يعمل — يُستخدم قالب الفحص الافتراضي للتحقق من سلامة الإصلاح.
             </p>
           </div>
-          <div className="bg-purple-500/[0.03]">
-            <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-purple-500/10 backdrop-blur">
+          <div>
+            <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-surface/80 backdrop-blur">
               <div className="flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-purple-300" />
-                <p className="text-[12px] font-black text-purple-200">فحص الجهاز بعد الإصلاح</p>
-                <span className="text-[9px] text-violet-300/60 font-bold px-1.5 py-0.5 rounded-full border border-violet-500/25 bg-violet-500/10">
+                <ClipboardCheck className="w-4 h-4 text-ink/50" />
+                <p className="text-[12px] font-black text-ink">فحص الجهاز بعد الإصلاح</p>
+                <span className="text-[9px] text-ink/40 font-bold px-1.5 py-0.5 rounded-full border border-line bg-surface">
                   قالب افتراضي
                 </span>
               </div>
@@ -168,7 +168,7 @@ export default function QcPhase({
                           hasNote
                             ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
                             : notesOpen
-                              ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                              ? 'bg-surface text-ink/60 border border-line'
                               : 'bg-surface text-ink/40 border border-line hover:text-ink/70 hover:bg-surface',
                         ].join(' ')}
                       >
@@ -229,7 +229,7 @@ export default function QcPhase({
                             'w-full px-2.5 py-1 rounded-md text-[10.5px] text-ink placeholder:text-ink/25 focus:outline-none transition-colors',
                             it.status === 'fail'
                               ? 'bg-red-500/8 border border-red-500/25 focus:border-red-400/45'
-                              : 'bg-surface border border-line focus:border-purple-400/35',
+                              : 'bg-surface border border-line focus:border-amber-500/30',
                           ].join(' ')}
                         />
                       </div>
@@ -246,11 +246,11 @@ export default function QcPhase({
           className="grid grid-cols-1 md:grid-cols-2 gap-0 max-h-[55vh] overflow-y-auto"
           dir="rtl"
         >
-          <div className="border-l border-line bg-indigo-500/[0.03]">
-            <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-indigo-500/10 backdrop-blur">
+          <div className="border-l border-line bg-surface/30">
+            <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-surface/60 backdrop-blur">
               <div className="flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-indigo-300" />
-                <p className="text-[12px] font-black text-indigo-200">بنود الاستلام (مرجع)</p>
+                <ClipboardList className="w-4 h-4 text-ink/40" />
+                <p className="text-[12px] font-black text-ink/60">بنود الاستلام (مرجع)</p>
               </div>
             </div>
             <div className="p-3 space-y-1.5">
@@ -293,11 +293,11 @@ export default function QcPhase({
             </div>
           </div>
 
-          <div className="bg-purple-500/[0.03]">
-            <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-purple-500/10 backdrop-blur">
+          <div>
+            <div className="sticky top-0 z-10 px-4 py-2.5 border-b border-line bg-surface/80 backdrop-blur">
               <div className="flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-purple-300" />
-                <p className="text-[12px] font-black text-purple-200">قرار الفحص النهائي</p>
+                <ClipboardCheck className="w-4 h-4 text-ink/50" />
+                <p className="text-[12px] font-black text-ink">قرار الفحص النهائي</p>
               </div>
             </div>
             <div className="p-3 space-y-1.5">
@@ -326,7 +326,7 @@ export default function QcPhase({
                           hasNote
                             ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
                             : notesOpen
-                              ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                              ? 'bg-surface text-ink/60 border border-line'
                               : 'bg-surface text-ink/40 border border-line hover:text-ink/70 hover:bg-surface',
                         ].join(' ')}
                       >
@@ -384,7 +384,7 @@ export default function QcPhase({
                             'w-full px-2.5 py-1 rounded-md text-[10.5px] text-ink placeholder:text-ink/25 focus:outline-none transition-colors',
                             it.status === 'fail'
                               ? 'bg-red-500/8 border border-red-500/25 focus:border-red-400/45'
-                              : 'bg-surface border border-line focus:border-purple-400/35',
+                              : 'bg-surface border border-line focus:border-amber-500/30',
                           ].join(' ')}
                         />
                       </div>

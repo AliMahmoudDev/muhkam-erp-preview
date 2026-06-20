@@ -133,13 +133,13 @@ export default function AccessoriesTab() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-5 space-y-4">
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-violet-500/8 border border-violet-500/20">
-          <Package className="w-5 h-5 text-violet-400/85 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-line">
+          <Package className="w-5 h-5 text-ink/40 shrink-0 mt-0.5" />
           <div>
-            <p className="text-[13px] font-semibold text-violet-300/80 mb-1">
+            <p className="text-[13px] font-semibold text-ink/60 mb-1">
               الإكسسوارات المستلمة مع الجهاز
             </p>
-            <p className="text-[12px] text-violet-300/50 leading-relaxed">
+            <p className="text-[12px] text-ink/35 leading-relaxed">
               يظهر اختيارها للموظف عند فتح بطاقة صيانة جديدة لتسجيل ما تسلّمه من العميل (شاحن، علبة،
               إلخ).
             </p>

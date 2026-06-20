@@ -182,13 +182,13 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
       onClick={onClose}
     >
       <div
-        className="bg-[#1a1a2e] border border-violet-500/30 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-[#1a1a2e] border border-line rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-              <ClipboardList className="w-5 h-5 text-violet-300" />
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center">
+              <ClipboardList className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <h2 className="text-ink font-bold text-lg">إنشاء أمر شراء</h2>
@@ -208,7 +208,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
             <select
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:border-amber-500/40"
             >
               <option value="" className="bg-[#1a1a2e]">
                 — اختر المورد (اختياري) —
@@ -227,7 +227,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="مثال: توريد عاجل / مواصفات خاصة..."
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+              className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:border-amber-500/40"
             />
           </div>
 
@@ -252,7 +252,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
                       {s.sku && <div className="text-ink/40 text-xs font-mono">{s.sku}</div>}
                     </td>
                     <td className="p-2.5 text-center">
-                      <span className="px-2 py-1 rounded-lg bg-violet-500/10 text-violet-300 font-bold font-mono text-sm">
+                      <span className="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-300 font-bold font-mono text-sm">
                         {s.suggested_qty}
                       </span>
                     </td>
@@ -261,7 +261,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
                     </td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-violet-500/30 bg-violet-500/5">
+                <tr className="border-t-2 border-line bg-surface">
                   <td className="p-2.5 text-ink/60 text-xs font-bold" colSpan={1}>
                     الإجمالي
                   </td>
@@ -279,7 +279,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
           <div className="flex gap-3 pt-1">
             <button
               onClick={printPO}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-violet-500 hover:bg-violet-400 text-ink rounded-xl font-bold text-sm transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-400 text-black rounded-xl font-bold text-sm transition-colors"
             >
               <Printer className="w-4 h-4" /> طباعة / PDF
             </button>

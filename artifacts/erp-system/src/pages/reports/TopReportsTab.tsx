@@ -163,7 +163,7 @@ export default function TopReportsTab() {
         />
         <TopTable
           title="أكثر العملاء بمشتريات"
-          icon={<Truck className="w-4 h-4 text-purple-400" />}
+          icon={<Truck className="w-4 h-4 text-ink/50" />}
           rows={topSuppliers}
           cols={[
             { key: 'supplier_name', label: 'العميل' },

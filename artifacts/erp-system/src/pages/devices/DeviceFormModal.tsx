@@ -331,8 +331,8 @@ export function DeviceFormModal({
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-line shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <Smartphone className="w-4 h-4 text-violet-400" />
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+              <Smartphone className="w-4 h-4 text-amber-400" />
             </div>
             <div>
               <span className="font-bold text-ink text-sm">إضافة جهاز مستعمل</span>
@@ -346,7 +346,7 @@ export function DeviceFormModal({
               {[1, 2].map((s) => (
                 <div
                   key={s}
-                  className={`h-1.5 rounded-full transition-all ${s <= step ? 'bg-violet-500 w-8' : 'bg-surface w-4'}`}
+                  className={`h-1.5 rounded-full transition-all ${s <= step ? 'bg-amber-500 w-8' : 'bg-surface w-4'}`}
                 />
               ))}
             </div>
@@ -587,7 +587,7 @@ export function DeviceFormModal({
                   />
                   <div className="absolute left-3 top-1/2 -translate-y-1/2">
                     {lookingUp ? (
-                      <div className="w-3.5 h-3.5 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
+                      <div className="w-3.5 h-3.5 border-2 border-line border-t-ink/50 rounded-full animate-spin" />
                     ) : foundCustomer ? (
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     ) : supplierPhone.length > 0 ? (
@@ -636,9 +636,9 @@ export function DeviceFormModal({
                   البطاقة الشخصية <span className="text-ink/20">(اختياري — حتى 2MB)</span>
                 </label>
                 {!idCardPreview ? (
-                  <label className="flex items-center gap-3 p-3 border border-dashed border-line rounded-xl cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/4 transition-all group">
-                    <div className="w-8 h-8 rounded-full bg-surface group-hover:bg-violet-500/10 flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-ink/25 group-hover:text-violet-400 transition-colors" />
+                  <label className="flex items-center gap-3 p-3 border border-dashed border-line rounded-xl cursor-pointer hover:border-amber-500/25 hover:bg-amber-500/4 transition-all group">
+                    <div className="w-8 h-8 rounded-full bg-surface group-hover:bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-ink/25 group-hover:text-amber-400 transition-colors" />
                     </div>
                     <div>
                       <p className="text-ink/35 text-sm">انقر لرفع صورة البطاقة</p>
@@ -661,7 +661,7 @@ export function DeviceFormModal({
                       />
                     ) : (
                       <div className="flex items-center gap-3 p-3">
-                        <FileText className="w-7 h-7 text-violet-400" />
+                        <FileText className="w-7 h-7 text-ink/40" />
                         <div>
                           <p className="text-ink/70 text-sm font-medium">{idCardFile?.name}</p>
                           <p className="text-ink/30 text-xs">
@@ -717,8 +717,8 @@ export function DeviceFormModal({
             <>
               {/* Device summary pill */}
               <div className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-line">
-                <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-                  <Smartphone className="w-4 h-4 text-violet-400" />
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-4 h-4 text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-ink text-sm">
@@ -738,7 +738,7 @@ export function DeviceFormModal({
                 </div>
                 <button
                   onClick={() => setStep(1)}
-                  className="text-[10px] text-violet-400/70 hover:text-violet-300 flex items-center gap-1 px-2 py-1 rounded-lg border border-violet-500/20 hover:border-violet-500/40 transition-all shrink-0"
+                  className="text-[10px] text-ink/40 hover:text-ink flex items-center gap-1 px-2 py-1 rounded-lg border border-line hover:border-line/60 transition-all shrink-0"
                 >
                   تعديل
                 </button>
@@ -826,10 +826,10 @@ export function DeviceFormModal({
                         disabled={disabled}
                         className={`py-2 rounded-xl border text-sm font-bold transition-all ${
                           fin.payment_type === pt
-                            ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
+                            ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                             : disabled
                               ? 'border-line text-ink/15 cursor-not-allowed'
-                              : 'border-line text-ink/40 hover:border-violet-500/30 hover:text-ink/70'
+                              : 'border-line text-ink/40 hover:border-amber-500/25 hover:text-ink/70'
                         }`}
                       >
                         {PAYMENT_LABELS[pt]}
@@ -935,7 +935,7 @@ export function DeviceFormModal({
             <button
               onClick={handleNext}
               disabled={lookingUp}
-              className="px-6 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all flex items-center gap-2 disabled:opacity-40"
+              className="px-6 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 text-sm font-bold hover:bg-amber-500/25 transition-all flex items-center gap-2 disabled:opacity-40"
             >
               {lookingUp ? (
                 <div className="w-3.5 h-3.5 border-2 border-line border-t-ink/60 rounded-full animate-spin" />

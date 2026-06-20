@@ -70,7 +70,7 @@ export function AddExpenseModal({
         {/* Category */}
         <div>
           <label className="block text-ink/70 text-sm mb-1.5 flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-violet-400" /> تصنيف المصروف *
+            <Tag className="w-3.5 h-3.5 text-ink/40" /> تصنيف المصروف *
           </label>
           <div className="flex gap-2">
             <select
@@ -120,7 +120,7 @@ export function AddExpenseModal({
               type="button"
               onClick={handleAddCategory}
               disabled={catLoading || !newCatName.trim()}
-              className="px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors border border-violet-500/30 text-sm font-bold disabled:opacity-40"
+              className="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 transition-colors border border-amber-500/25 text-sm font-bold disabled:opacity-40"
             >
               {catLoading ? '...' : 'إضافة'}
             </button>

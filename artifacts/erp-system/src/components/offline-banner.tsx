@@ -25,7 +25,7 @@ export function OfflineBanner() {
   return (
     <div
       dir="rtl"
-      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full shadow-lg text-sm font-medium transition-all duration-500 ${
+      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full shadow-lg text-sm font-medium transition-all duration-300 ${
         offline ? 'bg-red-600/90 text-ink' : 'bg-green-600/90 text-ink'
       }`}
     >

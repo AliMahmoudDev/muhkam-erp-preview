@@ -77,7 +77,7 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
             <>
               <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-3/4 h-1/3 border-2 border-purple-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]" />
+                <div className="w-3/4 h-1/3 border-2 border-amber-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]" />
               </div>
             </>
           )}
