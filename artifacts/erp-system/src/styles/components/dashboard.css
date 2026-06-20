@@ -6,11 +6,28 @@
 /* ══════════════════════════════════════════════════
    PAGE CONTAINER CLASSES — standardised layout
    Use on every main page to keep spacing uniform
+   ══════════════════════════════════════════════════
+
+   Page vertical rhythm (V2 Sprint 01):
+     Header
+     ── 24px ──  (header margin-bottom 8px + gap 16px)
+     Toolbar / Filters
+     ── 16px ──  (gap)
+     KPI Row
+     ── 16px ──  (gap)
+     Main Card / Table
+     ── 20px ──  (add .erp-page-secondary to secondary block)
+     Secondary Content
    ══════════════════════════════════════════════════ */
 .erp-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--page-gap-section);   /* 16px — between all top-level sections */
+}
+
+/* Header gets extra 8px bottom-margin so header→next = 16+8 = 24px */
+.erp-page > .erp-page-header {
+  margin-bottom: 8px;
 }
 
 .erp-page-header {

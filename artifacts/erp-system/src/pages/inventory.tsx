@@ -280,7 +280,7 @@ export default function Inventory() {
       {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
       <div>
         <div
-          className="erp-tab-bar erp-tab-bar--underline overflow-x-auto mb-6"
+          className="erp-tab-bar erp-tab-bar--underline overflow-x-auto"
           style={{ scrollbarWidth: 'none' }}
         >
           <TabBtn

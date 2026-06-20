@@ -1,11 +1,11 @@
 /*
  * ════════════════════════════════════════════════════════════════
- *  MUHKAMPRO — Layout & Spacing Layer
+ *  MUHKAMPRO — Layout & Spacing Layer  (V2 Sprint 01)
  * ════════════════════════════════════════════════════════════════
  */
 
 :root {
-  /* Spacing scale (4-base) */
+  /* ── Primitive spacing scale (4px base) ─────────────────── */
   --sp-1:  4px;
   --sp-2:  8px;
   --sp-3: 12px;
@@ -15,6 +15,12 @@
   --sp-8: 32px;
   --sp-10:40px;
   --sp-12:48px;
+
+  /* ── Page rhythm tokens ──────────────────────────────────── */
+  /* Vertical spacing between top-level page sections          */
+  --page-gap-section:   var(--sp-4);   /* 16px — toolbar→KPI, KPI→table, etc.  */
+  --page-gap-header:    var(--sp-6);   /* 24px — page header → first section    */
+  --page-gap-secondary: var(--sp-5);   /* 20px — main content → secondary block */
 
   /* Border radius */
   --radius-sm:  8px;
@@ -28,4 +34,44 @@
 .page-wrapper {
   width: 100%;
   height: 100%;
+}
+
+/* ════════════════════════════════════════════════════════════════
+ *  VERTICAL STACK UTILITIES  (.erp-stack-*)
+ *  Single responsibility: add top-margin spacing to any element.
+ *  Use for manual overrides; prefer .erp-page rhythm for pages.
+ *  Inside a flex-column parent these ADD to the parent gap.
+ * ════════════════════════════════════════════════════════════════ */
+.erp-stack-8  { margin-top: var(--sp-2);  }   /*  8px */
+.erp-stack-12 { margin-top: var(--sp-3);  }   /* 12px */
+.erp-stack-16 { margin-top: var(--sp-4);  }   /* 16px */
+.erp-stack-20 { margin-top: var(--sp-5);  }   /* 20px */
+.erp-stack-24 { margin-top: var(--sp-6);  }   /* 24px */
+.erp-stack-32 { margin-top: var(--sp-8);  }   /* 32px */
+
+/* ════════════════════════════════════════════════════════════════
+ *  PAGE BODY — sub-section wrapper inside .erp-page
+ *  Wraps toolbar + KPIs + table when you need 16px inner rhythm
+ *  without affecting the 24px header-to-content gap.
+ *
+ *  Usage:
+ *    <div class="erp-page">
+ *      <div class="erp-page-header">…</div>
+ *      <div class="erp-page-body">      ← 16px between children
+ *        <div class="erp-toolbar">…</div>
+ *        <div class="erp-kpi-grid">…</div>
+ *        <div class="erp-card">…table…</div>
+ *        <div class="erp-page-secondary">…</div>   ← gets +4px = 20px
+ *      </div>
+ *    </div>
+ * ════════════════════════════════════════════════════════════════ */
+.erp-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap-section);   /* 16px */
+}
+
+/* Secondary content block — adds 4px to the 16px flex-gap = 20px total */
+.erp-page-secondary {
+  margin-top: calc(var(--page-gap-secondary) - var(--page-gap-section));  /* 4px */
 }
