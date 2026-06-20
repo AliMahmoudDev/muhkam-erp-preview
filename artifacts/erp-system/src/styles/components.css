@@ -1219,3 +1219,556 @@ html.light .erp-empty-headline {
   box-shadow: var(--focus-ring) !important;
   border-color: var(--focus-edge) !important;
 }
+
+/* ════════════════════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1 — SPRINT 04
+ *  Forms, Inputs & Modal Form Experience
+ *  ─────────────────────────────────────────────────────────────
+ *  Priority classes (highest-impact, used 300+ times):
+ *    .glass-input — primary input class across all modals/pages
+ *    .erp-input   — shadcn Input component base
+ *  Plus: .erp-label, .erp-field, .erp-help, .erp-error,
+ *        .erp-form-*, .erp-select-*, .erp-dialog-*,
+ *        .erp-checkbox, .erp-switch
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   BASE INPUT — glass-input & erp-input (unified)
+   40px height, radius 12px, brand focus
+   ══════════════════════════════════════════════════ */
+.glass-input,
+.erp-input,
+input.glass-input,
+select.glass-input,
+textarea.glass-input {
+  height: 40px !important;
+  min-height: 40px !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--edge-md) !important;
+  background: var(--bg-surface) !important;
+  color: var(--text-1) !important;
+  font-size: 14px !important;
+  padding: 0 12px !important;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease !important;
+  outline: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  caret-color: var(--caret-color) !important;
+  width: 100%;
+}
+
+.glass-input::placeholder,
+.erp-input::placeholder {
+  color: var(--text-4) !important;
+  opacity: 1 !important;
+}
+
+.glass-input:focus,
+.glass-input:focus-visible,
+.erp-input:focus,
+.erp-input:focus-visible {
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+  background: var(--bg-surface) !important;
+  outline: none !important;
+}
+
+.glass-input:disabled,
+.erp-input:disabled,
+.glass-input[disabled],
+.erp-input[disabled] {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: var(--bg-surface-alt) !important;
+}
+
+/* Error state */
+.glass-input[aria-invalid="true"],
+.erp-input[aria-invalid="true"],
+.glass-input.erp-input--error,
+.erp-input.erp-input--error {
+  border-color: var(--status-danger) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08) !important;
+}
+
+/* Large variant */
+.glass-input--lg,
+.erp-input--lg {
+  height: 44px !important;
+  font-size: 14px !important;
+}
+
+/* Light mode */
+html.light .glass-input,
+html.light .erp-input,
+html.light input.glass-input,
+html.light select.glass-input,
+html.light textarea.glass-input {
+  background: #ffffff !important;
+  border-color: var(--edge-md) !important;
+  color: var(--text-1) !important;
+}
+html.light .glass-input:focus,
+html.light .glass-input:focus-visible,
+html.light .erp-input:focus,
+html.light .erp-input:focus-visible {
+  background: #ffffff !important;
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+html.light .glass-input::placeholder,
+html.light .erp-input::placeholder {
+  color: var(--text-4) !important;
+}
+html.light .glass-input:disabled,
+html.light .erp-input:disabled {
+  background: var(--bg-surface-alt) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TEXTAREA — min-height 96px, resize vertical
+   ══════════════════════════════════════════════════ */
+textarea.glass-input,
+textarea.erp-input,
+.erp-textarea {
+  height: auto !important;
+  min-height: 96px !important;
+  padding: 10px 12px !important;
+  resize: vertical !important;
+  line-height: 1.6 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SELECT — glass-input + native select overrides
+   ══════════════════════════════════════════════════ */
+select.glass-input,
+.erp-select-trigger {
+  cursor: pointer !important;
+  appearance: auto;
+}
+
+/* Radix select content dropdown */
+.erp-select-content {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--edge-md) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-modal) !important;
+  backdrop-filter: none !important;
+  padding: 4px !important;
+  color: var(--text-1) !important;
+}
+
+html.light .erp-select-content {
+  background: #ffffff !important;
+  border-color: var(--edge-md) !important;
+}
+
+.erp-select-item {
+  border-radius: 8px !important;
+  padding: 8px 10px 8px 32px !important;
+  font-size: 14px !important;
+  color: var(--text-2) !important;
+  cursor: pointer !important;
+  transition: background 0.1s ease, color 0.1s ease !important;
+}
+
+.erp-select-item:focus,
+.erp-select-item[data-highlighted] {
+  background: var(--brand-muted) !important;
+  color: var(--text-1) !important;
+  outline: none !important;
+}
+
+.erp-select-item[data-state="checked"] {
+  color: var(--brand) !important;
+  font-weight: 600 !important;
+}
+
+.erp-select-group-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--text-4) !important;
+  letter-spacing: 0.03em !important;
+  padding: 6px 10px 4px !important;
+}
+
+html.light .erp-select-item { color: var(--text-2) !important; }
+html.light .erp-select-item:focus,
+html.light .erp-select-item[data-highlighted] { color: var(--text-1) !important; }
+
+/* ══════════════════════════════════════════════════
+   LABEL — 13px, 600, var(--text-2)
+   ══════════════════════════════════════════════════ */
+.erp-label,
+label.erp-label {
+  display: inline-block !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-2) !important;
+  margin-bottom: 6px !important;
+  line-height: 1.4 !important;
+  cursor: default;
+}
+
+/* Required asterisk */
+.erp-label--required::after {
+  content: ' *' !important;
+  color: var(--status-danger) !important;
+  font-weight: 700 !important;
+}
+
+html.light .erp-label,
+html.light label.erp-label {
+  color: var(--text-2) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   HELP & ERROR TEXT
+   ══════════════════════════════════════════════════ */
+.erp-help {
+  font-size: 12px !important;
+  color: var(--text-3) !important;
+  margin-top: 5px !important;
+  line-height: 1.5 !important;
+}
+
+.erp-error {
+  font-size: 12px !important;
+  color: var(--status-danger) !important;
+  margin-top: 5px !important;
+  line-height: 1.5 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+html.light .erp-help { color: var(--text-3) !important; }
+html.light .erp-error { color: var(--status-danger) !important; }
+
+/* ══════════════════════════════════════════════════
+   FIELD WRAPPER — consistent label→input spacing
+   ══════════════════════════════════════════════════ */
+.erp-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  width: 100%;
+}
+
+.erp-field label,
+.erp-field .erp-label {
+  margin-bottom: 6px !important;
+}
+
+/* ══════════════════════════════════════════════════
+   FORM LAYOUT HELPERS
+   ══════════════════════════════════════════════════ */
+.erp-form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.erp-form-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  padding: 20px !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--bg-surface) !important;
+}
+
+.erp-form-section-title {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text-3) !important;
+  letter-spacing: 0.02em !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid var(--edge) !important;
+  margin-bottom: 4px !important;
+}
+
+/* Two-column grid — single col on mobile */
+.erp-form-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+}
+
+@media (max-width: 640px) {
+  .erp-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+.erp-form-grid--3 {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 16px !important;
+}
+@media (max-width: 768px) {
+  .erp-form-grid--3 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  .erp-form-grid--3 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Full-width field spanning grid columns */
+.erp-form-col-full {
+  grid-column: 1 / -1 !important;
+}
+
+/* Form actions row — RTL aligned */
+.erp-form-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  padding-top: 8px !important;
+}
+
+html.light .erp-form-section {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   CHECKBOX — 18px, 5px radius, brand accent
+   ══════════════════════════════════════════════════ */
+.erp-checkbox,
+input[type="checkbox"].erp-checkbox {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  border-radius: 5px !important;
+  border: 1.5px solid var(--edge-md) !important;
+  background: var(--bg-surface) !important;
+  cursor: pointer !important;
+  accent-color: var(--brand) !important;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease !important;
+  vertical-align: middle;
+}
+.erp-checkbox:checked {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+.erp-checkbox:focus-visible {
+  outline: none !important;
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+.erp-checkbox:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+/* Checkbox + label row */
+.erp-checkbox-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  cursor: pointer;
+}
+.erp-checkbox-row label {
+  font-size: 14px !important;
+  color: var(--text-2) !important;
+  cursor: pointer !important;
+  margin-bottom: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SWITCH — enterprise calm, brand active
+   ══════════════════════════════════════════════════ */
+.erp-switch {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  width: 42px !important;
+  height: 24px !important;
+  border-radius: 999px !important;
+  background: var(--edge-strong) !important;
+  border: 1px solid var(--edge-md) !important;
+  cursor: pointer !important;
+  transition: background 0.18s ease, border-color 0.18s ease !important;
+  flex-shrink: 0;
+}
+
+.erp-switch::after {
+  content: '' !important;
+  position: absolute !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  right: 2px !important;
+  transition: right 0.18s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.erp-switch[data-state="checked"],
+.erp-switch.erp-switch--on {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+
+.erp-switch[data-state="checked"]::after,
+.erp-switch.erp-switch--on::after {
+  right: calc(100% - 20px) !important;
+}
+
+.erp-switch:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.erp-switch:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+html.light .erp-switch {
+  background: #CBD5E1 !important;
+  border-color: #94A3B8 !important;
+}
+html.light .erp-switch[data-state="checked"],
+html.light .erp-switch.erp-switch--on {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   DIALOG / MODAL
+   ══════════════════════════════════════════════════ */
+.erp-dialog-overlay {
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+html.light .erp-dialog-overlay {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+
+.erp-dialog-content {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge-md) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-modal) !important;
+  padding: 28px !important;
+  gap: 0 !important;
+  backdrop-filter: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+html.light .erp-dialog-content {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+
+.erp-dialog-header {
+  padding-bottom: 4px !important;
+  border-bottom: 1px solid var(--edge) !important;
+  padding-bottom: 16px !important;
+}
+
+.erp-dialog-title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--text-1) !important;
+  line-height: 1.3 !important;
+}
+
+.erp-dialog-description {
+  font-size: 13px !important;
+  color: var(--text-3) !important;
+  margin-top: 4px !important;
+  line-height: 1.5 !important;
+}
+
+.erp-dialog-footer {
+  padding-top: 16px !important;
+  border-top: 1px solid var(--edge) !important;
+  margin-top: 4px !important;
+}
+
+/* Close button — RTL: start = right side visually */
+.erp-dialog-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  color: var(--text-3) !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background 0.12s ease, color 0.12s ease !important;
+  opacity: 1 !important;
+}
+.erp-dialog-close:hover {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+}
+.erp-dialog-close:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   MODAL CARDS (existing .modal-panel, .glass-panel
+   inside modal overlays) — flat, no blur
+   ══════════════════════════════════════════════════ */
+.modal-overlay {
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+
+html.light .modal-overlay {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   INLINE FORM TOKENS — CSS custom properties
+   so deep-nested form elements pick them up
+   ══════════════════════════════════════════════════ */
+:root,
+html,
+html.dark {
+  --input-height:     40px;
+  --input-height-lg:  44px;
+  --input-radius:     var(--radius-md);
+  --input-border:     var(--edge-md);
+  --input-bg:         var(--bg-surface);
+  --input-text:       var(--text-1);
+  --input-placeholder: var(--text-4);
+  --input-focus-border: var(--focus-edge);
+  --input-focus-ring: var(--focus-ring);
+  --label-size:       13px;
+  --label-weight:     600;
+  --label-color:      var(--text-2);
+  --label-gap:        6px;
+  --help-size:        12px;
+  --help-color:       var(--text-3);
+  --error-size:       12px;
+  --error-color:      var(--status-danger);
+}
+
+html.light {
+  --input-bg: #ffffff;
+}
