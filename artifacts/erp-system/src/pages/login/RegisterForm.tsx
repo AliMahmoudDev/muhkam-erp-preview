@@ -429,8 +429,8 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="ent-btn-primary"
-        style={{ marginBottom: 14 }}
+        className="erp-btn-primary"
+        style={{ width: '100%', height: 48, marginBottom: 14 }}
       >
         {loading ? (
           <>
@@ -438,8 +438,8 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
               style={{
                 width: 14,
                 height: 14,
-                border: '2px solid var(--edge-strong)',
-                borderTopColor: 'var(--text-1)',
+                border: '2px solid rgba(255,255,255,0.25)',
+                borderTopColor: 'var(--login-white)',
                 borderRadius: '50%',
                 display: 'inline-block',
                 animation: 'ent-spin .7s linear infinite',

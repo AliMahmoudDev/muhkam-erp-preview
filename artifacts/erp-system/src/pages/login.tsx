@@ -5,14 +5,15 @@ import { RegisterForm } from './login/RegisterForm';
 import { api } from '@/lib/api';
 
 /* ══════════════════════════════════════════════
-   Enterprise Login — Split: dark brand left, light form right
-   Inspired by Linear / Salesforce / Stripe / Oracle
+   Auth pages — Sprint 12 polish
+   Clean split layout: dark brand panel + white form panel
+   Buttons: erp-btn-primary / erp-btn-secondary (design system)
+   Inputs: .ent-input (custom — handles RTL + autofill + password padding)
 ══════════════════════════════════════════════ */
 const LOGIN_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 .lp-login *, .lp-login *::before, .lp-login *::after { box-sizing: border-box; }
-
 .lp-login {
   font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -23,24 +24,22 @@ const LOGIN_CSS = `
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
-@keyframes ent-spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes ent-spin  { to { transform: rotate(360deg); } }
 @keyframes ent-shake {
   0%,100% { transform: translateX(0); }
   25%     { transform: translateX(-4px); }
   75%     { transform: translateX(4px); }
 }
 
-/* ── Light form inputs ── */
+/* ── Auth inputs — calm, RTL-aware, autofill-safe ── */
 .ent-input {
   width: 100%;
   height: 46px;
   padding: 0 14px;
   border-radius: 8px;
-  background: var(--login-white);
+  background: var(--login-white, #fff);
   border: 1px solid #CBD5E1;
-  color: var(--login-navy);
+  color: var(--login-navy, #0f172a);
   font-size: 14px;
   font-family: inherit;
   outline: none;
@@ -48,83 +47,49 @@ const LOGIN_CSS = `
   direction: rtl;
   text-align: right;
 }
-.ent-input::placeholder { color: var(--login-muted-on-navy); }
-.ent-input:hover:not(:disabled):not(:focus) { border-color: var(--login-muted-on-navy); }
+.ent-input::placeholder { color: #94a3b8; }
+.ent-input:hover:not(:disabled):not(:focus) { border-color: #94a3b8; }
 .ent-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: var(--login-navy, #0f172a);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
 }
-.ent-input:disabled { opacity: .55; cursor: not-allowed; background: #F1F5F9; }
+.ent-input:disabled { opacity: .55; cursor: not-allowed; background: #F8FAFC; }
 .ent-input.ent-input-error {
   border-color: #DC2626;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.10);
 }
-
 .ent-input-pw { padding-right: 44px; padding-left: 14px; font-family: 'Inter', monospace; letter-spacing: .04em; }
 
-/* ── Primary button (light surface) ── */
-.ent-btn-primary {
-  width: 100%;
-  height: 48px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: #2563EB;
-  color: var(--login-white);
-  font-size: 14.5px;
-  font-weight: 600;
-  font-family: inherit;
-  transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15);
-}
-.ent-btn-primary:hover:not(:disabled) { background: #1D4ED8; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); }
-.ent-btn-primary:active:not(:disabled) { transform: scale(0.995); }
-.ent-btn-primary:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
-
-.ent-btn-secondary {
-  width: 100%;
-  height: 42px;
-  border-radius: 8px;
-  cursor: pointer;
-  background: var(--login-white);
-  color: #475569;
-  border: 1px solid #CBD5E1;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  transition: color .15s ease, border-color .15s ease, background .15s ease;
-}
-.ent-btn-secondary:hover { color: var(--login-navy); border-color: var(--login-muted-on-navy); background: #F1F5F9; }
-
+/* ── Inline text links ── */
 .ent-link {
   background: none; border: none; padding: 0; cursor: pointer;
   font-family: inherit;
-  color: #2563EB; font-size: 13px; font-weight: 600;
-  transition: color .15s ease;
+  color: var(--login-navy, #0f172a);
+  font-size: 13px; font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(15, 23, 42, 0.3);
+  transition: text-decoration-color .15s ease;
 }
-.ent-link:hover { color: #1D4ED8; text-decoration: underline; }
+.ent-link:hover { text-decoration-color: var(--login-navy, #0f172a); }
 
+/* ── Password visibility toggle ── */
 .ent-pw-toggle {
   position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; cursor: pointer;
-  color: var(--login-muted-on-navy); border-radius: 6px;
-  transition: color .15s ease, background .15s ease;
+  color: #94a3b8; border-radius: 6px;
+  transition: color .15s ease;
 }
-.ent-pw-toggle:hover { color: #334155; background: #F1F5F9; }
+.ent-pw-toggle:hover { color: #334155; }
 
-/* Override browser autofill background */
+/* Override browser autofill highlight */
 .ent-input:-webkit-autofill,
 .ent-input:-webkit-autofill:hover,
 .ent-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px var(--login-white) inset;
-  -webkit-text-fill-color: var(--login-navy);
-  box-shadow: 0 0 0 1000px var(--login-white) inset;
+  -webkit-box-shadow: 0 0 0 1000px var(--login-white, #fff) inset;
+  -webkit-text-fill-color: var(--login-navy, #0f172a);
+  box-shadow: 0 0 0 1000px var(--login-white, #fff) inset;
   transition: background-color 99999s ease-in-out 0s;
 }
 
@@ -509,19 +474,6 @@ export default function Login() {
         overflow: 'hidden',
       }}
     >
-      {/* Subtle radial accent */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-20%',
-          right: '-10%',
-          width: '70%',
-          height: '70%',
-          background:
-            'radial-gradient(ellipse at center, rgba(59,130,246,0.10) 0%, transparent 60%)',
-          pointerEvents: 'none',
-        }}
-      />
 
       {/* Top — logo + tagline + 3 product facts */}
       <div
@@ -633,8 +585,8 @@ export default function Login() {
                 alignItems: 'center',
                 gap: 12,
                 padding: '14px 16px',
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid #1E293B',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 10,
                 animation: `ent-fade-up .55s ${0.15 + i * 0.04}s ease both`,
               }}
@@ -645,8 +597,7 @@ export default function Login() {
                   height: 36,
                   borderRadius: 8,
                   flexShrink: 0,
-                  background: 'rgba(59, 130, 246, 0.12)',
-                  color: 'var(--status-info)',
+                  color: 'var(--login-text-on-navy)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -764,7 +715,7 @@ export default function Login() {
               border: '1px solid #E2E8F0',
               borderRadius: 12,
               padding: '40px',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 32px rgba(15, 23, 42, 0.08)',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 32px rgba(15, 23, 42, 0.06)',
             }}
           >
             {/* ─── 2FA STEP ─── */}
@@ -841,8 +792,8 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={totpLoading || totpCode.length !== 6}
-                  className="ent-btn-primary"
-                  style={{ marginBottom: 12 }}
+                  className="erp-btn-primary"
+                  style={{ width: '100%', height: 48, marginBottom: 12 }}
                 >
                   {totpLoading ? (
                     <>
@@ -865,7 +816,8 @@ export default function Login() {
                 </button>
                 <button
                   type="button"
-                  className="ent-btn-secondary"
+                  className="erp-btn-secondary"
+                  style={{ width: '100%' }}
                   onClick={() => {
                     setRequires2FA(false);
                     setTempToken('');
@@ -1008,7 +960,7 @@ function LoginFormFields({
     display: 'block',
     fontSize: 13,
     fontWeight: 600,
-    color: '#334155',
+    color: 'var(--login-navy)',
     marginBottom: 8,
   };
 
@@ -1118,8 +1070,8 @@ function LoginFormFields({
       <button
         type="submit"
         disabled={loading}
-        className="ent-btn-primary"
-        style={{ marginBottom: 16 }}
+        className="erp-btn-primary"
+        style={{ width: '100%', height: 48, marginBottom: 16 }}
       >
         {loading ? (
           <>
@@ -1127,7 +1079,7 @@ function LoginFormFields({
               style={{
                 width: 14,
                 height: 14,
-                border: '2px solid var(--edge-md)',
+                border: '2px solid rgba(255,255,255,0.25)',
                 borderTopColor: 'var(--login-white)',
                 borderRadius: '50%',
                 display: 'inline-block',
