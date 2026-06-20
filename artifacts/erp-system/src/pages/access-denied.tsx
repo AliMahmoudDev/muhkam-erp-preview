@@ -11,14 +11,13 @@ export default function AccessDenied() {
     <div
       className="min-h-screen flex items-center justify-center"
       dir="rtl"
-      style={{ background: 'radial-gradient(ellipse at 50% 50%, #0d0d18 0%, #070709 100%)' }}
+      style={{ background: 'var(--bg-app)' }}
     >
       <div
         className="text-center px-8 py-12 rounded-3xl max-w-md w-full mx-4"
         style={{
-          background: 'var(--surface)',
+          background: 'var(--bg-surface)',
           border: '1px solid rgba(239,68,68,0.18)',
-          backdropFilter: 'blur(20px)',
         }}
       >
         {/* Icon */}

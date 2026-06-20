@@ -56,10 +56,10 @@ export function BarcodeScanner({ open, onClose, onDetected }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-zinc-900 border border-purple-500/30 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+      <div className="bg-[var(--bg-surface)] border border-line rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-line">
           <h3 className="font-bold text-ink flex items-center gap-2">
-            <Camera className="w-5 h-5 text-purple-400" />
+            <Camera className="w-5 h-5 text-ink/50" />
             ماسح الباركود
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-ink">

@@ -206,7 +206,7 @@ export function OnboardingPanel() {
           <div className="flex items-center gap-2 mb-5">
             <div className="flex-1 h-1.5 rounded-full bg-surface overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-400 transition-all duration-500"
+                className="h-full rounded-full bg-[var(--brand)] transition-all duration-500"
                 style={{ width: `${(doneCount / 3) * 100}%` }}
               />
             </div>

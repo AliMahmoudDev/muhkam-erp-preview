@@ -29,11 +29,11 @@ export function SalesTargetsWidget() {
   });
 
   return (
-    <div className="db-card mt-0">
+    <div className="erp-card mt-0">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="db-card-title">أهداف المبيعات</h3>
-          <p className="db-card-sub">{monthLabel}</p>
+          <h3 className="text-base font-bold text-ink">أهداف المبيعات</h3>
+          <p className="text-sm text-ink/50 mt-0.5">{monthLabel}</p>
         </div>
         <div
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"

@@ -137,7 +137,7 @@ export default function TechPerformanceTab() {
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
                         className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[15px] text-ink"
-                        style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}
+                        style={{ background: 'var(--bg-elevated)' }}
                       >
                         {t.technician_name.charAt(0)}
                       </div>

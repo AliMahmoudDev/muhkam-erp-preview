@@ -9,18 +9,13 @@ export function LoadingPage() {
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
       style={{ background: 'var(--erp-bg-app, #0a0e1a)' }}
     >
-      {/* Ambient glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/5 blur-[120px] animate-pulse" />
-      </div>
-
       {/* Logo + Text */}
       <div className="relative flex flex-col items-center gap-6">
         {/* Logo icon */}
         <div className="relative">
           <div
-            className="w-20 h-20 rounded-2xl border border-amber-500/20 flex items-center justify-center shadow-2xl shadow-amber-500/10 animate-[logo-breathe_2.5s_ease-in-out_infinite]"
-            style={{ background: 'var(--erp-bg-card, linear-gradient(135deg, #0F172A, #1e293b))' }}
+            className="w-20 h-20 rounded-2xl border border-line flex items-center justify-center animate-[logo-breathe_2.5s_ease-in-out_infinite]"
+            style={{ background: 'var(--bg-surface)' }}
           >
             <svg
               width="48"
@@ -44,8 +39,6 @@ export function LoadingPage() {
               <circle cx="90" cy="148" r="6" fill="var(--status-warning)" opacity="0.7" />
             </svg>
           </div>
-          {/* Ring animation */}
-          <div className="absolute -inset-2 rounded-3xl border border-amber-500/20 animate-[ring-pulse_2.5s_ease-in-out_infinite]" />
         </div>
 
         {/* Brand name */}
@@ -61,7 +54,7 @@ export function LoadingPage() {
 
         {/* Progress bar */}
         <div className="w-48 h-1 rounded-full bg-surface overflow-hidden mt-2">
-          <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 animate-[progress-slide_1.8s_ease-in-out_infinite]" />
+          <div className="h-full rounded-full bg-[var(--brand)] animate-[progress-slide_1.8s_ease-in-out_infinite]" />
         </div>
 
         {/* Loading text */}
@@ -75,10 +68,6 @@ export function LoadingPage() {
         @keyframes logo-breathe {
           0%, 100% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.04); opacity: 0.92; }
-        }
-        @keyframes ring-pulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.06); }
         }
         @keyframes progress-slide {
           0% { width: 0%; margin-left: 0%; }

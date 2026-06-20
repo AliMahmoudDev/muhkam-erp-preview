@@ -251,7 +251,7 @@ export default function ConsignmentPage() {
               </div>
               <div className="h-1.5 bg-surface rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-green-500 transition-all"
+                  className="h-full rounded-full bg-[var(--brand)] transition-all"
                   style={{ width: `${soldPct}%` }}
                 />
               </div>

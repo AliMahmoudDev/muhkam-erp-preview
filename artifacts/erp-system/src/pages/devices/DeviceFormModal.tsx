@@ -938,7 +938,7 @@ export function DeviceFormModal({
               className="px-6 py-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300 text-sm font-bold hover:bg-violet-500/30 transition-all flex items-center gap-2 disabled:opacity-40"
             >
               {lookingUp ? (
-                <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-line border-t-ink/60 rounded-full animate-spin" />
               ) : null}
               التالي ←
             </button>
@@ -946,10 +946,10 @@ export function DeviceFormModal({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-violet-600/30 to-violet-500/20 border border-violet-500/50 text-violet-200 text-sm font-bold hover:from-violet-600/40 hover:to-violet-500/30 transition-all disabled:opacity-40 flex items-center gap-2"
+              className="erp-btn erp-btn-secondary flex items-center gap-2"
             >
               {saving ? (
-                <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-line border-t-ink/60 rounded-full animate-spin" />
               ) : (
                 <ShoppingCart className="w-3.5 h-3.5" />
               )}
