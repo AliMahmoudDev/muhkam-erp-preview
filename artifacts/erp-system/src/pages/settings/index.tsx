@@ -13,6 +13,7 @@ import {
   Cpu,
   Percent,
   TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
@@ -40,39 +41,48 @@ type Tab =
   | 'backup'
   | 'system';
 
-/* ─── Section config ─── */
+/* ─── Section config ─────────────────────────────────────────────────────
+   Sprint 11 IA refactor:
+   Old groups: الإدارة / المالية / التخصيص / النظام
+   New groups: إعدادات أساسية / الفواتير والتشغيل / المحاسبة والفترات / النظام والأمان
+   All 10 tabs preserved; NظامAndأمان gets danger flag for risky ops.
+───────────────────────────────────────────────────────────────────────── */
 const TAB_SECTIONS: {
   section: string;
+  subtitle?: string;
+  danger?: boolean;
   tabs: { id: Tab; label: string; icon: React.FC<{ className?: string }> }[];
 }[] = [
   {
-    section: 'الإدارة',
+    section: 'إعدادات أساسية',
     tabs: [
-      { id: 'users', label: 'المستخدمون', icon: Users },
       { id: 'company', label: 'بيانات الشركة', icon: Building2 },
+      { id: 'users',   label: 'المستخدمون',    icon: Users },
+      { id: 'currency',label: 'إعدادات المتجر', icon: Store },
     ],
   },
   {
-    section: 'المالية',
+    section: 'الفواتير والتشغيل',
     tabs: [
-      { id: 'opening-balance', label: 'أول المدة', icon: BookOpen },
-      { id: 'financial-lock', label: 'إغلاق الفترات', icon: Lock },
+      { id: 'invoice', label: 'الفاتورة',             icon: FileText },
+      { id: 'pricing', label: 'تسعير المنتجات',       icon: TrendingUp },
+      { id: 'vat',     label: 'ضريبة القيمة المضافة', icon: Percent },
     ],
   },
   {
-    section: 'التخصيص',
+    section: 'المحاسبة والفترات',
     tabs: [
-      { id: 'currency', label: 'إعدادات المتجر', icon: Store },
-      { id: 'vat', label: 'ضريبة القيمة المضافة', icon: Percent },
-      { id: 'invoice', label: 'الفاتورة', icon: FileText },
-      { id: 'pricing', label: 'تسعير المنتجات', icon: TrendingUp },
+      { id: 'opening-balance', label: 'أول المدة',      icon: BookOpen },
+      { id: 'financial-lock',  label: 'إغلاق الفترات', icon: Lock },
     ],
   },
   {
-    section: 'النظام',
+    section: 'النظام والأمان',
+    subtitle: 'عمليات حساسة — راجع قبل التنفيذ',
+    danger: true,
     tabs: [
       { id: 'backup', label: 'النسخ الاحتياطي', icon: HardDrive },
-      { id: 'system', label: 'إدارة البيانات', icon: Database },
+      { id: 'system', label: 'إدارة البيانات',  icon: Database },
     ],
   },
 ];
@@ -145,9 +155,24 @@ export default function SettingsPage() {
         <nav className="flex-1 px-3 pb-3 space-y-5 mt-3 overflow-y-auto">
           {TAB_SECTIONS.map((section) => (
             <div key={section.section}>
-              <p className="text-ink/25 text-[10px] font-black uppercase tracking-widest px-2 mb-1.5">
-                {section.section}
-              </p>
+              <div className="flex items-center gap-1.5 px-2 mb-0.5">
+                {section.danger && (
+                  <AlertTriangle className="w-2.5 h-2.5 shrink-0 text-red-400/50" />
+                )}
+                <p
+                  className={`text-[10px] font-black uppercase tracking-widest ${
+                    section.danger ? 'text-red-400/50' : 'text-ink/25'
+                  }`}
+                >
+                  {section.section}
+                </p>
+              </div>
+              {section.subtitle && (
+                <p className="text-[9px] text-red-400/40 font-medium px-2 mb-1.5">
+                  {section.subtitle}
+                </p>
+              )}
+              {!section.subtitle && <div className="mb-1.5" />}
               <div className="space-y-0.5">
                 {section.tabs.map((tab) => {
                   const active = activeTab === tab.id;
