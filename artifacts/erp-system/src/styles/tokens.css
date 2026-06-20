@@ -1,15 +1,11 @@
 /*
  * ════════════════════════════════════════════════════════════════
- *  MUHKAM Design System — Token Layer
+ *  MUHKAMPRO Design System — Token Layer  v4
  *  Single source of truth for ALL design tokens.
  *  ─────────────────────────────────────────────────────────────
- *  Primary tokens  : --bg-*, --text-*, --edge-*, --brand, etc.
- *  Legacy aliases  : --erp-* forwarded to primary tokens (compat)
- *  Component rules : focus rings, caret, selection, layout utils
- *
- *  NAMING NOTE: --edge-* is used for border colors to avoid
- *  conflict with shadcn's --border (HSL channel tuple).
- *  --surface-* avoids conflict with tailwind defaults.
+ *  Brand: Teal (#2DD4BF dark / #0F766E light)
+ *  Philosophy: Professional Workspace — Apple clarity, Linear calm
+ *  Legacy --erp-* aliases kept for backward compatibility.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -17,127 +13,134 @@
 :root,
 html,
 html.dark {
-  /* ── Solid backgrounds (replaces hardcoded hex in inline styles) ── */
-  --bg-app: #0b0f14;
-  --bg-card: #111827;
-  --bg-elevated: #1e293b;
+  /* ── App backgrounds ── */
+  --bg-app:        #0B1110;
+  --bg-surface:    #111A18;
+  --bg-surface-alt:#17211F;
+  --bg-card:       #111A18;
+  --bg-elevated:   #17211F;
 
-  /* ── Glass / transparent surfaces (replaces bg-white/* classes) ── */
-  --surface: rgba(255, 255, 255, 0.04);
-  --surface-raised: rgba(255, 255, 255, 0.07);
+  /* ── Transparent overlays (backward-compat surface system) ── */
+  --surface:        rgba(255, 255, 255, 0.04);
+  --surface-raised: rgba(255, 255, 255, 0.065);
 
   /* ── Structural backgrounds ── */
-  --bg-sidebar: hsla(225, 28%, 6.5%, 0.98);
-  --bg-topbar: hsla(225, 25%, 7%, 0.88);
-  --bg-input: rgba(255, 255, 255, 0.04);
+  --bg-sidebar: #0E1715;
+  --bg-topbar:  rgba(11, 17, 16, 0.92);
+  --bg-input:   rgba(255, 255, 255, 0.05);
 
   /* ── Text ── */
-  --text-1: #f1f5f9;
-  --text-2: #94a3b8;
-  --text-3: #64748b;
-  --text-4: #475569;
+  --text-1: #F8FAFC;
+  --text-2: #CBD5E1;
+  --text-3: #94A3B8;
+  --text-4: #64748B;
 
-  /* ── Borders (--edge-* avoids shadcn --border conflict) ── */
-  --edge: rgba(255, 255, 255, 0.07);
-  --edge-md: rgba(255, 255, 255, 0.1);
-  --edge-strong: rgba(255, 255, 255, 0.16);
+  /* ── Borders ── */
+  --edge:        rgba(255, 255, 255, 0.08);
+  --edge-md:     rgba(255, 255, 255, 0.13);
+  --edge-strong: rgba(255, 255, 255, 0.18);
 
-  /* ── Brand ── */
-  --brand: #c48a31;
-  --brand-hover: #d4993f;
-  --brand-dim: rgba(196, 138, 49, 0.55);
-  --brand-muted: rgba(196, 138, 49, 0.12);
-  --brand-border: rgba(196, 138, 49, 0.28);
-  --brand-glow: rgba(196, 138, 49, 0.18);
+  /* ── Brand (Teal) ── */
+  --brand:        #2DD4BF;
+  --brand-hover:  #5EEAD4;
+  --brand-dim:    rgba(45, 212, 191, 0.45);
+  --brand-muted:  rgba(45, 212, 191, 0.10);
+  --brand-border: rgba(45, 212, 191, 0.22);
+  --brand-glow:   rgba(45, 212, 191, 0.04);
+
+  /* ── Button primary text (dark text on light teal) ── */
+  --btn-primary-text: #0d1117;
 
   /* ── Status ── */
-  --status-success: #34d399;
-  --status-warning: #fbbf24;
-  --status-danger: #f87171;
-  --status-info: #60a5fa;
+  --status-success: #34D399;
+  --status-warning: #FBBF24;
+  --status-danger:  #F87171;
+  --status-info:    #60A5FA;
 
-  /* ── Status tinted backgrounds/borders (inline banners & alerts) ── */
-  --status-danger-bg: rgba(220, 38, 38, 0.10);
+  /* ── Status tinted backgrounds/borders ── */
+  --status-danger-bg:     rgba(220, 38, 38, 0.10);
   --status-danger-border: rgba(220, 38, 38, 0.25);
 
-  /* ── Status: external-repair (outsourced to external workshop — purple) ── */
-  --status-external-repair: #d8b4fe;
+  /* ── Special statuses ── */
+  --status-external-repair: #D8B4FE;
+  --status-urgent:          #F97316;
 
-  /* ── Status: urgent (subscription expiry CTA — orange) ── */
-  --status-urgent: #f97316;
-
-  /* ── Status tinted surfaces (report cards & table rows) ── */
+  /* ── Status tinted surfaces ── */
   --bg-success-tint: rgba(5, 150, 105, 0.08);
-  --bg-danger-tint: rgba(220, 38, 38, 0.08);
+  --bg-danger-tint:  rgba(220, 38, 38, 0.08);
   --bg-warning-tint: rgba(245, 158, 11, 0.08);
-  --bg-success-mid: rgba(5, 150, 105, 0.12);
-  --bg-danger-mid: rgba(220, 38, 38, 0.12);
+  --bg-success-mid:  rgba(5, 150, 105, 0.12);
+  --bg-danger-mid:   rgba(220, 38, 38, 0.12);
 
   /* ── Status tinted borders ── */
-  --edge-success: rgba(5, 150, 105, 0.2);
-  --edge-danger: rgba(220, 38, 38, 0.2);
-  --edge-warning: rgba(245, 158, 11, 0.2);
+  --edge-success: rgba(5, 150, 105, 0.20);
+  --edge-danger:  rgba(220, 38, 38, 0.20);
+  --edge-warning: rgba(245, 158, 11, 0.20);
 
   /* ── Table row backgrounds ── */
-  --bg-row-alt: rgba(255, 255, 255, 0.02);
+  --bg-row-alt:     rgba(255, 255, 255, 0.02);
   --bg-row-section: rgba(255, 255, 255, 0.03);
   --bg-row-subhead: rgba(255, 255, 255, 0.04);
-  --bg-row-header: rgba(255, 255, 255, 0.06);
+  --bg-row-header:  rgba(255, 255, 255, 0.055);
+  --edge-row:       rgba(255, 255, 255, 0.07);
 
-  /* ── Table divider & subtle row border ── */
-  --edge-row: rgba(255, 255, 255, 0.08);
+  /* ── Text helpers ── */
+  --text-hint:    rgba(255, 255, 255, 0.32);
+  --text-neutral: rgba(255, 255, 255, 0.52);
 
-  /* ── Faint / hint text ── */
-  --text-hint: rgba(255, 255, 255, 0.35);
-  --text-neutral: rgba(255, 255, 255, 0.55);
+  /* ── Floating panel ── */
+  --bg-panel: #131E1C;
 
-  /* ── Floating panel (notification/alert dropdowns) ── */
-  --bg-panel: #161f30;
-
-  /* ── Deep background (gateway, full-page surfaces) ── */
-  --bg-deep: #070d1a;
+  /* ── Deep background ── */
+  --bg-deep: #060C0B;
 
   /* ── Focus ── */
-  --focus-edge: rgba(196, 138, 49, 0.55);
-  --focus-ring: 0 0 0 3px rgba(196, 138, 49, 0.18);
+  --focus-edge: rgba(45, 212, 191, 0.55);
+  --focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.15);
 
   /* ── Shadows ── */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 20px rgba(0, 0, 0, 0.25);
-  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.45), 0 8px 32px rgba(0, 0, 0, 0.3);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.7), 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-card:  0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.22);
+  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.28);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.65), 0 4px 20px rgba(0, 0, 0, 0.45);
 
   /* ── Caret / selection ── */
-  --caret-color: rgba(196, 138, 49, 0.85);
-  --selection-bg: rgba(196, 138, 49, 0.22);
+  --caret-color:  rgba(45, 212, 191, 0.85);
+  --selection-bg: rgba(45, 212, 191, 0.18);
+
+  /* ── Table surface helpers ── */
+  --table-header-bg:   rgba(255, 255, 255, 0.04);
+  --table-header-text: rgba(255, 255, 255, 0.42);
+  --table-border:      rgba(255, 255, 255, 0.06);
+  --table-row-hover:   rgba(255, 255, 255, 0.04);
 
   /* ════════════════════════════════════════════════════════════
-     LEGACY --erp-* ALIASES — forward to primary tokens above.
-     Keep so existing components that use var(--erp-brand) etc.
+     LEGACY --erp-* ALIASES — forward to primary tokens.
+     Keep so existing components using var(--erp-brand) etc.
      continue to work without modification.
      ════════════════════════════════════════════════════════════ */
 
-  --erp-bg-app: var(--bg-app);
-  --erp-bg-sidebar: var(--bg-sidebar);
-  --erp-bg-topbar: var(--bg-topbar);
-  --erp-bg-main: var(--bg-app);
-  --erp-bg-surface: var(--surface);
-  --erp-bg-card: var(--surface);
+  --erp-bg-app:      var(--bg-app);
+  --erp-bg-sidebar:  var(--bg-sidebar);
+  --erp-bg-topbar:   var(--bg-topbar);
+  --erp-bg-main:     var(--bg-app);
+  --erp-bg-surface:  var(--surface);
+  --erp-bg-card:     var(--bg-card);
   --erp-bg-elevated: var(--bg-elevated);
-  --erp-bg-panel: var(--surface);
-  --erp-bg-soft: var(--surface);
-  --erp-bg-hover: var(--surface-raised);
-  --erp-bg-active: rgba(255, 255, 255, 0.09);
-  --erp-bg-input: var(--bg-input);
-  --erp-input-text: var(--text-1);
-  --erp-text: var(--text-1);
+  --erp-bg-panel:    var(--bg-panel);
+  --erp-bg-soft:     var(--surface);
+  --erp-bg-hover:    var(--surface-raised);
+  --erp-bg-active:   rgba(255, 255, 255, 0.08);
+  --erp-bg-input:    var(--bg-input);
+  --erp-input-text:  var(--text-1);
+  --erp-text:        var(--text-1);
 
-  --erp-brand: var(--brand);
-  --erp-brand-hover: var(--brand-hover);
-  --erp-brand-dim: var(--brand-dim);
-  --erp-brand-muted: var(--brand-muted);
+  --erp-brand:        var(--brand);
+  --erp-brand-hover:  var(--brand-hover);
+  --erp-brand-dim:    var(--brand-dim);
+  --erp-brand-muted:  var(--brand-muted);
   --erp-brand-border: var(--brand-border);
-  --erp-brand-glow: var(--brand-glow);
-  --erp-accent: var(--brand);
+  --erp-brand-glow:   var(--brand-glow);
+  --erp-accent:       var(--brand);
   --erp-accent-hover: var(--brand-hover);
 
   --erp-text-1: var(--text-1);
@@ -145,9 +148,9 @@ html.dark {
   --erp-text-3: var(--text-3);
   --erp-text-4: var(--text-4);
 
-  --erp-border: var(--edge);
-  --erp-border-md: var(--edge-md);
-  --erp-border-strong: var(--edge-strong);
+  --erp-border:         var(--edge);
+  --erp-border-md:      var(--edge-md);
+  --erp-border-strong:  var(--edge-strong);
   --erp-border-sidebar: var(--edge);
 
   --erp-focus-border: var(--focus-edge);
@@ -155,149 +158,169 @@ html.dark {
 
   --erp-success: var(--status-success);
   --erp-warning: var(--status-warning);
-  --erp-danger: var(--status-danger);
-  --erp-info: var(--status-info);
+  --erp-danger:  var(--status-danger);
+  --erp-info:    var(--status-info);
 
-  --erp-shadow-card: var(--shadow-card);
+  --erp-shadow-card:  var(--shadow-card);
   --erp-shadow-hover: var(--shadow-hover);
   --erp-shadow-modal: var(--shadow-modal);
 
-  --erp-chip-bg: var(--surface);
+  --erp-chip-bg:     var(--surface);
   --erp-chip-border: var(--edge);
-  --erp-caret: var(--caret-color);
+  --erp-caret:       var(--caret-color);
   --erp-selection-bg: var(--selection-bg);
+
+  /* ── amber-* compat (components still reference these) ── */
+  --amber-glow:   rgba(45, 212, 191, 0.05);
+  --amber-border: rgba(45, 212, 191, 0.18);
 }
 
 /* ── LIGHT override ──────────────────────────────────────────── */
 html.light {
-  /* ── Solid backgrounds ── */
-  --bg-app: #f7f8fa;
-  --bg-card: #ffffff;
-  --bg-elevated: #f1f5f9;
+  /* ── App backgrounds ── */
+  --bg-app:        #F8FAFC;
+  --bg-surface:    #FFFFFF;
+  --bg-surface-alt:#F1F5F9;
+  --bg-card:       #FFFFFF;
+  --bg-elevated:   #F1F5F9;
 
-  /* ── Glass / transparent surfaces ── */
-  --surface: rgba(0, 0, 0, 0.04);
-  --surface-raised: rgba(0, 0, 0, 0.07);
+  /* ── Transparent overlays ── */
+  --surface:        rgba(0, 0, 0, 0.03);
+  --surface-raised: rgba(0, 0, 0, 0.055);
 
   /* ── Structural ── */
-  --bg-sidebar: rgba(255, 255, 255, 0.99);
-  --bg-topbar: rgba(255, 255, 255, 0.9);
-  --bg-input: #ffffff;
+  --bg-sidebar: #FFFFFF;
+  --bg-topbar:  rgba(255, 255, 255, 0.95);
+  --bg-input:   #FFFFFF;
 
   /* ── Text ── */
-  --text-1: #0d1117;
-  --text-2: #334155;
-  --text-3: #64748b;
-  --text-4: #94a3b8;
+  --text-1: #0F172A;
+  --text-2: #475569;
+  --text-3: #64748B;
+  --text-4: #94A3B8;
 
   /* ── Borders ── */
-  --edge: rgba(0, 0, 0, 0.1);
-  --edge-md: rgba(0, 0, 0, 0.15);
-  --edge-strong: rgba(0, 0, 0, 0.22);
+  --edge:        #E2E8F0;
+  --edge-md:     #CBD5E1;
+  --edge-strong: #94A3B8;
 
-  /* ── Brand ── */
-  --brand: #b87924;
-  --brand-hover: #a06a1a;
-  --brand-dim: rgba(184, 121, 36, 0.65);
-  --brand-muted: rgba(184, 121, 36, 0.08);
-  --brand-border: rgba(184, 121, 36, 0.2);
-  --brand-glow: rgba(184, 121, 36, 0.1);
+  /* ── Brand (Teal) ── */
+  --brand:        #0F766E;
+  --brand-hover:  #115E59;
+  --brand-dim:    rgba(15, 118, 110, 0.60);
+  --brand-muted:  rgba(15, 118, 110, 0.10);
+  --brand-border: rgba(15, 118, 110, 0.22);
+  --brand-glow:   rgba(15, 118, 110, 0.05);
+
+  /* ── Button primary text (white on dark teal) ── */
+  --btn-primary-text: #ffffff;
 
   /* ── Status ── */
-  --status-success: #059669;
-  --status-warning: #d97706;
-  --status-danger: #dc2626;
-  --status-info: #2563eb;
+  --status-success: #16A34A;
+  --status-warning: #D97706;
+  --status-danger:  #DC2626;
+  --status-info:    #2563EB;
+
+  /* ── Status tinted backgrounds/borders ── */
+  --status-danger-bg:     #FEF2F2;
+  --status-danger-border: #FECACA;
+
+  /* ── Special statuses ── */
+  --status-external-repair: #6D28D9;
+  --status-urgent:          #EA580C;
 
   /* ── Status tinted surfaces ── */
-  --bg-success-tint: #f0fdf4;
-  --bg-danger-tint: #fef2f2;
-  --bg-warning-tint: #fffbeb;
-  --bg-success-mid: #ecfdf5;
-  --bg-danger-mid: #fef2f2;
+  --bg-success-tint: #F0FDF4;
+  --bg-danger-tint:  #FEF2F2;
+  --bg-warning-tint: #FFFBEB;
+  --bg-success-mid:  #ECFDF5;
+  --bg-danger-mid:   #FEF2F2;
 
   /* ── Status tinted borders ── */
-  --edge-success: #bbf7d0;
-  --edge-danger: #fecaca;
-  --edge-warning: #fde68a;
-
-  /* ── Status tinted backgrounds/borders (inline banners & alerts) ── */
-  --status-danger-bg: #fef2f2;
-  --status-danger-border: #fecaca;
-
-  /* ── Status: external-repair (outsourced to external workshop — purple) ── */
-  --status-external-repair: #6d28d9;
-
-  /* ── Status: urgent (subscription expiry CTA — orange) ── */
-  --status-urgent: #ea580c;
+  --edge-success: #BBF7D0;
+  --edge-danger:  #FECACA;
+  --edge-warning: #FDE68A;
 
   /* ── Table row backgrounds ── */
-  --bg-row-alt: #fafafa;
-  --bg-row-section: #f9fafb;
-  --bg-row-subhead: #f9fafb;
-  --bg-row-header: #f3f4f6;
+  --bg-row-alt:     #FAFAFA;
+  --bg-row-section: #F9FAFB;
+  --bg-row-subhead: #F9FAFB;
+  --bg-row-header:  #F3F4F6;
+  --edge-row:       #E5E7EB;
 
-  /* ── Table divider & subtle row border ── */
-  --edge-row: #e5e7eb;
-
-  /* ── Faint / hint text ── */
-  --text-hint: #9ca3af;
-  --text-neutral: #4b5563;
+  /* ── Text helpers ── */
+  --text-hint:    #9CA3AF;
+  --text-neutral: #4B5563;
 
   /* ── Floating panel ── */
-  --bg-panel: #ffffff;
+  --bg-panel: #FFFFFF;
 
   /* ── Deep background ── */
-  --bg-deep: #f0f4ff;
+  --bg-deep: #EEF2F7;
 
   /* ── Focus ── */
-  --focus-edge: rgba(184, 121, 36, 0.5);
-  --focus-ring: 0 0 0 3px rgba(184, 121, 36, 0.12);
+  --focus-edge: rgba(15, 118, 110, 0.50);
+  --focus-ring: 0 0 0 3px rgba(15, 118, 110, 0.12);
 
   /* ── Shadows ── */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.22), 0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-card:  0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 28px rgba(0, 0, 0, 0.07);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.22), 0 4px 20px rgba(0, 0, 0, 0.10);
 
   /* ── Caret / selection ── */
-  --caret-color: rgba(184, 121, 36, 0.85);
-  --selection-bg: rgba(184, 121, 36, 0.18);
+  --caret-color:  rgba(15, 118, 110, 0.85);
+  --selection-bg: rgba(15, 118, 110, 0.15);
+
+  /* ── Table ── */
+  --table-header-bg:   #F8FAFC;
+  --table-header-text: #64748B;
+  --table-border:      #E2E8F0;
+  --table-row-hover:   rgba(15, 118, 110, 0.04);
 
   /* ── Legacy --erp-* light overrides ── */
-  --erp-bg-app: var(--bg-app);
-  --erp-bg-sidebar: var(--bg-sidebar);
-  --erp-bg-topbar: var(--bg-topbar);
-  --erp-bg-card: var(--bg-card);
-  --erp-bg-surface: var(--surface);
+  --erp-bg-app:      var(--bg-app);
+  --erp-bg-sidebar:  var(--bg-sidebar);
+  --erp-bg-topbar:   var(--bg-topbar);
+  --erp-bg-card:     var(--bg-card);
+  --erp-bg-surface:  var(--surface);
   --erp-bg-elevated: var(--bg-elevated);
-  --erp-bg-panel: var(--bg-card);
-  --erp-bg-soft: var(--surface);
-  --erp-bg-active: rgba(0, 0, 0, 0.07);
-  --erp-bg-input: var(--bg-input);
-  --erp-input-text: var(--text-1);
-  --erp-text: var(--text-1);
-  --erp-text-1: var(--text-1);
-  --erp-text-2: var(--text-2);
-  --erp-text-3: var(--text-3);
-  --erp-text-4: var(--text-4);
-  --erp-border: var(--edge);
-  --erp-border-md: var(--edge-md);
+  --erp-bg-panel:    var(--bg-panel);
+  --erp-bg-soft:     var(--surface);
+  --erp-bg-active:   rgba(0, 0, 0, 0.06);
+  --erp-bg-input:    var(--bg-input);
+  --erp-input-text:  var(--text-1);
+  --erp-text:        var(--text-1);
+  --erp-text-1:      var(--text-1);
+  --erp-text-2:      var(--text-2);
+  --erp-text-3:      var(--text-3);
+  --erp-text-4:      var(--text-4);
+  --erp-border:      var(--edge);
+  --erp-border-md:   var(--edge-md);
   --erp-border-strong: var(--edge-strong);
-  --erp-brand: var(--brand);
-  --erp-brand-muted: var(--brand-muted);
-  --erp-brand-border: var(--brand-border);
-  --erp-accent: var(--brand);
-  --erp-focus-border: var(--focus-edge);
-  --erp-focus-shadow: var(--focus-ring);
-  --erp-success: var(--status-success);
-  --erp-warning: var(--status-warning);
-  --erp-danger: var(--status-danger);
-  --erp-info: var(--status-info);
-  --erp-shadow-card: var(--shadow-card);
-  --erp-chip-bg: var(--surface);
-  --erp-chip-border: var(--edge);
-  --erp-caret: var(--caret-color);
-  --erp-selection-bg: var(--selection-bg);
+  --erp-brand:         var(--brand);
+  --erp-brand-hover:   var(--brand-hover);
+  --erp-brand-muted:   var(--brand-muted);
+  --erp-brand-border:  var(--brand-border);
+  --erp-brand-glow:    var(--brand-glow);
+  --erp-accent:        var(--brand);
+  --erp-accent-hover:  var(--brand-hover);
+  --erp-focus-border:  var(--focus-edge);
+  --erp-focus-shadow:  var(--focus-ring);
+  --erp-success:       var(--status-success);
+  --erp-warning:       var(--status-warning);
+  --erp-danger:        var(--status-danger);
+  --erp-info:          var(--status-info);
+  --erp-shadow-card:   var(--shadow-card);
+  --erp-shadow-hover:  var(--shadow-hover);
+  --erp-shadow-modal:  var(--shadow-modal);
+  --erp-chip-bg:       var(--surface);
+  --erp-chip-border:   var(--edge);
+  --erp-caret:         var(--caret-color);
+  --erp-selection-bg:  var(--selection-bg);
+
+  /* ── amber-* compat ── */
+  --amber-glow:   rgba(15, 118, 110, 0.05);
+  --amber-border: rgba(15, 118, 110, 0.18);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -314,9 +337,7 @@ html.light {
 /* ── Glass-input focus ── */
 .glass-input:focus {
   border-color: var(--focus-edge) !important;
-  box-shadow:
-    var(--focus-ring),
-    0 0 16px var(--brand-glow) !important;
+  box-shadow: var(--focus-ring) !important;
 }
 
 /* ── Caret ── */
@@ -354,7 +375,7 @@ textarea::selection {
   border: 1.5px solid var(--edge-md);
 }
 
-/* ── Purchases search/exchange focus ── */
+/* ── Purchases search/exchange focus — override hardcoded amber ── */
 .purch-search-wrap:focus-within,
 .purch-row:focus-within {
   border-color: var(--focus-edge) !important;

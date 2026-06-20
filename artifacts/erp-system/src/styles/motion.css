@@ -1,0 +1,69 @@
+/*
+ * ════════════════════════════════════════════════════════════════
+ *  MUHKAMPRO — Motion Layer
+ *  Calm, purposeful animation. No bounce, no spring, no glow.
+ * ════════════════════════════════════════════════════════════════
+ */
+
+:root {
+  --motion-fast:     120ms;
+  --motion-base:     180ms;
+  --motion-slow:     240ms;
+  --ease-standard:   cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in:         cubic-bezier(0.4, 0, 1, 1);
+  --ease-out:        cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* ── Keyframes ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes slide-down-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ── Utility classes ── */
+.animate-fade-in  { animation: fade-in  var(--motion-base) var(--ease-standard) both; }
+.animate-slide-up { animation: slide-up var(--motion-base) var(--ease-standard) both; }
+.animate-scale-in { animation: scale-in var(--motion-fast) var(--ease-standard) both; }
+
+/* ── Page entry ── */
+main,
+[data-page],
+.page-content {
+  animation: page-in var(--motion-base) var(--ease-standard) both;
+}
+
+/* ── Modal / dialog entrance ── */
+[role='dialog'] > *,
+.erp-modal-inner {
+  animation: scale-in var(--motion-fast) var(--ease-standard) both;
+}
+
+/* ── Reduce motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
