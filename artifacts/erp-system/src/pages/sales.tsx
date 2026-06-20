@@ -33,29 +33,30 @@ export default function Sales() {
         : tab;
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2 items-center">
-        <div className="flex bg-surface rounded-2xl p-1 border border-line">
+    <div className="erp-page" dir="rtl">
+      <div className="erp-page-header">
+        <div className="erp-tab-bar">
           {canCreateSale && (
             <button
               onClick={() => changeTab('new')}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${effectiveTab === 'new' ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
+              className={`erp-tab${effectiveTab === 'new' ? ' erp-tab--active' : ''}`}
             >
-              ➕ فاتورة بيع جديدة
+              فاتورة بيع جديدة
             </button>
           )}
           <button
             onClick={() => changeTab('history')}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${effectiveTab === 'history' ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
+            className={`erp-tab${effectiveTab === 'history' ? ' erp-tab--active' : ''}`}
           >
-            <ClipboardList className="w-3.5 h-3.5" /> سجل الفواتير
+            <ClipboardList />
+            سجل الفواتير
           </button>
           {canReturnSale && (
             <button
               onClick={() => changeTab('returns')}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${effectiveTab === 'returns' ? 'bg-orange-500 text-ink shadow' : 'text-ink/50 hover:text-ink'}`}
+              className={`erp-tab${effectiveTab === 'returns' ? ' erp-tab--active' : ''}`}
             >
-              ↩ المرتجعات
+              المرتجعات
             </button>
           )}
         </div>

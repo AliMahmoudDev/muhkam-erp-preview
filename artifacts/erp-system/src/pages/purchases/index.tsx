@@ -17,26 +17,28 @@ export default function Purchases() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2 items-center">
-        <div className="flex bg-surface rounded-2xl p-1 border border-line">
+    <div className="erp-page" dir="rtl">
+      <div className="erp-page-header">
+        <div className="erp-tab-bar">
           <button
             onClick={() => changeTab('new')}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${tab === 'new' ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
+            className={`erp-tab${tab === 'new' ? ' erp-tab--active' : ''}`}
           >
             فاتورة شراء
           </button>
           <button
             onClick={() => changeTab('history')}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${tab === 'history' ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
+            className={`erp-tab${tab === 'history' ? ' erp-tab--active' : ''}`}
           >
-            <ClipboardList className="w-3.5 h-3.5" /> سجل الفواتير
+            <ClipboardList />
+            سجل الفواتير
           </button>
           <button
             onClick={() => changeTab('returns')}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${tab === 'returns' ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
+            className={`erp-tab${tab === 'returns' ? ' erp-tab--active' : ''}`}
           >
-            <RotateCcw className="w-3.5 h-3.5" /> المرتجعات
+            <RotateCcw />
+            المرتجعات
           </button>
         </div>
       </div>

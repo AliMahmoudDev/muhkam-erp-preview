@@ -70,19 +70,22 @@ export default function ScrapInventory({ embedded = false }: { embedded?: boolea
   const total = items.reduce((s, i) => s + Number(i.quantity) * Number(i.unit_cost), 0);
 
   return (
-    <div className={embedded ? 'space-y-4' : 'p-4 space-y-4 h-full overflow-y-auto'} dir="rtl">
-      <div className="flex items-center justify-between">
+    <div className={embedded ? 'erp-page' : 'erp-page h-full overflow-y-auto'} dir="rtl">
+      <div className="erp-page-header">
         {!embedded && (
-          <h1 className="text-xl font-black text-ink flex items-center gap-2">
+          <h1 className="erp-page-title flex items-center gap-2">
             <Trash2 className="w-5 h-5 text-amber-400" /> مخزن التوالف
           </h1>
         )}
-        <button
-          onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-bold"
-        >
-          <Plus className="w-3.5 h-3.5" /> إضافة
-        </button>
+        <div className="erp-page-actions">
+          <button
+            onClick={() => setShowNew(true)}
+            className="erp-btn erp-btn-sm"
+            style={{ background: 'rgba(245,158,11,0.2)', color: 'var(--color-amber-300, #fcd34d)', border: '1px solid rgba(245,158,11,0.3)' }}
+          >
+            <Plus className="w-3.5 h-3.5" /> إضافة
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

@@ -115,30 +115,30 @@ export default function Attendance() {
   }
 
   return (
-    <div className="p-4 space-y-4" dir="rtl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="erp-page" dir="rtl">
+      <div className="erp-page-header">
         <div className="flex items-center gap-2">
           <Clock size={22} className="text-amber-400" />
-          <h1 className="text-xl font-bold text-ink">الحضور والانصراف</h1>
+          <h1 className="erp-page-title">الحضور والانصراف</h1>
         </div>
         {canManage && (
-          <div className="flex gap-2 flex-wrap">
+          <div className="erp-page-actions">
             <button
               onClick={() => setShowCheckIn(true)}
-              className="erp-btn erp-btn-primary flex items-center gap-1 text-sm"
+              className="erp-btn erp-btn-primary erp-btn-sm"
             >
               <LogIn size={14} /> تسجيل حضور
             </button>
             <button
               onClick={() => setShowCheckOut(true)}
-              className="erp-btn erp-btn-secondary flex items-center gap-1 text-sm"
+              className="erp-btn erp-btn-secondary erp-btn-sm"
             >
               <LogOut size={14} /> تسجيل انصراف
             </button>
             {activeTab === 'deductions' && (
               <button
                 onClick={() => setShowDedSettings(true)}
-                className="erp-btn erp-btn-ghost flex items-center gap-1 text-sm"
+                className="erp-btn erp-btn-ghost erp-btn-sm"
               >
                 <Settings size={14} /> إعدادات الخصم
               </button>
@@ -149,12 +149,12 @@ export default function Attendance() {
 
       <AttendanceSummary total={allRecords.length} present={present} absent={absent} late={late} />
 
-      <div className="flex gap-1 border-b border-line mb-2 flex-wrap">
+      <div className="erp-tab-bar erp-tab-bar--underline">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-t-lg transition-all ${activeTab === t.key ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-400' : 'text-ink/50 hover:text-ink/80'}`}
+            className={`erp-tab${activeTab === t.key ? ' erp-tab--active' : ''}`}
           >
             <t.icon size={14} /> {t.label}
           </button>

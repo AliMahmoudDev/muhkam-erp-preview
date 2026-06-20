@@ -247,7 +247,7 @@ export default function Expenses() {
     );
 
   return (
-    <div className="space-y-5">
+    <div className="erp-page">
       {/* Modals */}
       {confirmDeleteId !== null && (
         <ConfirmModal
@@ -270,60 +270,53 @@ export default function Expenses() {
       {detailItem && <ExpenseDetailModal item={detailItem} onClose={() => setDetailItem(null)} />}
 
       {/* ─── Header ─── */}
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-xl font-bold text-ink flex-shrink-0">
+      <div className="erp-page-header">
+        <h1 className="erp-page-title">
           {activeTab === 'expenses' ? 'إدارة المصروفات' : 'الديون المعدومة / المتعثرة'}
-        </h2>
-        <div className="flex-1" />
-        {activeTab === 'expenses' && (
-          <button
-            onClick={() => setShowReports(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-surface text-ink/60 border border-line hover:bg-raised transition-colors"
-          >
-            <BarChart2 className="w-4 h-4" /> تقارير المصروفات
-          </button>
-        )}
-        {canAdd && activeTab === 'expenses' && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm"
-          >
-            <Plus className="w-4 h-4" /> إضافة مصروف
-          </button>
-        )}
-        {canAdd && activeTab === 'debts' && (
-          <button
-            onClick={() => {
-              const fn = (window as unknown as { __openBadDebtForm?: () => void })
-                .__openBadDebtForm;
-              if (fn) fn();
-            }}
-            className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm"
-          >
-            <Plus className="w-4 h-4" /> إضافة دين
-          </button>
-        )}
+        </h1>
+        <div className="erp-page-actions">
+          {activeTab === 'expenses' && (
+            <button
+              onClick={() => setShowReports(true)}
+              className="erp-btn erp-btn-secondary erp-btn-sm"
+            >
+              <BarChart2 className="w-4 h-4" /> تقارير المصروفات
+            </button>
+          )}
+          {canAdd && activeTab === 'expenses' && (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="erp-btn erp-btn-primary erp-btn-sm"
+            >
+              <Plus className="w-4 h-4" /> إضافة مصروف
+            </button>
+          )}
+          {canAdd && activeTab === 'debts' && (
+            <button
+              onClick={() => {
+                const fn = (window as unknown as { __openBadDebtForm?: () => void })
+                  .__openBadDebtForm;
+                if (fn) fn();
+              }}
+              className="erp-btn erp-btn-primary erp-btn-sm"
+            >
+              <Plus className="w-4 h-4" /> إضافة دين
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ─── Tabs ─── */}
-      <div className="flex items-center gap-1.5 border-b border-line -mt-1">
+      <div className="erp-tab-bar erp-tab-bar--underline">
         <button
           onClick={() => changeTab('expenses')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
-            activeTab === 'expenses'
-              ? 'border-amber-400 text-ink'
-              : 'border-transparent text-ink/40 hover:text-ink/70'
-          }`}
+          className={`erp-tab${activeTab === 'expenses' ? ' erp-tab--active' : ''}`}
         >
           <TrendingDown className="w-4 h-4" /> المصروفات
         </button>
         <button
           onClick={() => changeTab('debts')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${
-            activeTab === 'debts'
-              ? 'border-amber-400 text-ink'
-              : 'border-transparent text-ink/40 hover:text-ink/70'
-          }`}
+          className={`erp-tab${activeTab === 'debts' ? ' erp-tab--active' : ''}`}
         >
           <Ban className="w-4 h-4" /> الديون المعدومة
         </button>

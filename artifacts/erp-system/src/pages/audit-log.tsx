@@ -416,25 +416,26 @@ export default function AuditLog() {
   const uniqueUsers = [...new Set(logs.map((l) => l.username).filter(Boolean))].sort();
 
   return (
-    <div className="space-y-4" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="erp-page" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-xl font-bold text-ink flex items-center gap-2">
+          <h1 className="erp-page-title flex items-center gap-2">
             <Shield className="w-5 h-5 text-amber-400" />
             سجل التدقيق والمراجعة
           </h1>
-          <p className="text-sm text-ink/40 mt-0.5">
+          <p className="erp-page-subtitle">
             سجل شامل لجميع العمليات الحساسة — {filtered.length} من {logs.length} سجل
           </p>
         </div>
-        <button
-          onClick={() => void refetch()}
-          className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-surface rounded-xl text-sm text-ink/60 border border-line transition-all"
-        >
-          <RefreshCw className="w-4 h-4" />
-          تحديث
-        </button>
+        <div className="erp-page-actions">
+          <button
+            onClick={() => void refetch()}
+            className="erp-btn erp-btn-secondary erp-btn-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            تحديث
+          </button>
+        </div>
       </div>
 
       {/* Filters Bar */}

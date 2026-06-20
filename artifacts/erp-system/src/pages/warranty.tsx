@@ -321,23 +321,25 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
   };
 
   return (
-    <div className="space-y-4" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }} dir="rtl">
+    <div className="erp-page" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }} dir="rtl">
       {showForm && <NewWarrantyForm onClose={() => setShowForm(false)} />}
 
       {/* ── Header (hidden when embedded) ── */}
       {!embedded && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-black text-ink flex items-center gap-2">
+        <div className="erp-page-header">
+          <h1 className="erp-page-title flex items-center gap-2">
             <Shield className="w-6 h-6 text-amber-400" />
             سجلات الضمان
           </h1>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn-primary flex items-center gap-2 px-4 py-2 text-sm font-bold"
-          >
-            <Plus className="w-4 h-4" />
-            سجل ضمان جديد
-          </button>
+          <div className="erp-page-actions">
+            <button
+              onClick={() => setShowForm(true)}
+              className="erp-btn erp-btn-primary erp-btn-sm"
+            >
+              <Plus className="w-4 h-4" />
+              سجل ضمان جديد
+            </button>
+          </div>
         </div>
       )}
 

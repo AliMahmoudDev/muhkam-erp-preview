@@ -149,26 +149,28 @@ export default function FiscalYears() {
   };
 
   return (
-    <div className="space-y-6 p-4" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
+    <div className="erp-page" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-xl font-bold text-ink flex items-center gap-2">
+          <h1 className="erp-page-title flex items-center gap-2">
             <Calendar className="w-5 h-5 text-amber-400" />
             إدارة السنوات المالية
           </h1>
-          <p className="text-sm text-ink/40 mt-0.5">
+          <p className="erp-page-subtitle">
             تحكم في السنوات المالية للشركة، فتح وإقفال الفترات المحاسبية
           </p>
         </div>
         {isAdmin && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-sm transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            سنة مالية جديدة
-          </button>
+          <div className="erp-page-actions">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="erp-btn erp-btn-primary erp-btn-sm"
+            >
+              <Plus className="w-4 h-4" />
+              سنة مالية جديدة
+            </button>
+          </div>
         )}
       </div>
 

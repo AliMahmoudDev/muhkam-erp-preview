@@ -33,29 +33,31 @@ export default function FixedAssetsPage() {
   const totalBookValue = totalCost - totalAccDep;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="erp-page">
       {showAdd && <AddAssetModal onClose={() => setShowAdd(false)} />}
       {selectedId !== null && (
         <AssetDetailModal assetId={selectedId} onClose={() => setSelectedId(null)} />
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="erp-page-header">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center">
             <Building2 className="w-6 h-6 text-amber-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-ink">الأصول الثابتة</h1>
-            <p className="text-ink/40 text-sm mt-0.5">إدارة الأصول وحساب الإهلاك</p>
+            <h1 className="erp-page-title">الأصول الثابتة</h1>
+            <p className="erp-page-subtitle">إدارة الأصول وحساب الإهلاك</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="btn-primary px-5 py-2.5 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> إضافة أصل
-        </button>
+        <div className="erp-page-actions">
+          <button
+            onClick={() => setShowAdd(true)}
+            className="erp-btn erp-btn-primary erp-btn-sm"
+          >
+            <Plus className="w-4 h-4" /> إضافة أصل
+          </button>
+        </div>
       </div>
 
       {/* Summary */}

@@ -200,18 +200,20 @@ export default function BankReconciliationPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="erp-page">
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-ink">المطابقة البنكية</h1>
-          <p className="text-ink/50 text-sm mt-1">مطابقة كشف الحساب البنكي مع القيود المحاسبية</p>
+          <h1 className="erp-page-title">المطابقة البنكية</h1>
+          <p className="erp-page-subtitle">مطابقة كشف الحساب البنكي مع القيود المحاسبية</p>
         </div>
-        <Button
-          onClick={() => setShowAddBank(true)}
-          className="gap-2 bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" /> إضافة حساب بنكي
-        </Button>
+        <div className="erp-page-actions">
+          <Button
+            onClick={() => setShowAddBank(true)}
+            className="gap-2 bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" /> إضافة حساب بنكي
+          </Button>
+        </div>
       </div>
 
       {/* Banks List */}

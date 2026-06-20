@@ -285,16 +285,17 @@ export default function Repairs() {
         style={{ borderLeft: selectedJob ? '1px solid var(--erp-border)' : undefined }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black text-ink flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-amber-400" />
+        <div className="erp-page-header" style={{ flexWrap: 'nowrap' }}>
+          <h1 className="erp-page-title" style={{ fontSize: '18px' }}>
+            <Wrench className="w-5 h-5 text-amber-400 inline-block ml-2" />
             بطاقات الصيانة
           </h1>
-          <div className="flex items-center gap-1.5">
+          <div className="erp-page-actions">
             <button
               onClick={() => setShowSettings(true)}
               title="إعدادات بنود الفحص"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-surface hover:bg-surface border border-line text-ink/40 hover:text-ink/70 text-xs transition-all"
+              className="erp-btn erp-btn-icon"
+              aria-label="إعدادات"
             >
               <Settings className="w-3.5 h-3.5" />
             </button>
@@ -303,7 +304,7 @@ export default function Repairs() {
                 setShowNewForm(true);
                 setSelectedJob(null);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-300 text-xs font-bold transition-all"
+              className="erp-btn erp-btn-primary erp-btn-sm"
             >
               <Plus className="w-3.5 h-3.5" /> بطاقة جديدة
             </button>

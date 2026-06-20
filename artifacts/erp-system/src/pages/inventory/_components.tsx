@@ -17,11 +17,7 @@ export function TabBtn({
   return (
     <button
       onClick={() => onClick(id)}
-      className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px whitespace-nowrap ${
-        isActive
-          ? 'border-amber-400 text-amber-300'
-          : 'border-transparent text-ink/50 hover:text-ink/80'
-      }`}
+      className={`erp-tab${isActive ? ' erp-tab--active' : ''}`}
     >
       {icon}
       {label}
@@ -48,11 +44,7 @@ export function TabBtnBadge({
   return (
     <button
       onClick={() => onClick(id)}
-      className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px whitespace-nowrap ${
-        isActive
-          ? 'border-amber-400 text-amber-300'
-          : 'border-transparent text-ink/50 hover:text-ink/80'
-      }`}
+      className={`erp-tab${isActive ? ' erp-tab--active' : ''}`}
     >
       {icon}
       {label}

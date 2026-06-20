@@ -205,7 +205,7 @@ export default function Treasury() {
   };
 
   return (
-    <div className="space-y-8" dir="rtl">
+    <div className="erp-page" dir="rtl">
       {/* ── Modals ── */}
       {openModal === 'receipt' && <ReceiptModal onClose={() => setOpenModal(null)} />}
       {openModal === 'payment' && <PaymentModal onClose={() => setOpenModal(null)} />}
@@ -235,19 +235,21 @@ export default function Treasury() {
       />
 
       {/* ── Page title ── */}
-      <div>
-        <h1 className="text-2xl font-black text-ink flex items-center gap-3">
-          <Wallet className="w-7 h-7 text-amber-400" />
-          السندات والخزينة
-        </h1>
-        <p className="text-ink/40 text-sm mt-1">
-          {new Date().toLocaleDateString('ar-EG-u-nu-latn', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
+      <div className="erp-page-header">
+        <div>
+          <h1 className="erp-page-title flex items-center gap-3">
+            <Wallet className="w-7 h-7 text-amber-400" />
+            السندات والخزينة
+          </h1>
+          <p className="erp-page-subtitle">
+            {new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        </div>
       </div>
 
       {/* ── KPI cards ── */}

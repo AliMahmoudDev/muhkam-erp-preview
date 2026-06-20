@@ -256,20 +256,22 @@ export default function Payroll() {
   const unpaidCount = recordsList.filter((r) => r.status !== 'paid').length;
 
   return (
-    <div className="p-4 space-y-4" dir="rtl">
+    <div className="erp-page" dir="rtl">
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
+      <div className="erp-page-header">
+        <h1 className="erp-page-title flex items-center gap-2">
           <Wallet size={22} className="text-amber-400" />
-          <h1 className="text-xl font-bold text-ink">إدارة الرواتب</h1>
-        </div>
+          إدارة الرواتب
+        </h1>
         {canManage && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="erp-btn erp-btn-primary flex items-center gap-1 text-sm"
-          >
-            <Plus size={14} /> فترة جديدة
-          </button>
+          <div className="erp-page-actions">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="erp-btn erp-btn-primary erp-btn-sm"
+            >
+              <Plus size={14} /> فترة جديدة
+            </button>
+          </div>
         )}
       </div>
 

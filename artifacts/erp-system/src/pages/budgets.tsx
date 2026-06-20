@@ -268,17 +268,19 @@ export default function BudgetsPage() {
 
   /* ── List View ───────────────────────────────────────────────── */
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="erp-page">
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-ink">الميزانية التقديرية</h1>
-          <p className="text-ink/50 text-sm mt-1">
+          <h1 className="erp-page-title">الميزانية التقديرية</h1>
+          <p className="erp-page-subtitle">
             مقارنة الميزانية بالأرقام الفعلية من القيود المحاسبية
           </p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4" /> إنشاء ميزانية
-        </Button>
+        <div className="erp-page-actions">
+          <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4" /> إنشاء ميزانية
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

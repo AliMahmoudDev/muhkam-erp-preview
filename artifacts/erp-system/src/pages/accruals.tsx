@@ -118,17 +118,19 @@ export default function AccrualsPage() {
   });
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="erp-page">
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-ink">الاستحقاقات والمدفوعات المقدمة</h1>
-          <p className="text-ink/50 text-sm mt-1">
+          <h1 className="erp-page-title">الاستحقاقات والمدفوعات المقدمة</h1>
+          <p className="erp-page-subtitle">
             إدارة المصروفات/الإيرادات المؤجلة والمستحقة مع القيود التلقائية
           </p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4" /> إضافة جديد
-        </Button>
+        <div className="erp-page-actions">
+          <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4" /> إضافة جديد
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

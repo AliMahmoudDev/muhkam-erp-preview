@@ -98,17 +98,19 @@ export default function CostCentersPage() {
   });
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="erp-page">
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-ink">مراكز التكلفة</h1>
-          <p className="text-ink/50 text-sm mt-1">
+          <h1 className="erp-page-title">مراكز التكلفة</h1>
+          <p className="erp-page-subtitle">
             تقسيم الإيرادات والمصروفات على مراكز التكلفة وتقارير الربحية
           </p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4" /> إضافة مركز تكلفة
-        </Button>
+        <div className="erp-page-actions">
+          <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4" /> إضافة مركز تكلفة
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

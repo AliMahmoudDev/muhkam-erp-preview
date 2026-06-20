@@ -16,31 +16,19 @@ export default function Products() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-1 border-b border-line pb-0">
+    <div className="erp-page">
+      <div className="erp-tab-bar erp-tab-bar--underline">
         <button
           onClick={() => changeTab('products')}
-          className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all ${
-            activeTab === 'products'
-              ? 'bg-surface text-ink border border-line border-b-transparent'
-              : 'text-ink/40 hover:text-ink/70'
-          }`}
+          className={`erp-tab${activeTab === 'products' ? ' erp-tab--active' : ''}`}
         >
-          <span className="flex items-center gap-2">
-            <Package className="w-4 h-4" /> المنتجات
-          </span>
+          <Package className="w-4 h-4" /> المنتجات
         </button>
         <button
           onClick={() => changeTab('categories')}
-          className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all ${
-            activeTab === 'categories'
-              ? 'bg-surface text-ink border border-line border-b-transparent'
-              : 'text-ink/40 hover:text-ink/70'
-          }`}
+          className={`erp-tab${activeTab === 'categories' ? ' erp-tab--active' : ''}`}
         >
-          <span className="flex items-center gap-2">
-            <Tag className="w-4 h-4" /> التصنيفات
-          </span>
+          <Tag className="w-4 h-4" /> التصنيفات
         </button>
       </div>
 

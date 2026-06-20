@@ -230,7 +230,7 @@ export default function Income() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="erp-page">
       {confirmDeleteId !== null && (
         <ConfirmModal
           title="حذف الإيراد"
@@ -244,14 +244,16 @@ export default function Income() {
       {detailItem && <IncomeDetailModal item={detailItem} onClose={() => setDetailItem(null)} />}
 
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-ink">إدارة الإيرادات الإضافية</h2>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold"
-        >
-          <Plus className="w-5 h-5" /> إضافة إيراد
-        </button>
+      <div className="erp-page-header">
+        <h1 className="erp-page-title">إدارة الإيرادات الإضافية</h1>
+        <div className="erp-page-actions">
+          <button
+            onClick={() => setShowAdd(true)}
+            className="erp-btn erp-btn-primary erp-btn-sm"
+          >
+            <Plus className="w-4 h-4" /> إضافة إيراد
+          </button>
+        </div>
       </div>
 
       {/* Stats Row */}

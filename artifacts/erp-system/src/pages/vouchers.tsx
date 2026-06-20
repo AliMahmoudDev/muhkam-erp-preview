@@ -410,7 +410,7 @@ export default function Vouchers() {
     .reduce((s, r) => s + r.amount, 0);
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="erp-page" dir="rtl">
       {/* Confirm delete */}
       {confirmDelete && (
         <ConfirmModal
@@ -440,13 +440,13 @@ export default function Vouchers() {
       </div>
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
+          <h1 className="erp-page-title flex items-center gap-3">
             <ReceiptText className="w-6 h-6 text-amber-400" />
             سجل السندات
           </h1>
-          <p className="text-ink/40 text-sm mt-1">
+          <p className="erp-page-subtitle">
             عرض جميع السندات والتحويلات — لإنشاء سند جديد انتقل إلى{' '}
             <button
               onClick={() => navigate('/treasury')}
@@ -456,15 +456,15 @@ export default function Vouchers() {
             </button>
           </p>
         </div>
-
-        {/* Quick create link */}
-        <button
-          onClick={() => navigate('/treasury')}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 whitespace-nowrap"
-        >
-          <Wallet className="w-4 h-4" />
-          إضافة سند جديد
-        </button>
+        <div className="erp-page-actions">
+          <button
+            onClick={() => navigate('/treasury')}
+            className="erp-btn erp-btn-primary erp-btn-sm"
+          >
+            <Wallet className="w-4 h-4" />
+            إضافة سند جديد
+          </button>
+        </div>
       </div>
 
       {/* Safe balances */}

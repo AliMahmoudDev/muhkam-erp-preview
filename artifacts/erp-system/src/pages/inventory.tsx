@@ -276,11 +276,11 @@ export default function Inventory() {
   }
 
   return (
-    <div className="p-6 space-y-6 text-right" dir="rtl">
+    <div className="erp-page" dir="rtl">
       {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
       <div>
         <div
-          className="flex border-b border-line mb-6 overflow-x-auto"
+          className="erp-tab-bar erp-tab-bar--underline overflow-x-auto mb-6"
           style={{ scrollbarWidth: 'none' }}
         >
           <TabBtn
@@ -308,7 +308,7 @@ export default function Inventory() {
           )}
           {canAdjustInventory && (
             <Link to="/transfers">
-              <button className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold border-b-2 border-transparent text-ink/50 hover:text-ink/80 transition-colors -mb-px whitespace-nowrap">
+              <button className="erp-tab">
                 <Truck className="w-4 h-4" />
                 التحويلات بين الفروع
               </button>
