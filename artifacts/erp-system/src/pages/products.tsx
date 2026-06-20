@@ -16,7 +16,15 @@ export default function Products() {
   };
 
   return (
-    <div className="erp-page">
+    <div className="erp-page" dir="rtl">
+      {/* ══ Page Header ═══════════════════════════════════════════════════════ */}
+      <div className="erp-page-header">
+        <div>
+          <h1 className="erp-page-title">المنتجات</h1>
+          <p className="erp-page-subtitle">إدارة المنتجات والتصنيفات</p>
+        </div>
+      </div>
+
       <div className="erp-tab-bar erp-tab-bar--underline">
         <button
           onClick={() => changeTab('products')}

@@ -277,6 +277,13 @@ export default function Inventory() {
 
   return (
     <div className="erp-page" dir="rtl">
+      {/* ══ Page Header ═══════════════════════════════════════════════════════ */}
+      <div className="erp-page-header">
+        <div>
+          <h1 className="erp-page-title">المخزون</h1>
+          <p className="erp-page-subtitle">إدارة المنتجات والكميات وحركات المخزون</p>
+        </div>
+      </div>
       {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
       <div>
         <div
