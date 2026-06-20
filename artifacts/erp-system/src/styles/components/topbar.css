@@ -128,3 +128,126 @@ html.light .erp-hero-strip {
   border-color: var(--edge-md) !important;
 }
 
+
+/* ══════════════════════════════════════════════════
+   SPRINT 17 — Search UX additions
+   ══════════════════════════════════════════════════ */
+
+/* ⌘K keyboard shortcut badge */
+.erp-search-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 5px;
+  border: 1px solid var(--edge);
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-4);
+  background: transparent;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  opacity: 0.65;
+  pointer-events: none;
+}
+html.light .erp-search-kbd {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+}
+
+/* Section group label inside dropdown */
+.erp-search-group-label {
+  padding: 10px 14px 3px;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-4);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Muted route hint shown at end of each result row */
+.erp-search-route {
+  font-size: 10px;
+  color: var(--text-4);
+  opacity: 0.55;
+  direction: ltr;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+/* Footer row inside dropdown */
+.erp-search-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-top: 1px solid var(--edge);
+  font-size: 10px;
+  color: var(--text-4);
+  flex-shrink: 0;
+}
+.erp-search-footer-sep {
+  width: 1px;
+  height: 10px;
+  background: var(--edge);
+  flex-shrink: 0;
+}
+
+/* Empty state inside dropdown */
+.erp-search-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 16px;
+  font-size: 13px;
+  color: var(--text-4);
+}
+
+/* ══════════════════════════════════════════════════
+   MOBILE SEARCH OVERLAY
+   ══════════════════════════════════════════════════ */
+.erp-mobile-search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.erp-mobile-search-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--edge-md);
+  box-shadow: var(--shadow-modal);
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  animation: slide-down-search 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes slide-down-search {
+  from { transform: translateY(-8px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+html.light .erp-mobile-search-panel {
+  background: #ffffff;
+}
+.erp-mobile-search-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--edge);
+  flex-shrink: 0;
+}
+.erp-mobile-search-results {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 8px;
+}

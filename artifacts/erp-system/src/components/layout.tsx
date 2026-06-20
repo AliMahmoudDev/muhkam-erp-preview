@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState, useRef, useCallback } from 'react';
+import { ReactNode, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { MobileNav } from '@/components/MobileNav';
 import { useQuery } from '@tanstack/react-query';
@@ -77,8 +77,28 @@ function getInitials(name: string) {
 }
 
 /* ─────────────────────────────────────────────────
-   TOPBAR SEARCH
-   Keyboard: ↑↓ navigate, Enter confirm, Esc close
+   SHARED SEARCH HELPER — groups navItems by section
+───────────────────────────────────────────────── */
+function getSearchGroups(navItems: typeof NAV_ITEMS, query: string) {
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? navItems.filter(
+        (i) => i.name.includes(query.trim()) || i.href.includes(q)
+      )
+    : navItems.slice(0, 8);
+  const groups: { label: string; items: typeof NAV_ITEMS }[] = [];
+  NAV_SECTIONS.forEach((section) => {
+    const sectionItems = filtered.filter((i) => section.hrefs.includes(i.href));
+    if (sectionItems.length) groups.push({ label: section.label, items: sectionItems });
+  });
+  return { groups, flat: groups.flatMap((g) => g.items) };
+}
+
+/* ─────────────────────────────────────────────────
+   TOPBAR SEARCH (desktop md+)
+   Keyboard : ↑↓ navigate · Enter confirm · Esc close
+   Global   : Cmd/Ctrl+K focuses (won't steal focus
+              from other inputs on the page)
 ───────────────────────────────────────────────── */
 function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
   const [query, setQuery] = useState('');
@@ -88,11 +108,10 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const results = query.trim()
-    ? navItems
-        .filter((i) => i.name.includes(query.trim()) || i.href.includes(query.toLowerCase()))
-        .slice(0, 7)
-    : navItems.slice(0, 7);
+  const { groups, flat } = useMemo(
+    () => getSearchGroups(navItems, query),
+    [navItems, query]
+  );
 
   const go = useCallback(
     (href: string) => {
@@ -108,13 +127,13 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
     if (!open) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setIdx((i) => Math.min(i + 1, results.length - 1));
+      setIdx((i) => Math.min(i + 1, flat.length - 1));
     }
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       setIdx((i) => Math.max(i - 1, 0));
     }
-    if (e.key === 'Enter' && results[idx]) go(results[idx].href);
+    if (e.key === 'Enter' && flat[idx]) go(flat[idx].href);
     if (e.key === 'Escape') {
       setOpen(false);
       inputRef.current?.blur();
@@ -123,9 +142,29 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
 
   useEffect(() => setIdx(0), [query]);
 
+  /* Global Cmd/Ctrl+K → focus this search field */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        const active = document.activeElement as HTMLElement | null;
+        const tag = active?.tagName;
+        /* Don't steal focus from other text inputs / textareas */
+        if (tag === 'TEXTAREA') return;
+        if (tag === 'INPUT' && active !== inputRef.current) return;
+        e.preventDefault();
+        inputRef.current?.focus();
+        setOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  /* Click outside → close */
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -133,9 +172,11 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
 
   const iconColor = 'var(--text-hint)';
   const inputColor = 'var(--text-1)';
+  const showDropdown = open && flat.length > 0;
+  const showEmpty = open && query.trim().length > 0 && flat.length === 0;
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', width: '240px', flexShrink: 0 }}>
+    <div ref={wrapRef} style={{ position: 'relative', width: '260px', flexShrink: 0 }}>
       <div className="erp-topbar-search">
         <Search style={{ width: 14, height: 14, color: iconColor, flexShrink: 0 }} />
         <input
@@ -148,6 +189,7 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
           onFocus={() => setOpen(true)}
           onKeyDown={handleKey}
           placeholder="ابحث في الصفحات..."
+          aria-label="البحث في صفحات النظام"
           style={{
             flex: 1,
             border: 'none',
@@ -159,7 +201,7 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
             caretColor: 'var(--erp-caret)',
           }}
         />
-        {query && (
+        {query ? (
           <button
             onClick={() => {
               setQuery('');
@@ -173,27 +215,191 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
               color: iconColor,
               display: 'flex',
             }}
+            aria-label="مسح البحث"
           >
             <X style={{ width: 12, height: 12 }} />
           </button>
+        ) : (
+          <kbd className="erp-search-kbd">⌘K</kbd>
         )}
       </div>
 
-      {open && results.length > 0 && (
-        <div className="erp-search-dropdown">
-          {results.map((item, i) => (
-            <div
-              key={item.href}
-              className={`erp-search-item ${i === idx ? 'active' : ''}`}
-              onMouseDown={() => go(item.href)}
-              onMouseEnter={() => setIdx(i)}
-            >
-              <item.icon style={{ width: 14, height: 14, opacity: 0.55, flexShrink: 0 }} />
-              <span>{item.name}</span>
+      {showDropdown && (
+        <div className="erp-search-dropdown" role="listbox" aria-label="نتائج البحث">
+          {groups.map((group) => (
+            <div key={group.label}>
+              <div className="erp-search-group-label">{group.label}</div>
+              {group.items.map((item) => {
+                const fi = flat.findIndex((f) => f.href === item.href);
+                return (
+                  <div
+                    key={item.href}
+                    className={`erp-search-item${fi === idx ? ' active' : ''}`}
+                    onMouseDown={() => go(item.href)}
+                    onMouseEnter={() => setIdx(fi)}
+                    role="option"
+                    aria-selected={fi === idx}
+                  >
+                    <item.icon
+                      style={{ width: 14, height: 14, opacity: 0.55, flexShrink: 0 }}
+                    />
+                    <span style={{ flex: 1 }}>{item.name}</span>
+                    <span className="erp-search-route">{item.href}</span>
+                  </div>
+                );
+              })}
             </div>
           ))}
+          <div className="erp-search-footer">
+            <span>↑↓ للتنقل</span>
+            <span className="erp-search-footer-sep" />
+            <span>Enter للانتقال</span>
+            <span className="erp-search-footer-sep" />
+            <span>Esc للإغلاق</span>
+          </div>
         </div>
       )}
+
+      {showEmpty && (
+        <div className="erp-search-dropdown">
+          <div className="erp-search-empty">
+            <Search style={{ width: 16, height: 16 }} />
+            <span>لا توجد نتائج لـ &ldquo;{query}&rdquo;</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   MOBILE SEARCH OVERLAY — full-width panel at top
+   Tap backdrop or press Esc to dismiss
+───────────────────────────────────────────────── */
+function MobileSearchOverlay({
+  navItems,
+  onClose,
+}: {
+  navItems: typeof NAV_ITEMS;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [idx, setIdx] = useState(0);
+  const [, navigate] = useLocation();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const { groups, flat } = useMemo(
+    () => getSearchGroups(navItems, query),
+    [navItems, query]
+  );
+
+  useEffect(() => setIdx(0), [query]);
+
+  const go = (href: string) => {
+    navigate(href);
+    onClose();
+  };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { onClose(); return; }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setIdx((i) => Math.min(i + 1, flat.length - 1));
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setIdx((i) => Math.max(i - 1, 0));
+    }
+    if (e.key === 'Enter' && flat[idx]) go(flat[idx].href);
+  };
+
+  const showEmpty = query.trim().length > 0 && flat.length === 0;
+
+  return (
+    <div className="erp-mobile-search-overlay" onClick={onClose}>
+      <div
+        className="erp-mobile-search-panel"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Input row */}
+        <div className="erp-mobile-search-input-row">
+          <Search
+            style={{ width: 16, height: 16, color: 'var(--text-hint)', flexShrink: 0 }}
+          />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setIdx(0);
+            }}
+            onKeyDown={handleKey}
+            placeholder="ابحث في الصفحات..."
+            aria-label="البحث في صفحات النظام"
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: '15px',
+              fontFamily: 'inherit',
+              color: 'var(--text-1)',
+              caretColor: 'var(--erp-caret)',
+            }}
+          />
+          <button
+            onClick={onClose}
+            style={{
+              border: 'none',
+              background: 'none',
+              padding: 4,
+              cursor: 'pointer',
+              color: 'var(--text-hint)',
+              display: 'flex',
+            }}
+            aria-label="إغلاق البحث"
+          >
+            <X style={{ width: 18, height: 18 }} />
+          </button>
+        </div>
+
+        {/* Results */}
+        <div className="erp-mobile-search-results">
+          {showEmpty && (
+            <div className="erp-search-empty">
+              <Search style={{ width: 18, height: 18 }} />
+              <span>لا توجد نتائج لـ &ldquo;{query}&rdquo;</span>
+            </div>
+          )}
+          {!showEmpty &&
+            groups.map((group) => (
+              <div key={group.label}>
+                <div className="erp-search-group-label">{group.label}</div>
+                {group.items.map((item) => {
+                  const fi = flat.findIndex((f) => f.href === item.href);
+                  return (
+                    <div
+                      key={item.href}
+                      className={`erp-search-item${fi === idx ? ' active' : ''}`}
+                      onMouseDown={() => go(item.href)}
+                      onTouchEnd={(e) => { e.preventDefault(); go(item.href); }}
+                      onMouseEnter={() => setIdx(fi)}
+                    >
+                      <item.icon
+                        style={{ width: 16, height: 16, opacity: 0.6, flexShrink: 0 }}
+                      />
+                      <span style={{ flex: 1, fontSize: '14px' }}>{item.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -216,6 +422,8 @@ export function AppLayout({ children }: LayoutProps) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   /* ── Idle timeout modal ── */
   const [showIdleModal, setShowIdleModal] = useState(false);
+  /* ── Mobile search overlay ── */
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   /* ── Today's attendance record (for employees with employee_id) ── */
   const empId = user?.employee_id;
@@ -702,6 +910,14 @@ export function AppLayout({ children }: LayoutProps) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-3 flex-1 justify-end">
+            {/* Mobile search trigger — only visible below md breakpoint */}
+            <button
+              className="md:hidden erp-icon-btn"
+              onClick={() => setMobileSearchOpen(true)}
+              aria-label="بحث"
+            >
+              <Search style={{ width: 15, height: 15 }} />
+            </button>
             <NotificationBell />
             <AlertBell />
             <ThemeToggle />
@@ -792,6 +1008,14 @@ export function AppLayout({ children }: LayoutProps) {
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
+
+      {/* ── Mobile search overlay ── */}
+      {mobileSearchOpen && (
+        <MobileSearchOverlay
+          navItems={visibleNav}
+          onClose={() => setMobileSearchOpen(false)}
+        />
+      )}
 
       {/* ── Logout check-out modal ── */}
       {showLogoutModal && (
