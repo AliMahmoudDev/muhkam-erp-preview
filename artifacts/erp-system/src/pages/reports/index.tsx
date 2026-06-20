@@ -310,12 +310,12 @@ export default function Reports() {
       </div>
 
       {/* ── Sub-tab navigation (Level 2) ── */}
-      <div className="no-print flex flex-wrap gap-1.5 bg-surface rounded-2xl p-1.5 border border-line items-center">
+      <div className="no-print flex overflow-x-auto gap-1.5 bg-surface rounded-2xl p-1.5 border border-line items-center" style={{ scrollbarWidth: 'none' }}>
         {activeGroup.tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => changeTab(t.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all ${
               tab === t.id
                 ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
                 : 'text-ink/50 hover:text-ink hover:bg-surface'

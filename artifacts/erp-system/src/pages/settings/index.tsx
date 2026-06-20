@@ -207,7 +207,10 @@ export default function SettingsPage() {
       </aside>
 
       {/* ─────────── Mobile Tab Bar ─────────── */}
-      <div className="settings-sidebar lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-line px-2 py-1 flex gap-1 overflow-x-auto">
+      <div
+        className="settings-sidebar lg:hidden fixed bottom-14 left-0 right-0 z-40 border-t border-line px-2 py-1 flex gap-1 overflow-x-auto"
+        style={{ background: 'var(--bg-topbar)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
+      >
         {allTabs.map((tab) => {
           const active = activeTab === tab.id;
           const Icon = tab.icon;
@@ -227,7 +230,7 @@ export default function SettingsPage() {
       </div>
 
       {/* ─────────── Main Content ─────────── */}
-      <main className="flex-1 overflow-y-auto pb-24 lg:pb-8">
+      <main className="flex-1 overflow-y-auto pb-32 lg:pb-8">
         {/* Mobile header */}
         <div className="settings-sidebar-main lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-line flex items-center gap-2">
           <Settings className="w-4 h-4 text-amber-400" />

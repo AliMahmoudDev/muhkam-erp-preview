@@ -664,10 +664,9 @@ export function AppLayout({ children }: LayoutProps) {
         <header
           role="banner"
           aria-label="شريط العنوان"
-          className="flex items-center gap-3 shrink-0"
+          className="flex items-center gap-3 shrink-0 px-3 md:px-6"
           style={{
             height: '64px',
-            padding: '0 24px',
             background: topbarBg,
             borderBottom: topbarBdr,
             position: 'sticky',
@@ -789,7 +788,7 @@ export function AppLayout({ children }: LayoutProps) {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 overflow-y-auto" style={{ padding: '24px' }}>
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
