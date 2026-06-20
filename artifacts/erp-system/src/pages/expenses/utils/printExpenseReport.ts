@@ -29,24 +29,26 @@ export function printExpenseReport(opts: {
 
   const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"/>
     <title>تقرير المصروفات</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #1a1a2e; background: #fff; padding: 24px; font-size: 13px; }
+      body { font-family: 'Cairo', 'Segoe UI', Arial, sans-serif; direction: rtl; color: #1a1a2e; background: #fff; padding: 24px; font-size: 13px; }
       .header { text-align: center; margin-bottom: 20px; }
       .company { font-size: 22px; font-weight: 900; color: #1a1a2e; }
-      .title { font-size: 16px; font-weight: 700; color: #7c3aed; margin-top: 6px; }
+      .title { font-size: 16px; font-weight: 700; color: #1f2937; margin-top: 6px; }
       .meta { display: flex; justify-content: center; gap: 32px; margin: 12px 0 18px; font-size: 12px; color: #555; }
-      .meta span { background: #f3f0ff; padding: 4px 12px; border-radius: 6px; }
+      .meta span { background: #f3f4f6; padding: 4px 12px; border-radius: 6px; }
       table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-      th { background: #1a1a2e; color: #fff; padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 600; }
+      th { background: #1f2937; color: #fff; padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 600; }
       td { padding: 7px 10px; border-bottom: 1px solid #eee; text-align: right; }
       tr.even { background: #fafafa; }
       tr.odd  { background: #fff; }
       .num { text-align: left; font-family: monospace; }
       .amount { font-weight: 700; color: #dc2626; }
-      tfoot td { font-weight: 800; background: #f3f0ff; border-top: 2px solid #7c3aed; color: #1a1a2e; }
+      tfoot td { font-weight: 800; background: #f3f4f6; border-top: 2px solid #1f2937; color: #1a1a2e; }
       .footer { margin-top: 20px; font-size: 11px; color: #888; text-align: center; }
-      @media print { body { padding: 10px; } }
+      @media print { body { padding: 0; } @page { size: A4; margin: 12mm 15mm; } }
     </style></head><body>
     <div class="header">
       <div class="company">${esc(companyName)}</div>

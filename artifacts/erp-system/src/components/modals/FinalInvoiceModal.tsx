@@ -183,8 +183,9 @@ export default function FinalInvoiceModal({ job, onClose, onSaved }: Props) {
     const html = `<!doctype html>
 <html dir="rtl" lang="ar"><head><meta charset="utf-8"/>
 <title>فاتورة تسليم ${esc(data.job_no)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-  body{font-family:'Tahoma','Segoe UI',sans-serif;padding:8px;font-size:11px;color:#000;max-width:80mm;margin:0 auto;}
+  body{font-family:'Cairo','Tahoma','Segoe UI',sans-serif;padding:8px;font-size:11px;color:#000;max-width:80mm;margin:0 auto;}
   h1{text-align:center;font-size:13px;margin:6px 0;border-bottom:1px dashed #000;padding-bottom:4px;}
   .row{display:flex;justify-content:space-between;margin:2px 0;}
   .label{color:#555;}

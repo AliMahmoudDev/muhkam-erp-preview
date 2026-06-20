@@ -54,8 +54,8 @@ export function printSaleInvoice(sale: FullSaleData): void {
   <div class="inv-head">
     <div>
       <div class="co-name">${escapeHtml(s.companyName)}</div>
-      ${s.phone ? `<div class="co-sub">📞 ${escapeHtml(s.phone)}</div>` : ''}
-      ${s.address ? `<div class="co-sub">📍 ${escapeHtml(s.address)}</div>` : ''}
+      ${s.phone ? `<div class="co-sub">هاتف: ${escapeHtml(s.phone)}</div>` : ''}
+      ${s.address ? `<div class="co-sub">عنوان: ${escapeHtml(s.address)}</div>` : ''}
     </div>
     <div class="inv-meta">
       <div class="inv-title">فاتورة مبيعات</div>
@@ -98,7 +98,7 @@ export function printSaleInvoice(sale: FullSaleData): void {
       ${escapeHtml(s.companyName)}<br>تم الإنشاء: ${fmtDate(sale.created_at)}
     </div>
   </div>
-  <div class="thank">🙏 شكراً لتعاملكم معنا — ${escapeHtml(s.companyName)}</div>
+  <div class="thank">شكراً لتعاملكم معنا — ${escapeHtml(s.companyName)}</div>
 </div>`;
 
   invoiceWindow(escapeHtml(sale.invoice_no), body);
@@ -157,8 +157,8 @@ export function printPurchaseInvoice(purchase: FullPurchaseData): void {
   <div class="inv-head">
     <div>
       <div class="co-name">${escapeHtml(s.companyName)}</div>
-      ${s.phone ? `<div class="co-sub">📞 ${escapeHtml(s.phone)}</div>` : ''}
-      ${s.address ? `<div class="co-sub">📍 ${escapeHtml(s.address)}</div>` : ''}
+      ${s.phone ? `<div class="co-sub">هاتف: ${escapeHtml(s.phone)}</div>` : ''}
+      ${s.address ? `<div class="co-sub">عنوان: ${escapeHtml(s.address)}</div>` : ''}
     </div>
     <div class="inv-meta">
       <div class="inv-title" style="color:#2563eb">فاتورة مشتريات</div>
@@ -200,7 +200,7 @@ export function printPurchaseInvoice(purchase: FullPurchaseData): void {
       ${escapeHtml(s.companyName)}<br>تم التسجيل: ${fmtDate(purchase.created_at)}
     </div>
   </div>
-  <div class="thank">📦 تم استلام البضاعة بنجاح — ${escapeHtml(s.companyName)}</div>
+  <div class="thank">تم استلام البضاعة بنجاح — ${escapeHtml(s.companyName)}</div>
 </div>`;
 
   invoiceWindow(escapeHtml(purchase.invoice_no), body);

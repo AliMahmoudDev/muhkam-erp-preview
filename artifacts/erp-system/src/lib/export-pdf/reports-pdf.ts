@@ -165,7 +165,7 @@ export function printPLReport(data: PLReportData): void {
   <div class="pl-footer">
     <span>طُبع: ${now}</span>
     <span>عدد الفواتير: ${data.invoice_count}${data.item_count ? ` · ${data.item_count} صنف` : ''}</span>
-    <span>نظام هالال تك ERP</span>
+    <span>${s.companyName}</span>
   </div>
 
 </div>`;

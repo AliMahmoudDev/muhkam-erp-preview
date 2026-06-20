@@ -76,7 +76,7 @@ ${invoice.customer_name ? `<div class="row"><span>العميل:</span><span>${es
 <div class="row total-row"><span>الإجمالي</span><span>${invoice.total_amount.toFixed(2)} ج.م</span></div>
 <div class="row" style="margin-top:3px;"><span>طريقة الدفع:</span><span>${escapeHtml(payLabel[invoice.payment_type] ?? invoice.payment_type)}</span></div>
 <div class="sep"></div>
-<div class="footer">شكراً لتعاملكم معنا 🙏<br/>${escapeHtml(companyName)} © ${now.getFullYear()}</div>
+<div class="footer">شكراً لتعاملكم معنا<br/>${escapeHtml(companyName)} © ${now.getFullYear()}</div>
 </body></html>`;
 
   openPrintWindow(html, { width: 340, height: 600, delay: 250, autoClose: true });

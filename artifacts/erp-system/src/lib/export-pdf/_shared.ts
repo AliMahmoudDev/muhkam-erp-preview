@@ -161,8 +161,8 @@ export function buildWindow(title: string, bodyHtml: string): void {
   <div class="header">
     <div>
       <div class="company-name">${safeCompanyName}</div>
-      ${safePhone ? `<div class="company-info">📞 ${safePhone}</div>` : ''}
-      ${safeAddress ? `<div class="company-info">📍 ${safeAddress}</div>` : ''}
+      ${safePhone ? `<div class="company-info">هاتف: ${safePhone}</div>` : ''}
+      ${safeAddress ? `<div class="company-info">عنوان: ${safeAddress}</div>` : ''}
     </div>
     <div class="report-info">
       <div class="report-title">${safeTitle}</div>
@@ -170,7 +170,7 @@ export function buildWindow(title: string, bodyHtml: string): void {
     </div>
   </div>
   ${bodyHtml}
-  <div class="footer">نظام هالال تك ERP &bull; ${now}</div>
+  <div class="footer">${escapeHtml(s.companyName)} &bull; ${now}</div>
 </div>
 <script>
   document.fonts.ready.then(function() { setTimeout(function() { window.print(); }, 600); });

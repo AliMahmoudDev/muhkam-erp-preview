@@ -91,14 +91,16 @@ export default function CloseSafeModal({ onClose }: Props) {
 
   const printClosing = () => {
     const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>إقفال الخزينة</title>
-    <style>body{font-family:'Segoe UI',sans-serif;direction:rtl;padding:20px;font-size:13px}
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>body{font-family:'Cairo','Segoe UI',sans-serif;direction:rtl;padding:20px;font-size:13px}
     h2{text-align:center;margin-bottom:4px}p.sub{text-align:center;color:#666;margin-bottom:16px;font-size:11px}
-    table{width:100%;border-collapse:collapse;margin-bottom:12px}th{background:#1a1a2e;color:white;padding:6px 10px;text-align:right;font-size:11px}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px}th{background:#1f2937;color:white;padding:6px 10px;text-align:right;font-size:11px}
     td{padding:5px 10px;border-bottom:1px solid #eee}.tr td{font-weight:bold;background:#f5f5f5}
     .tc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .sm{background:#f9f9f9;padding:10px;border-radius:6px;margin-top:12px}
     .sr{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #ddd}
-    .vp{color:green;font-weight:bold}.vn{color:red;font-weight:bold}</style></head><body>
+    .vp{color:green;font-weight:bold}.vn{color:red;font-weight:bold}
+    @media print{@page{size:A4;margin:12mm 15mm;}body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body>
     <h2>مُحكم - MUHKAM — إقفال الخزينة</h2>
     <p class="sub">الخزينة: ${selectedSafe?.name || ''} | التاريخ: ${closingDate}</p>
     <div class="tc">
