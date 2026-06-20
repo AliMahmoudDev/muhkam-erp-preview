@@ -1,3 +1,5 @@
+import { ChevronRight, ChevronLeft } from 'lucide-react';
+
 interface PaginationBarProps {
   page: number;
   totalItems: number;
@@ -26,38 +28,40 @@ export function PaginationBar({
   if (totalItems === 0) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-line mt-1">
-      <span className="text-xs text-ink/40">
+    <div className="erp-pagination">
+      <span className="erp-pagination-info">
         عرض {start}–{end} من {totalItems} {itemLabel}
       </span>
+
       {totalPages > 1 && (
-        <div className="flex items-center gap-1">
+        <div className="erp-pagination-controls">
           <button
+            aria-label="الصفحة السابقة"
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page === 1}
-            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-surface border border-line text-ink/50 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="erp-pagination-btn"
           >
-            ←
+            <ChevronRight size={16} />
           </button>
+
           {pageNums.map((p) => (
             <button
               key={p}
               onClick={() => onPageChange(p)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
-                p === page
-                  ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
-                  : 'bg-surface border-line text-ink/40 hover:bg-surface'
-              }`}
+              aria-current={p === page ? 'page' : undefined}
+              className={`erp-pagination-btn${p === page ? ' erp-pagination-btn--active' : ''}`}
             >
               {p}
             </button>
           ))}
+
           <button
+            aria-label="الصفحة التالية"
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
-            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-surface border border-line text-ink/50 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="erp-pagination-btn"
           >
-            →
+            <ChevronLeft size={16} />
           </button>
         </div>
       )}

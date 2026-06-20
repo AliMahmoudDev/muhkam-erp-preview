@@ -553,3 +553,669 @@ button.erp-divider-label {
   flex-shrink: 0;
   flex-wrap: wrap;
 }
+
+/* ════════════════════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1 — SPRINT 03
+ *  Enterprise Tables & Data Experience
+ *  ─────────────────────────────────────────────────────────────
+ *  Targets:
+ *    .erp-table-row   — every <tr> in data tables
+ *    .erp-table-th    — header cells <th>
+ *    .erp-table-td    — body cells <td>
+ *    .erp-table-head  — <thead> wrapper
+ *    .glass-panel table — broad cascade fallback
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   SHIMMER — professional loading skeleton
+   ══════════════════════════════════════════════════ */
+@keyframes erp-shimmer-wave {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.erp-shimmer,
+.skeleton-layer,
+.skeleton-layer-dim {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-alt) 25%,
+    rgba(255, 255, 255, 0.06) 50%,
+    var(--bg-surface-alt) 75%
+  ) !important;
+  background-size: 400% 100% !important;
+  animation: erp-shimmer-wave 1.6s ease infinite !important;
+  border-radius: 6px;
+  display: block;
+}
+
+html.light .erp-shimmer,
+html.light .skeleton-layer,
+html.light .skeleton-layer-dim {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 25%,
+    #f1f5f9 50%,
+    #e2e8f0 75%
+  ) !important;
+  background-size: 400% 100% !important;
+  animation: erp-shimmer-wave 1.6s ease infinite !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE CONTAINER — wrapper defaults
+   ══════════════════════════════════════════════════ */
+.glass-panel table,
+.erp-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE HEADER
+   ══════════════════════════════════════════════════ */
+.erp-table-head,
+.glass-panel table thead,
+.glass-panel table thead tr {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  background: var(--bg-surface-alt) !important;
+}
+
+.erp-table-th,
+.glass-panel table thead th {
+  height: 48px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-3) !important;
+  background: var(--bg-surface-alt) !important;
+  border-bottom: 1px solid var(--edge) !important;
+  white-space: nowrap;
+  vertical-align: middle !important;
+  letter-spacing: 0;
+  text-transform: none !important;
+}
+
+html.light .erp-table-th,
+html.light .glass-panel table thead th {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-3) !important;
+  border-bottom-color: var(--edge) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE ROWS
+   ══════════════════════════════════════════════════ */
+.erp-table-row {
+  border-bottom: 1px solid var(--edge) !important;
+  transition: background 0.12s ease !important;
+  background: transparent !important;
+}
+
+.erp-table-row:last-child {
+  border-bottom: none !important;
+}
+
+.erp-table-row:hover {
+  background: var(--table-row-hover) !important;
+}
+
+.erp-table-row:nth-child(even) {
+  background: var(--bg-row-alt) !important;
+}
+
+.erp-table-row:nth-child(even):hover {
+  background: var(--table-row-hover) !important;
+}
+
+/* Selected row */
+.erp-table-row--selected,
+.erp-table-row[data-selected="true"] {
+  background: var(--brand-muted) !important;
+  border-right: 3px solid var(--brand) !important;
+}
+
+html.light .erp-table-row {
+  border-bottom-color: var(--edge) !important;
+  background: transparent !important;
+}
+html.light .erp-table-row:hover {
+  background: var(--table-row-hover) !important;
+}
+html.light .erp-table-row:nth-child(even) {
+  background: rgba(0, 0, 0, 0.016) !important;
+}
+html.light .erp-table-row:nth-child(even):hover {
+  background: var(--table-row-hover) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE CELLS
+   ══════════════════════════════════════════════════ */
+.erp-table-td,
+.glass-panel table tbody td {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--text-2) !important;
+  padding: 12px 16px !important;
+  vertical-align: middle !important;
+  min-height: 52px;
+}
+
+/* Desktop: 52px rows */
+.erp-table-row td {
+  height: 52px;
+  vertical-align: middle !important;
+}
+
+/* Compact mode */
+.erp-table--compact .erp-table-row td {
+  height: 44px !important;
+}
+
+html.light .erp-table-td,
+html.light .glass-panel table tbody td {
+  color: var(--text-2) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   COLUMN ALIGNMENT HELPERS
+   ══════════════════════════════════════════════════ */
+.erp-col-num,
+.erp-col-money {
+  text-align: left !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" !important;
+  direction: ltr !important;
+}
+
+.erp-col-status,
+.erp-col-action {
+  text-align: center !important;
+}
+
+th.erp-col-num,
+th.erp-col-money {
+  text-align: left !important;
+}
+
+th.erp-col-status,
+th.erp-col-action {
+  text-align: center !important;
+}
+
+/* ══════════════════════════════════════════════════
+   STATUS BADGES — 24px pill, soft tinted
+   ══════════════════════════════════════════════════ */
+.erp-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  border: 1px solid transparent;
+  line-height: 1 !important;
+}
+
+/* Paid — soft green */
+.erp-status-paid {
+  background: rgba(5, 150, 105, 0.10) !important;
+  border-color: rgba(5, 150, 105, 0.22) !important;
+  color: #34D399 !important;
+}
+
+/* Unpaid / Overdue — soft red */
+.erp-status-unpaid,
+.erp-status-overdue {
+  background: rgba(220, 38, 38, 0.10) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: #F87171 !important;
+}
+
+/* Pending / In-progress — soft orange */
+.erp-status-pending {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border-color: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
+}
+
+/* Partial — soft amber */
+.erp-status-partial {
+  background: rgba(217, 119, 6, 0.10) !important;
+  border-color: rgba(217, 119, 6, 0.22) !important;
+  color: #FBBF24 !important;
+}
+
+/* Cancelled — soft slate */
+.erp-status-cancelled {
+  background: rgba(100, 116, 139, 0.10) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  color: #94A3B8 !important;
+}
+
+/* Draft — soft gray */
+.erp-status-draft {
+  background: rgba(71, 85, 105, 0.12) !important;
+  border-color: rgba(71, 85, 105, 0.22) !important;
+  color: #94A3B8 !important;
+}
+
+/* Posted — soft teal (brand) */
+.erp-status-posted {
+  background: var(--brand-muted) !important;
+  border-color: var(--brand-border) !important;
+  color: var(--brand) !important;
+}
+
+/* Active — soft green */
+.erp-status-active {
+  background: rgba(5, 150, 105, 0.10) !important;
+  border-color: rgba(5, 150, 105, 0.22) !important;
+  color: #34D399 !important;
+}
+
+/* Inactive — soft gray */
+.erp-status-inactive {
+  background: rgba(71, 85, 105, 0.12) !important;
+  border-color: rgba(71, 85, 105, 0.22) !important;
+  color: #64748B !important;
+}
+
+/* Info — soft blue */
+.erp-status-info {
+  background: rgba(59, 130, 246, 0.10) !important;
+  border-color: rgba(59, 130, 246, 0.22) !important;
+  color: #60A5FA !important;
+}
+
+/* Light mode overrides */
+html.light .erp-status-paid    { color: #059669 !important; }
+html.light .erp-status-unpaid,
+html.light .erp-status-overdue { color: #DC2626 !important; }
+html.light .erp-status-pending  { color: #EA580C !important; }
+html.light .erp-status-partial  { color: #B45309 !important; }
+html.light .erp-status-cancelled { color: #64748B !important; }
+html.light .erp-status-draft    { color: #64748B !important; }
+html.light .erp-status-posted   { color: #0F766E !important; }
+html.light .erp-status-active   { color: #059669 !important; }
+html.light .erp-status-inactive { color: #475569 !important; }
+html.light .erp-status-info     { color: #2563EB !important; }
+
+/* ── Legacy erp-badge aliases — forward to new erp-status ── */
+.erp-badge-success { @extend .erp-status-paid; }
+
+.erp-badge-success {
+  background: rgba(5, 150, 105, 0.10) !important;
+  border-color: rgba(5, 150, 105, 0.22) !important;
+  color: #34D399 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-danger {
+  background: rgba(220, 38, 38, 0.10) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: #F87171 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-warning {
+  background: rgba(217, 119, 6, 0.10) !important;
+  border-color: rgba(217, 119, 6, 0.22) !important;
+  color: #FBBF24 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-pending {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border-color: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-info {
+  background: rgba(59, 130, 246, 0.10) !important;
+  border-color: rgba(59, 130, 246, 0.22) !important;
+  color: #60A5FA !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.erp-badge-neutral {
+  background: rgba(71, 85, 105, 0.12) !important;
+  border-color: rgba(71, 85, 105, 0.22) !important;
+  color: #94A3B8 !important;
+  border-radius: 999px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+html.light .erp-badge-success { color: #059669 !important; }
+html.light .erp-badge-danger  { color: #DC2626 !important; }
+html.light .erp-badge-warning { color: #B45309 !important; }
+html.light .erp-badge-pending { color: #EA580C !important; }
+html.light .erp-badge-info    { color: #2563EB !important; }
+
+/* ══════════════════════════════════════════════════
+   ACTION BUTTONS — 36×36, radius 10, icon-only
+   ══════════════════════════════════════════════════ */
+.erp-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--edge) !important;
+  background: transparent !important;
+  color: var(--text-3) !important;
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease,
+    border-color 0.14s ease !important;
+  flex-shrink: 0;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.erp-action-btn:hover {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.erp-action-btn:active {
+  opacity: 0.7 !important;
+  transform: none !important;
+}
+.erp-action-btn:focus-visible {
+  outline: none !important;
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* Danger variant */
+.erp-action-btn--danger {
+  color: rgba(248, 113, 113, 0.5) !important;
+  border-color: rgba(220, 38, 38, 0.12) !important;
+  background: rgba(220, 38, 38, 0.04) !important;
+}
+.erp-action-btn--danger:hover {
+  background: rgba(220, 38, 38, 0.12) !important;
+  color: #F87171 !important;
+  border-color: rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Primary variant */
+.erp-action-btn--primary {
+  color: var(--brand) !important;
+  border-color: var(--brand-border) !important;
+  background: var(--brand-muted) !important;
+}
+.erp-action-btn--primary:hover {
+  background: rgba(45, 212, 191, 0.16) !important;
+  border-color: var(--brand-dim) !important;
+}
+
+html.light .erp-action-btn {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+html.light .erp-action-btn:hover {
+  background: var(--bg-surface-alt) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SEARCH BAR — Spotlight feel
+   ══════════════════════════════════════════════════ */
+.erp-search-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  padding: 0 14px !important;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-1) !important;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease !important;
+  backdrop-filter: none !important;
+}
+.erp-search-bar:focus-within {
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+  background: var(--bg-surface) !important;
+}
+.erp-search-bar input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: var(--text-1) !important;
+  font-size: 14px !important;
+  width: 100%;
+  caret-color: var(--caret-color) !important;
+}
+.erp-search-bar input::placeholder {
+  color: var(--text-4) !important;
+}
+
+html.light .erp-search-bar {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+html.light .erp-search-bar:focus-within {
+  background: #ffffff !important;
+  border-color: var(--focus-edge) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   FILTER DROPDOWNS — consistent sizing
+   ══════════════════════════════════════════════════ */
+.erp-filter-select {
+  height: 40px !important;
+  padding: 0 12px !important;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-1) !important;
+  font-size: 14px !important;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+.erp-filter-select:focus {
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+  outline: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   PAGINATION — minimal, 36×36 boxes
+   ══════════════════════════════════════════════════ */
+.erp-pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 20px !important;
+  border-top: 1px solid var(--edge) !important;
+}
+
+.erp-pagination-info {
+  font-size: 12px !important;
+  color: var(--text-4) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.erp-pagination-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.erp-pagination-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  padding: 0 6px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--edge) !important;
+  background: transparent !important;
+  color: var(--text-3) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.erp-pagination-btn:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-1) !important;
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+}
+.erp-pagination-btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+.erp-pagination-btn:focus-visible {
+  outline: none !important;
+  border-color: var(--focus-edge) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.erp-pagination-btn--active {
+  background: var(--brand) !important;
+  color: var(--btn-primary-text) !important;
+  border-color: var(--brand) !important;
+  font-weight: 700 !important;
+}
+.erp-pagination-btn--active:hover {
+  background: var(--brand-hover) !important;
+  border-color: var(--brand-hover) !important;
+  color: var(--btn-primary-text) !important;
+}
+
+html.light .erp-pagination-btn {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+}
+html.light .erp-pagination-btn:hover:not(:disabled) {
+  background: var(--bg-surface-alt) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   EMPTY STATE — full treatment
+   ══════════════════════════════════════════════════ */
+.erp-empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: 100%;
+  padding: 40px 24px !important;
+}
+
+.erp-empty-state--rich {
+  gap: 12px !important;
+  padding: 56px 24px !important;
+}
+
+.erp-empty-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 14px !important;
+  background: var(--bg-surface-alt) !important;
+  border: 1px solid var(--edge) !important;
+  color: var(--text-4) !important;
+  margin-bottom: 4px !important;
+}
+
+.erp-empty-headline {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+  margin: 0 !important;
+  text-align: center !important;
+}
+
+.erp-empty-label {
+  font-size: 13px !important;
+  color: var(--text-4) !important;
+  margin: 0 !important;
+  text-align: center !important;
+  max-width: 320px;
+  line-height: 1.6 !important;
+}
+
+.erp-empty-action {
+  margin-top: 8px !important;
+}
+
+html.light .erp-empty-icon {
+  background: var(--bg-surface-alt) !important;
+  border-color: var(--edge) !important;
+  color: var(--text-3) !important;
+}
+html.light .erp-empty-label {
+  color: var(--text-3) !important;
+}
+html.light .erp-empty-headline {
+  color: var(--text-1) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SELECTION CHECKBOXES — 18px, brand color
+   ══════════════════════════════════════════════════ */
+.erp-table-checkbox {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 5px !important;
+  border: 1px solid var(--edge-md) !important;
+  background: var(--bg-input) !important;
+  cursor: pointer;
+  accent-color: var(--brand) !important;
+  transition: border-color 0.12s ease !important;
+}
+.erp-table-checkbox:checked {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+.erp-table-checkbox:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+  border-color: var(--focus-edge) !important;
+}

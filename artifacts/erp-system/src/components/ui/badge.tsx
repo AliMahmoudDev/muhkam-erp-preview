@@ -1,27 +1,44 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  // @replit
-  // Whitespace-nowrap: Badges should never wrap.
-  "whitespace-nowrap inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" +
-  " hover-elevate ",
+  "whitespace-nowrap inline-flex items-center gap-1 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
-          "border-transparent bg-primary text-primary-foreground shadow-xs",
+          "border-transparent bg-primary text-primary-foreground shadow-xs rounded-md px-2.5 py-0.5 text-xs border",
         secondary:
-          // @replit no hover because we use hover-elevate
-          "border-transparent bg-secondary text-secondary-foreground",
+          "border-transparent bg-secondary text-secondary-foreground rounded-md px-2.5 py-0.5 text-xs border",
         destructive:
-          // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
-          "border-transparent bg-destructive text-destructive-foreground shadow-xs",
-          // @replit shadow-xs" - use badge outline variable
-        outline: "text-foreground border [border-color:var(--badge-outline)]",
+          "border-transparent bg-destructive text-destructive-foreground shadow-xs rounded-md px-2.5 py-0.5 text-xs border",
+        outline:
+          "text-foreground border [border-color:var(--badge-outline)] rounded-md px-2.5 py-0.5 text-xs",
+
+        /* ── Status pills — 24px height, 999px radius ── */
+        paid:
+          "erp-status erp-status-paid",
+        unpaid:
+          "erp-status erp-status-unpaid",
+        pending:
+          "erp-status erp-status-pending",
+        partial:
+          "erp-status erp-status-partial",
+        cancelled:
+          "erp-status erp-status-cancelled",
+        overdue:
+          "erp-status erp-status-overdue",
+        draft:
+          "erp-status erp-status-draft",
+        posted:
+          "erp-status erp-status-posted",
+        active:
+          "erp-status erp-status-active",
+        inactive:
+          "erp-status erp-status-inactive",
+        info:
+          "erp-status erp-status-info",
       },
     },
     defaultVariants: {
