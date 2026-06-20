@@ -31,6 +31,7 @@ import {
   ArrowLeftRight,
   UserCircle,
   Tags,
+  ScrollText,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -76,36 +77,54 @@ export const ROUTE_PERMISSION: Record<string, string> = {
 
 /* ── Nav items with role visibility + icons ─────────────── */
 export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: AppRole[] }[] = [
+  /* ── القائمة ───────────────────────────────────────────── */
   { name: 'الرئيسية',              href: '/',                    icon: LayoutDashboard, roles: ['admin', 'manager', 'cashier', 'salesperson'] },
-  { name: 'السندات والخزينة',      href: '/treasury',            icon: Wallet,          roles: ['admin', 'manager', 'cashier', 'salesperson'] },
+
+  /* ── المبيعات ──────────────────────────────────────────── */
   { name: 'نقطة البيع',            href: '/pos',                 icon: Zap,             roles: ['admin', 'manager', 'cashier', 'salesperson'] },
   { name: 'المبيعات',              href: '/sales',               icon: Receipt,         roles: ['admin', 'manager', 'cashier', 'salesperson'] },
-  { name: 'المشتريات',             href: '/purchases',           icon: CreditCard,      roles: ['admin', 'manager'] },
+  { name: 'المرتجعات',             href: '/returns',             icon: RotateCcw,       roles: ['admin', 'manager'] },
+
+  /* ── المخزون والمنتجات ─────────────────────────────────── */
   { name: 'المنتجات',              href: '/products',            icon: Package,         roles: ['admin', 'manager', 'cashier', 'salesperson'] },
   { name: 'قوائم الأسعار',         href: '/price-lists',         icon: Tags,            roles: ['admin', 'manager'] },
   { name: 'المخزون',               href: '/inventory',           icon: ClipboardList,   roles: ['admin', 'manager'] },
   { name: 'التحويلات',             href: '/transfers',           icon: ArrowLeftRight,  roles: ['admin', 'manager'] },
+
+  /* ── الشراء ────────────────────────────────────────────── */
+  { name: 'المشتريات',             href: '/purchases',           icon: CreditCard,      roles: ['admin', 'manager'] },
   { name: 'العملاء والموردون',     href: '/customers',           icon: Users,           roles: ['admin', 'manager', 'cashier', 'salesperson'] },
-  { name: 'المرتجعات',             href: '/returns',             icon: RotateCcw,       roles: ['admin', 'manager'] },
+
+  /* ── الأجهزة والصيانة ──────────────────────────────────── */
   { name: 'الأجهزة',               href: '/devices',             icon: Smartphone,      roles: ['admin', 'manager', 'cashier'] },
   { name: 'الصيانة',               href: '/repairs',             icon: Wrench,          roles: ['admin', 'manager', 'cashier'] },
-  { name: 'الإيرادات',             href: '/income',              icon: TrendingUp,      roles: ['admin', 'manager'] },
+
+  /* ── المالية ───────────────────────────────────────────── */
+  { name: 'السندات والخزينة',      href: '/treasury',            icon: Wallet,          roles: ['admin', 'manager', 'cashier', 'salesperson'] },
+  { name: 'السندات',               href: '/vouchers',            icon: ScrollText,      roles: ['admin', 'manager', 'cashier', 'salesperson'] },
   { name: 'المصروفات',             href: '/expenses',            icon: ReceiptText,     roles: ['admin', 'manager'] },
+  { name: 'الإيرادات',             href: '/income',              icon: TrendingUp,      roles: ['admin', 'manager'] },
   { name: 'التقارير',              href: '/reports',             icon: FileText,        roles: ['admin', 'manager'] },
+
+  /* ── الموارد البشرية ───────────────────────────────────── */
+  { name: 'الموظفون',              href: '/employees',           icon: UserCheck,       roles: ['admin', 'manager', 'employee'] },
+  { name: 'الحضور والانصراف',      href: '/attendance',          icon: Clock,           roles: ['admin', 'manager'] },
+  { name: 'الرواتب',               href: '/payroll',             icon: Wallet,          roles: ['admin', 'manager'] },
+
+  /* ── المحاسبة ──────────────────────────────────────────── */
   { name: 'شجرة الحسابات',         href: '/accounts',            icon: BookOpen,        roles: ['admin'] },
   { name: 'القيود اليومية',        href: '/journal-entries',     icon: FileText,        roles: ['admin'] },
+  { name: 'السنوات المالية',       href: '/fiscal-years',        icon: BookOpen,        roles: ['admin'] },
+  { name: 'سجل التدقيق',           href: '/audit-log',           icon: Shield,          roles: ['admin'] },
   { name: 'الأصول الثابتة',        href: '/fixed-assets',        icon: Building2,       roles: ['admin'] },
   { name: 'الاستحقاقات والمدفوعات',href: '/accruals',            icon: Scale,           roles: ['admin'] },
   { name: 'المطابقة البنكية',      href: '/bank-reconciliation', icon: Landmark,        roles: ['admin'] },
   { name: 'الميزانية التقديرية',   href: '/budgets',             icon: PiggyBank,       roles: ['admin', 'manager'] },
   { name: 'مراكز التكلفة',         href: '/cost-centers',        icon: Target,          roles: ['admin'] },
-  { name: 'السنوات المالية',       href: '/fiscal-years',        icon: BookOpen,        roles: ['admin'] },
-  { name: 'سجل التدقيق',           href: '/audit-log',           icon: Shield,          roles: ['admin'] },
-  { name: 'الفروع',                href: '/branches',            icon: GitBranch,       roles: ['admin', 'manager'] },
+
+  /* ── النظام ────────────────────────────────────────────── */
   { name: 'الإعدادات',             href: '/settings',            icon: Settings,        roles: ['admin'] },
-  { name: 'الموظفون',              href: '/employees',           icon: UserCheck,       roles: ['admin', 'manager', 'employee'] },
-  { name: 'الحضور والانصراف',      href: '/attendance',          icon: Clock,           roles: ['admin', 'manager'] },
-  { name: 'الرواتب',               href: '/payroll',             icon: Wallet,          roles: ['admin', 'manager'] },
+  { name: 'الفروع',                href: '/branches',            icon: GitBranch,       roles: ['admin', 'manager'] },
   { name: 'بوابتي الشخصية',        href: '/my-portal',           icon: UserCircle,      roles: ['admin', 'manager', 'cashier', 'salesperson', 'employee'] },
 ];
 

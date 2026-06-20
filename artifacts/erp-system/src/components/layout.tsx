@@ -12,7 +12,7 @@ import { NAV_ITEMS, canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rba
 import { hasPermission } from '@/lib/permissions';
 import { translateRole, Role } from '@/lib/roles';
 import { useWarehouses } from '@/hooks/useWarehouses';
-import { LogOut, Warehouse, Search, X, ChevronDown, UserCircle } from 'lucide-react';
+import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -21,26 +21,27 @@ import LogoutCheckoutModal from '@/components/logout-checkout-modal';
 import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
 import { resolveUploadedFileUrl } from '@/lib/file-upload';
-/* ── Nav sections ───────────────────────────────── */
+/* ── Nav sections ───────────────────────────────────────────
+   Sprint 09 IA refactor:
+   - "التجارة" (10 items) split into 4 focused sections
+   - /vouchers added to المالية (route + permission existed; nav was missing)
+   - /transfers added to المخزون والمنتجات (was hidden — nav item existed but no section)
+   - /my-portal added to النظام (was hardcoded at sidebar bottom; now in section system)
+────────────────────────────────────────────────────────────── */
 const NAV_SECTIONS = [
-  { label: 'القائمة', hrefs: ['/'] },
+  { label: 'القائمة',            hrefs: ['/'] },
+  { label: 'المبيعات',           hrefs: ['/pos', '/sales', '/returns'] },
   {
-    label: 'التجارة',
-    hrefs: [
-      '/pos',
-      '/sales',
-      '/purchases',
-      '/products',
-      '/price-lists',
-      '/inventory',
-      '/customers',
-      '/returns',
-      '/devices',
-      '/repairs',
-    ],
+    label: 'المخزون والمنتجات',
+    hrefs: ['/products', '/price-lists', '/inventory', '/transfers'],
   },
-  { label: 'المالية', hrefs: ['/treasury', '/expenses', '/income', '/reports'] },
-  { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance', '/payroll'] },
+  { label: 'الشراء',             hrefs: ['/purchases', '/customers'] },
+  { label: 'الأجهزة والصيانة',  hrefs: ['/devices', '/repairs'] },
+  {
+    label: 'المالية',
+    hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'],
+  },
+  { label: 'الموارد البشرية',   hrefs: ['/employees', '/attendance', '/payroll'] },
   {
     label: 'المحاسبة',
     hrefs: [
@@ -55,7 +56,7 @@ const NAV_SECTIONS = [
       '/cost-centers',
     ],
   },
-  { label: 'النظام', hrefs: ['/settings', '/branches'] },
+  { label: 'النظام',             hrefs: ['/settings', '/branches', '/my-portal'] },
 ];
 
 interface LayoutProps {
@@ -535,9 +536,7 @@ export function AppLayout({ children }: LayoutProps) {
           {NAV_SECTIONS.map((section, si) => {
             const items = visibleNav.filter((i) => section.hrefs.includes(i.href));
             if (!items.length) return null;
-            const sectionActive =
-              items.some((i) => i.href === location) ||
-              (section.hrefs.includes('/inventory') && location === '/transfers');
+            const sectionActive = items.some((i) => i.href === location);
             const isAccounting = section.label === 'المحاسبة';
             /* Accounting: toggle-able; all others: always open */
             const isOpen = isAccounting ? (openSections[section.label] ?? sectionActive) : true;
@@ -603,9 +602,7 @@ export function AppLayout({ children }: LayoutProps) {
                 {/* Nav items */}
                 {(sidebarCollapsed || isOpen) &&
                   items.map((item) => {
-                    const active =
-                      location === item.href ||
-                      (item.href === '/inventory' && location === '/transfers');
+                    const active = location === item.href;
                     return (
                       <Link key={item.href} href={item.href}>
                         <div
@@ -635,56 +632,6 @@ export function AppLayout({ children }: LayoutProps) {
             );
           })}
         </nav>
-
-        {/* ── My Portal pinned bottom link ── */}
-        {user?.employee_id && (
-          <div
-            style={{
-              flexShrink: 0,
-              borderTop: sidebarBdr,
-              padding: sidebarCollapsed ? '8px' : '8px 12px',
-            }}
-          >
-            <Link href="/my-portal">
-              <div
-                className={`nav-item ${location === '/my-portal' ? 'active' : ''}`}
-                title={sidebarCollapsed ? 'بوابتي الشخصية' : undefined}
-                style={{
-                  ...(sidebarCollapsed
-                    ? { justifyContent: 'center', paddingRight: 0, paddingLeft: 0 }
-                    : {}),
-                  background:
-                    location === '/my-portal' ? 'var(--erp-bg-active)' : 'var(--erp-brand-muted)',
-                  border: `1px solid ${location === '/my-portal' ? 'var(--erp-brand-border)' : 'var(--erp-brand-muted)'}`,
-                  borderRadius: 10,
-                  marginBottom: 0,
-                }}
-              >
-                <UserCircle
-                  style={{
-                    width: 16,
-                    height: 16,
-                    flexShrink: 0,
-                    color: 'var(--erp-brand)',
-                    opacity: location === '/my-portal' ? 1 : 0.75,
-                  }}
-                />
-                {!sidebarCollapsed && (
-                  <span
-                    style={{
-                      flex: 1,
-                      color: 'var(--erp-brand)',
-                      fontWeight: location === '/my-portal' ? 800 : 600,
-                      fontSize: 13,
-                    }}
-                  >
-                    بوابتي الشخصية
-                  </span>
-                )}
-              </div>
-            </Link>
-          </div>
-        )}
 
         {/* Sidebar footer */}
         <div
