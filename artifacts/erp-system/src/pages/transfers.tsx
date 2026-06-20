@@ -479,10 +479,10 @@ export default function Transfers() {
 
   return (
     <div className="erp-page" dir="rtl">
-      <div className="max-w-6xl mx-auto w-full">
+      <div className="max-w-6xl mx-auto w-full flex flex-col gap-4">
         {/* ══ شريط تبويبات المخزون — نفس تبويبات صفحة /inventory ══ */}
         <div
-          className="erp-tab-bar erp-tab-bar--underline overflow-x-auto mb-6"
+          className="erp-tab-bar erp-tab-bar--underline overflow-x-auto"
           style={{ scrollbarWidth: 'none' }}
         >
           <button
