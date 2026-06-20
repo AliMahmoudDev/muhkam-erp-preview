@@ -356,14 +356,13 @@ export function AppLayout({ children }: LayoutProps) {
       <aside
         className="hidden lg:flex flex-col shrink-0 z-20"
         style={{
-          width: sidebarCollapsed ? '60px' : '228px',
+          width: sidebarCollapsed ? '76px' : '272px',
           height: '100vh',
           position: 'sticky',
           top: 0,
           background: sidebarBg,
           borderLeft: sidebarBdr,
-          backdropFilter: 'blur(24px)',
-          transition: 'width 0.25s ease',
+          transition: 'width 0.22s cubic-bezier(0.4,0,0.2,1)',
           overflow: 'hidden',
         }}
       >
@@ -374,22 +373,20 @@ export function AppLayout({ children }: LayoutProps) {
             height: '64px',
             borderBottom: sidebarBdr,
             flexShrink: 0,
-            padding: sidebarCollapsed ? '0 12px' : '0 14px',
+            padding: sidebarCollapsed ? '0 14px' : '0 16px',
             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            gap: 11,
+            gap: 12,
             position: 'relative',
-            background: 'linear-gradient(135deg, var(--erp-brand-muted) 0%, transparent 60%)',
           }}
         >
           {/* Logo — square, no frame */}
           <div
             style={{
-              width: sidebarCollapsed ? 44 : 48,
-              height: sidebarCollapsed ? 44 : 48,
-              borderRadius: 12,
+              width: sidebarCollapsed ? 36 : 40,
+              height: sidebarCollapsed ? 36 : 40,
+              borderRadius: 10,
               overflow: 'hidden',
               flexShrink: 0,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
             }}
           >
             <img
@@ -439,9 +436,9 @@ export function AppLayout({ children }: LayoutProps) {
               left: sidebarCollapsed ? 'auto' : 8,
               top: sidebarCollapsed ? 'auto' : '50%',
               transform: sidebarCollapsed ? 'none' : 'translateY(-50%)',
-              width: 22,
-              height: 22,
-              borderRadius: 6,
+              width: 28,
+              height: 28,
+              borderRadius: 8,
               border: '1px solid var(--erp-border-md)',
               background: 'var(--erp-bg-surface)',
               color: textMuted,
@@ -450,7 +447,7 @@ export function AppLayout({ children }: LayoutProps) {
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              transition: 'opacity 0.2s',
+              transition: 'background 0.15s ease, opacity 0.2s',
             }}
           >
             <ChevronDown
@@ -622,8 +619,8 @@ export function AppLayout({ children }: LayoutProps) {
                         >
                           <item.icon
                             style={{
-                              width: 16,
-                              height: 16,
+                              width: 18,
+                              height: 18,
                               flexShrink: 0,
                               opacity: active ? 1 : 0.55,
                               color: active ? 'var(--erp-brand)' : 'inherit',
@@ -722,11 +719,10 @@ export function AppLayout({ children }: LayoutProps) {
           aria-label="شريط العنوان"
           className="flex items-center gap-3 shrink-0"
           style={{
-            height: '56px',
-            padding: '0 20px',
+            height: '64px',
+            padding: '0 24px',
             background: topbarBg,
             borderBottom: topbarBdr,
-            backdropFilter: 'blur(20px)',
             position: 'sticky',
             top: 0,
             zIndex: 30,
@@ -740,7 +736,7 @@ export function AppLayout({ children }: LayoutProps) {
                 height: 18,
                 borderRadius: 99,
                 flexShrink: 0,
-                background: 'linear-gradient(to bottom, #f59e0b, #d97706)',
+                background: 'var(--brand)',
               }}
             />
             <div style={{ minWidth: 0 }}>

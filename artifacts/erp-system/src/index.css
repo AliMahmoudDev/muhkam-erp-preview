@@ -506,9 +506,7 @@ main,
 .erp-card:hover,
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.22),
-    0 2px 8px rgba(245, 158, 11, 0.06) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22) !important;
 }
 
 /* ── Universal button transitions ── */
@@ -613,7 +611,7 @@ tr {
   background-clip: padding-box;
 }
 .rs-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.3);
+  background: rgba(45, 212, 191, 0.20);
   background-clip: padding-box;
 }
 
@@ -648,8 +646,8 @@ tr {
   transform: translateX(2px);
 }
 .rs-nav-item:hover .rs-nav-icon {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.18);
+  background: var(--brand-muted);
+  border-color: var(--brand-border);
 }
 
 /* device-pill premium */
@@ -707,12 +705,12 @@ tr {
     background 0.18s ease !important;
 }
 
-/* ── caret amber ── */
+/* ── caret brand ── */
 .erp-input,
 .glass-input,
 input,
 textarea {
-  caret-color: rgba(245, 158, 11, 0.85);
+  caret-color: var(--caret-color);
 }
 
 /* ── Input selection highlight ── */
@@ -720,7 +718,7 @@ textarea {
 .glass-input::selection,
 input::selection,
 textarea::selection {
-  background: rgba(245, 158, 11, 0.25);
+  background: var(--selection-bg);
   color: inherit;
 }
 

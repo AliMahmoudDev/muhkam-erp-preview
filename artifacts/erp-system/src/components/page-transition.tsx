@@ -13,8 +13,8 @@ export function PageTransition({ children }: PageTransitionProps) {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         el.current,
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.32, ease: "power2.out" }
+        { opacity: 0, y: 4 },
+        { opacity: 1, y: 0, duration: 0.18, ease: "power2.out" }
       );
     }, el);
     return () => ctx.revert();
