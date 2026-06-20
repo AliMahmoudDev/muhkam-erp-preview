@@ -98,8 +98,8 @@ describe("Dashboard page", () => {
 
     render(<Dashboard />, { wrapper: createWrapper() });
 
-    // Should show skeleton elements
-    const skeletons = document.querySelectorAll(".db-skeleton");
+    // Should show skeleton elements (KpiSkeleton uses aria-hidden="true")
+    const skeletons = document.querySelectorAll('[aria-hidden="true"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 

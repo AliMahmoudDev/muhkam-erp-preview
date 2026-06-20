@@ -98,9 +98,9 @@ describe("Sales page — tabs and permissions", () => {
   it("renders all 3 tabs for admin (full permissions)", () => {
     render(<Sales />, { wrapper: createWrapper() });
 
-    expect(screen.getByText("➕ فاتورة بيع جديدة")).toBeInTheDocument();
-    expect(screen.getByText("سجل الفواتير")).toBeInTheDocument();
-    expect(screen.getByText("↩ المرتجعات")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "فاتورة بيع جديدة" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /سجل الفواتير/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "المرتجعات" })).toBeInTheDocument();
   });
 
   it("defaults to 'new' tab when user has can_create_sale", () => {
@@ -111,14 +111,14 @@ describe("Sales page — tabs and permissions", () => {
   it("switches to history tab on click", () => {
     render(<Sales />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByText("سجل الفواتير"));
+    fireEvent.click(screen.getByRole("button", { name: /سجل الفواتير/ }));
     expect(screen.getByTestId("history-panel")).toBeInTheDocument();
   });
 
   it("switches to returns tab on click", () => {
     render(<Sales />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByText("↩ المرتجعات"));
+    fireEvent.click(screen.getByRole("button", { name: "المرتجعات" }));
     expect(screen.getByTestId("returns-panel")).toBeInTheDocument();
   });
 
@@ -127,10 +127,10 @@ describe("Sales page — tabs and permissions", () => {
 
     render(<Sales />, { wrapper: createWrapper() });
 
-    expect(screen.queryByText("➕ فاتورة بيع جديدة")).not.toBeInTheDocument();
-    expect(screen.queryByText("↩ المرتجعات")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "فاتورة بيع جديدة" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "المرتجعات" })).not.toBeInTheDocument();
     // Only history should be visible
-    expect(screen.getByText("سجل الفواتير")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /سجل الفواتير/ })).toBeInTheDocument();
   });
 
   it("falls back to history when no create permission and tab=new", () => {
@@ -145,7 +145,7 @@ describe("Sales page — tabs and permissions", () => {
   it("navigates URL when tab changes", () => {
     render(<Sales />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByText("سجل الفواتير"));
+    fireEvent.click(screen.getByRole("button", { name: /سجل الفواتير/ }));
     expect(mockNavigate).toHaveBeenCalledWith("?tab=history", { replace: true });
   });
 });
