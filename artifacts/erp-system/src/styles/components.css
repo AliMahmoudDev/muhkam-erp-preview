@@ -25,102 +25,9 @@ html.light .glass-panel {
   -webkit-backdrop-filter: none !important;
 }
 
-/* ══════════════════════════════════════════════════
-   GLASS-INPUT — clean border, brand focus
-   ══════════════════════════════════════════════════ */
-.glass-input {
-  background: var(--bg-input);
-  border: 1px solid var(--edge-md);
-  color: var(--text-1);
-}
-.glass-input:focus {
-  border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
-  background: var(--bg-input) !important;
-}
-html.light .glass-input {
-  background: #ffffff;
-  border-color: var(--edge-md);
-}
-html.light .glass-input:focus {
-  border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
-  background: #ffffff !important;
-}
-
-/* ══════════════════════════════════════════════════
-   ERP-INPUT — brand focus ring (override hardcoded amber)
-   ══════════════════════════════════════════════════ */
-.erp-input:focus,
-.erp-input:focus-visible {
-  border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
-  outline: none !important;
-}
-html.light .erp-input:focus,
-html.light .erp-input:focus-visible {
-  border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
-  background: #ffffff !important;
-}
-
-/* ══════════════════════════════════════════════════
-   BTN-PRIMARY — solid brand, no shine, no glow
-   ══════════════════════════════════════════════════ */
-.btn-primary {
-  background: var(--brand) !important;
-  color: var(--btn-primary-text) !important;
-  font-weight: 700;
-  padding: 0.625rem 1.25rem;
-  border-radius: var(--radius-md);
-  border: none;
-  cursor: pointer;
-  position: static;
-  overflow: visible;
-  box-shadow: none !important;
-  filter: none !important;
-  transition:
-    background var(--motion-fast) var(--ease-standard),
-    transform   var(--motion-fast) var(--ease-standard) !important;
-}
-.btn-primary::after {
-  display: none !important;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--brand-hover) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: none !important;
-  filter: none !important;
-}
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0) !important;
-  filter: none !important;
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ══════════════════════════════════════════════════
-   BTN-SECONDARY — clean border, no glass
-   ══════════════════════════════════════════════════ */
-.btn-secondary {
-  background: var(--surface) !important;
-  border: 1px solid var(--edge) !important;
-  color: var(--text-1) !important;
-  cursor: pointer;
-  transition:
-    background var(--motion-fast) ease,
-    border-color var(--motion-fast) ease !important;
-}
-.btn-secondary:hover {
-  background: var(--surface-raised) !important;
-  border-color: var(--edge-md) !important;
-}
-.btn-secondary:active {
-  opacity: 0.8;
-  transform: none !important;
-}
+/* glass-input, erp-input, btn-primary, btn-secondary:
+   Authoritative versions live in the FORMS (Sprint 04)
+   and BUTTONS (Sprint 05) sections below. */
 
 /* ══════════════════════════════════════════════════
    STAT-CARD VARIANTS — flat tinted surfaces (no gradient, no glow)
@@ -164,10 +71,11 @@ html.light .stat-card-red    { border: 1px solid rgba(239, 68, 68, 0.20) !import
 html.light .stat-card-blue   { border: 1px solid rgba(59, 130, 246, 0.20) !important; }
 html.light .stat-card-violet { border: 1px solid rgba(139, 92, 246, 0.20) !important; }
 
-/* stat-card hover: gentle lift, no glow */
+/* stat-card hover: border stronger, no lift */
 .stat-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-hover) !important;
+  border-color: var(--edge-md) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 /* ══════════════════════════════════════════════════
@@ -285,12 +193,12 @@ html.light .btn-icon-primary:hover {
 }
 
 /* ══════════════════════════════════════════════════
-   INTERACTIVE CARD — subtle hover only
+   INTERACTIVE CARD — border stronger, no lift/float
    ══════════════════════════════════════════════════ */
 .glass-card:hover,
 .erp-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover) !important;
+  transform: none !important;
+  box-shadow: none !important;
   border-color: var(--edge-md) !important;
 }
 
@@ -2342,4 +2250,540 @@ button:focus-visible,
 button:hover,
 [role="button"]:hover {
   transform: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v1 — SPRINT 06
+ *  Card System, KPI Components & Dashboard Foundations
+ *  ─────────────────────────────────────────────────────────────
+ *  Philosophy: Quiet. Professional. The data is the hero.
+ *  No gradient. No glow. No glass. No heavy shadow. No lift.
+ *  Surface: bg-surface | Border: 1px edge | Radius: 16px
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   CARD — base surface
+   ══════════════════════════════════════════════════ */
+.erp-card {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition:
+    border-color 0.18s ease,
+    background   0.18s ease !important;
+  transform: none !important;
+}
+
+html.light .erp-card {
+  background: #ffffff !important;
+  border-color: var(--edge) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Hover: border slightly stronger, never lift/float */
+.erp-card:hover {
+  border-color: var(--edge-md) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html.light .erp-card:hover {
+  border-color: var(--edge-md) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Selected state */
+.erp-card--selected,
+.erp-card[data-selected="true"] {
+  border-color: var(--brand) !important;
+  background: var(--brand-muted) !important;
+}
+
+/* Disabled state */
+.erp-card--disabled,
+.erp-card[data-disabled="true"] {
+  opacity: 0.45 !important;
+  pointer-events: none !important;
+}
+
+/* Collapsed state */
+.erp-card--collapsed .erp-card-body {
+  display: none !important;
+}
+
+/* Loading state — shimmer applied by JS */
+.erp-card--loading {
+  pointer-events: none !important;
+}
+
+/* Compact variant */
+.erp-card--compact {
+  border-radius: 12px !important;
+}
+
+/* Clickable card */
+.erp-card--clickable {
+  cursor: pointer !important;
+}
+.erp-card--clickable:active {
+  opacity: 0.85 !important;
+}
+
+/* ── Card Header ─────────────────────────────────── */
+.erp-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 20px 24px 0 !important;
+}
+
+.erp-card-header--bordered {
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid var(--edge) !important;
+}
+
+/* ── Card Title ──────────────────────────────────── */
+.erp-card-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+/* ── Card Subtitle ───────────────────────────────── */
+.erp-card-subtitle {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: var(--text-3) !important;
+  margin: 2px 0 0 !important;
+  line-height: 1.4 !important;
+}
+
+/* Title + subtitle stacked */
+.erp-card-title-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+
+/* Header actions (buttons/icons on the right/left in RTL) */
+.erp-card-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Card Body ───────────────────────────────────── */
+.erp-card-body {
+  padding: 20px 24px !important;
+}
+
+.erp-card-body--flush {
+  padding: 0 !important;
+}
+
+.erp-card-body--compact {
+  padding: 16px !important;
+}
+
+.erp-card-body--large {
+  padding: 32px !important;
+}
+
+/* ── Card Footer ─────────────────────────────────── */
+.erp-card-footer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 24px 20px !important;
+  border-top: 1px solid var(--edge) !important;
+  padding-top: 16px !important;
+  margin-top: auto !important;
+}
+
+/* ══════════════════════════════════════════════════
+   KPI CARD — metric / statistic display
+   ══════════════════════════════════════════════════ */
+.erp-kpi {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  padding: 20px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transition: border-color 0.18s ease !important;
+  transform: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.erp-kpi:hover {
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html.light .erp-kpi {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* KPI header: label + icon on opposite sides */
+.erp-kpi-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+/* KPI label */
+.erp-kpi-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text-3) !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+/* KPI icon container */
+.erp-kpi-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  background: var(--brand-muted) !important;
+  color: var(--brand) !important;
+}
+
+.erp-kpi-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* KPI value — the number */
+.erp-kpi-value {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: var(--text-1) !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 1280px) {
+  .erp-kpi-value { font-size: 28px !important; }
+}
+@media (max-width: 768px) {
+  .erp-kpi-value { font-size: 24px !important; }
+}
+
+/* KPI trend badge */
+.erp-kpi-trend {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 3px 8px !important;
+  border-radius: 20px !important;
+  width: fit-content !important;
+}
+
+.erp-kpi-trend--up {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: var(--status-success) !important;
+  border: 1px solid rgba(52, 211, 153, 0.22) !important;
+}
+
+.erp-kpi-trend--down {
+  background: rgba(248, 113, 113, 0.15) !important;
+  color: var(--status-danger) !important;
+  border: 1px solid rgba(248, 113, 113, 0.22) !important;
+}
+
+.erp-kpi-trend--neutral {
+  background: var(--bg-surface-alt) !important;
+  color: var(--text-3) !important;
+  border: 1px solid var(--edge) !important;
+}
+
+.erp-kpi-trend svg {
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   PANEL — section container, slightly elevated
+   ══════════════════════════════════════════════════ */
+.erp-panel {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  box-shadow: none !important;
+}
+
+html.light .erp-panel {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Flush panel (no padding — for tables/lists) */
+.erp-panel--flush {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.erp-panel--compact {
+  padding: 16px !important;
+  border-radius: 10px !important;
+}
+
+/* ══════════════════════════════════════════════════
+   SECTION — page layout section
+   ══════════════════════════════════════════════════ */
+.erp-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.erp-section-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.erp-section-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.erp-section-subtitle,
+.erp-section-sub {
+  font-size: 13px !important;
+  color: var(--text-3) !important;
+  margin: 2px 0 0 !important;
+}
+
+html.light .erp-section-title { color: var(--text-1) !important; }
+html.light .erp-section-sub   { color: var(--text-3) !important; }
+
+/* ══════════════════════════════════════════════════
+   WIDGET — small functional unit
+   ══════════════════════════════════════════════════ */
+.erp-widget {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  box-shadow: none !important;
+}
+
+html.light .erp-widget {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   DASHBOARD GRID LAYOUTS
+   ══════════════════════════════════════════════════ */
+
+/* KPI grid: 4-col → 2-col → 1-col */
+.erp-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 16px !important;
+}
+
+@media (max-width: 1200px) {
+  .erp-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  .erp-kpi-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Card grid: 2-col → 1-col */
+.erp-card-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 20px !important;
+}
+
+@media (max-width: 900px) {
+  .erp-card-grid { grid-template-columns: 1fr !important; }
+}
+
+/* 3-col card grid */
+.erp-card-grid--3 {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px !important;
+}
+
+@media (max-width: 1100px) {
+  .erp-card-grid--3 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  .erp-card-grid--3 { grid-template-columns: 1fr !important; }
+}
+
+/* ══════════════════════════════════════════════════
+   EMPTY PANEL — whitespace + message + action
+   ══════════════════════════════════════════════════ */
+.erp-empty-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  padding: 48px 24px !important;
+  text-align: center !important;
+}
+
+.erp-empty-panel-icon {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  background: var(--bg-surface-alt) !important;
+  border: 1px solid var(--edge) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text-4) !important;
+}
+
+.erp-empty-panel-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.erp-empty-panel-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--text-2) !important;
+  margin: 0 !important;
+}
+
+.erp-empty-panel-desc {
+  font-size: 13px !important;
+  color: var(--text-4) !important;
+  margin: 0 !important;
+  max-width: 280px !important;
+  line-height: 1.5 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   CARD SKELETON — loading state
+   ══════════════════════════════════════════════════ */
+.erp-card-skeleton {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  overflow: hidden !important;
+}
+
+.erp-kpi-skeleton {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  padding: 20px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  overflow: hidden !important;
+}
+
+/* Shared shimmer line utility */
+.erp-skeleton-line {
+  height: 12px !important;
+  border-radius: 6px !important;
+  background: var(--bg-surface-alt) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.erp-skeleton-line::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  ) !important;
+  animation: erp-shimmer-wave 1.4s ease-in-out infinite !important;
+  background-size: 200% 100% !important;
+}
+
+html.light .erp-skeleton-line::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+.erp-skeleton-line--sm  { height: 10px !important; }
+.erp-skeleton-line--lg  { height: 32px !important; border-radius: 8px !important; }
+.erp-skeleton-line--xl  { height: 44px !important; border-radius: 10px !important; }
+.erp-skeleton-box       { height: 36px !important; width: 36px !important; border-radius: 10px !important; }
+
+/* ══════════════════════════════════════════════════
+   OVERRIDE — kill db-kpi decorative elements
+   These existed in index.css, keeping them quiet.
+   ══════════════════════════════════════════════════ */
+.db-kpi-shimmer,
+.db-kpi-glow,
+.db-kpi-dots {
+  display: none !important;
+}
+
+.db-kpi-card {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.db-kpi-card:hover {
+  border-color: var(--edge-md) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.db-kpi-value {
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.02em !important;
 }
