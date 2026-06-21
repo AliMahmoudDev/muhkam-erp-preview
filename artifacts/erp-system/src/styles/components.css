@@ -48,3 +48,6 @@
 
 /* ── Phase 03 Navigation Components ──────────── */
 @import "./components/navigation-v3.css";
+
+/* ── Phase 03 Feedback Components ────────────── */
+@import "./components/feedback.css";
