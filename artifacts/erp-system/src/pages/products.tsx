@@ -3,6 +3,7 @@ import { useLocation, useSearch } from 'wouter';
 import { Package, Tag } from 'lucide-react';
 import { ProductsTab } from './products/ProductsTab';
 import { CategoriesTab } from './products/CategoriesTab';
+import { PageHeader } from '@/components/patterns';
 
 export default function Products() {
   const searchStr = useSearch();
@@ -16,14 +17,11 @@ export default function Products() {
   };
 
   return (
-    <div className="erp-page" dir="rtl">
-      {/* ══ Page Header ═══════════════════════════════════════════════════════ */}
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title">المنتجات</h1>
-          <p className="erp-page-subtitle">إدارة المنتجات والتصنيفات</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="المنتجات"
+        subtitle="إدارة المنتجات والتصنيفات"
+      />
 
       <div className="erp-tab-bar erp-tab-bar--underline">
         <button

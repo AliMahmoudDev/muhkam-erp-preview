@@ -8,22 +8,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency } from '@/lib/format';
 import {
   Plus,
-  Search,
   Trash2,
-  AlertTriangle,
   Pencil,
   FileDown,
   FileUp,
   Download,
-  Package,
   X,
   QrCode,
-  Loader2,
-  CheckCircle2,
 } from 'lucide-react';
 import { exportProductsExcel } from '@/lib/export-excel';
 import { useToast } from '@/hooks/use-toast';
-import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import {
   ProductFormModal,
@@ -33,6 +27,25 @@ import {
 import { safeArray } from '@/lib/safe-data';
 import { api } from '@/lib/api';
 import { useProductsImport } from '@/pages/settings/data/hooks/useImportActions';
+
+import { PageToolbar } from '@/components/patterns';
+import { SearchInput } from '@/components/ui/search-input';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Badge } from '@/components/ui/badge';
+import { Banner } from '@/components/ui/banner';
+import { Card } from '@/components/ui/card';
 
 export function ProductsTab() {
   const { data: productsRaw = [], isLoading } = useGetProducts();
@@ -57,6 +70,7 @@ export function ProductsTab() {
       return j;
     },
   });
+
   const deleteMutation = useMutation({
     mutationFn: async ({ id }: { id: number }) => {
       const r = await authFetch(api(`/api/products/${id}`), { method: 'DELETE' });
@@ -168,131 +182,109 @@ export function ProductsTab() {
     });
   };
 
+  /* ── Permission gate ──────────────────────────────────────── */
   if (!canViewProducts)
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Package className="w-14 h-14 text-red-400/40 mb-4" />
-        <p className="text-ink/60 font-bold text-lg">غير مصرح</p>
-        <p className="text-ink/30 text-sm mt-1">
-          غير مصرح لك بالوصول إلى المنتجات — تواصل مع المدير لتفعيل الصلاحية
-        </p>
-      </div>
+      <EmptyState
+        variant="no-data"
+        title="غير مصرح"
+        description="غير مصرح لك بالوصول إلى المنتجات — تواصل مع المدير لتفعيل الصلاحية"
+      />
     );
 
+  const hasActiveFilter = !!(search || catFilter);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex gap-2 items-center flex-wrap">
-          <div className="relative">
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink/40" />
-            <input
-              type="text"
-              placeholder="بحث عن منتج..."
-              className="glass-input pl-4 icon-pr w-64"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          {categories.length > 0 && (
+    <div className="space-y-4">
+      {/* ── Toolbar ─────────────────────────────────────────── */}
+      <PageToolbar
+        searchSlot={
+          <SearchInput
+            placeholder="بحث عن منتج..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+          />
+        }
+        filtersSlot={
+          categories.length > 0 ? (
             <select
-              className="glass-input appearance-none w-44 cursor-pointer"
+              className="erp-input h-10 w-44 cursor-pointer"
               value={catFilter}
               onChange={(e) => setCatFilter(e.target.value)}
+              aria-label="تصفية حسب التصنيف"
             >
               <option value="">كل الأصناف</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.name} className="bg-gray-900">
+                <option key={cat.id} value={cat.name}>
                   {cat.name} ({cat.product_count})
                 </option>
               ))}
             </select>
-          )}
-        </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          {/* Export Excel */}
-          <button
-            onClick={() => exportProductsExcel(products)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all whitespace-nowrap"
-            title="تصدير Excel"
-          >
-            <FileDown className="w-4 h-4" /> تصدير
-          </button>
+          ) : null
+        }
+        actionsSlot={
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => exportProductsExcel(products)}>
+              <FileDown /> تصدير
+            </Button>
 
-          {canManageProducts && (
-            <>
-              {/* Import Excel */}
-              <button
-                onClick={() => prodRef.current?.click()}
-                disabled={prodImporting}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all whitespace-nowrap disabled:opacity-50"
-                title="استيراد من Excel"
-              >
-                {prodImporting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileUp className="w-4 h-4" />
-                )}
-                {prodImporting ? 'جاري...' : 'استيراد Excel'}
-              </button>
+            {canManageProducts && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => prodRef.current?.click()}
+                  loading={prodImporting}
+                  disabled={prodImporting}
+                >
+                  <FileUp /> {prodImporting ? 'جاري...' : 'استيراد Excel'}
+                </Button>
 
-              {/* Download template */}
-              <button
-                onClick={downloadProductsTemplate}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-surface border border-line text-ink/50 hover:text-ink hover:border-line/80 transition-all whitespace-nowrap"
-                title="تحميل نموذج فارغ"
-              >
-                <Download className="w-4 h-4" /> نموذج
-              </button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={downloadProductsTemplate}
+                >
+                  <Download /> نموذج
+                </Button>
 
-              {/* Hidden file input */}
-              <input
-                ref={prodRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                className="hidden"
-                onChange={handleProductsImport}
-              />
+                {/* Hidden file input */}
+                <input
+                  ref={prodRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={handleProductsImport}
+                />
 
-              {/* Add product */}
-              <button
-                onClick={() => setShowAdd(true)}
-                className="btn-primary flex items-center gap-2 whitespace-nowrap"
-              >
-                <Plus className="w-5 h-5" /> إضافة منتج
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Import result banner */}
-      {prodResult && (
-        <div
-          className={`px-4 py-3 rounded-xl border text-sm space-y-2 ${
-            prodResult.failed === 0
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>
-              تم استيراد <strong>{prodResult.success}</strong> صنف
-              {prodResult.failed > 0 && (
-                <span className="text-red-400"> — فشل {prodResult.failed} صنف</span>
-              )}
-            </span>
+                <Button size="sm" onClick={() => setShowAdd(true)}>
+                  <Plus /> إضافة منتج
+                </Button>
+              </>
+            )}
           </div>
-          {prodResult.errors.length > 0 && (
-            <ul className="text-xs text-red-400 space-y-0.5 pr-6 list-disc">
-              {prodResult.errors.map((err, i) => (
-                <li key={i}>{err}</li>
-              ))}
-            </ul>
-          )}
-        </div>
+        }
+      />
+
+      {/* ── Import result banner ─────────────────────────────── */}
+      {prodResult && (
+        <Banner
+          variant={prodResult.failed === 0 ? 'success' : 'warning'}
+          title={
+            prodResult.failed === 0
+              ? `تم استيراد ${prodResult.success} صنف بنجاح`
+              : `تم استيراد ${prodResult.success} صنف — فشل ${prodResult.failed} صنف`
+          }
+          description={
+            prodResult.errors.length > 0
+              ? prodResult.errors.join(' / ')
+              : undefined
+          }
+        />
       )}
 
+      {/* ── Modals ──────────────────────────────────────────── */}
       {showAdd && (
         <ProductFormModal
           title="منتج جديد"
@@ -320,21 +312,28 @@ export function ProductsTab() {
           isPending={updateMutation.isPending}
         />
       )}
+
+      {/* ── QR code modal ───────────────────────────────────── */}
       {qrProduct && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           dir="rtl"
           onClick={() => setQrProduct(null)}
         >
-          <div
-            className="glass-panel rounded-3xl p-6 w-full max-w-xs border border-line space-y-4 text-center"
+          <Card
+            className="p-6 w-full max-w-xs space-y-4 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-black text-ink">رمز QR للمنتج</h2>
-              <button onClick={() => setQrProduct(null)} className="text-ink/40 hover:text-ink">
-                <X className="w-5 h-5" />
-              </button>
+              <h2 className="text-base font-black">رمز QR للمنتج</h2>
+              <IconButton
+                aria-label="إغلاق"
+                variant="ghost"
+                size="sm"
+                onClick={() => setQrProduct(null)}
+              >
+                <X />
+              </IconButton>
             </div>
             <div className="flex justify-center p-4 bg-white rounded-2xl">
               <QRCodeSVG
@@ -343,138 +342,170 @@ export function ProductsTab() {
                 level="H"
               />
             </div>
-            <p className="text-ink font-bold text-sm">{qrProduct.name}</p>
-            {qrProduct.sku && <p className="text-ink/40 text-xs font-mono">SKU: {qrProduct.sku}</p>}
-            <p className="text-ink/30 text-xs">امسح الرمز لتحديد المنتج</p>
-          </div>
+            <p className="font-bold text-sm">{qrProduct.name}</p>
+            {qrProduct.sku && (
+              <p className="text-xs font-mono opacity-40">SKU: {qrProduct.sku}</p>
+            )}
+            <p className="text-xs opacity-30">امسح الرمز لتحديد المنتج</p>
+          </Card>
         </div>
       )}
 
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-ink/80 whitespace-nowrap">
-            <thead className="bg-surface border-b border-line">
-              <tr>
-                <th className="p-4 font-semibold text-ink/60">المنتج</th>
-                <th className="p-4 font-semibold text-ink/60">الباركود</th>
-                <th className="p-4 font-semibold text-ink/60">التصنيف</th>
-                <th className="p-4 font-semibold text-ink/60">التكلفة</th>
-                <th className="p-4 font-semibold text-ink/60">سعر البيع</th>
-                <th className="p-4 font-semibold text-ink/60">الهامش</th>
-                <th className="p-4 font-semibold text-ink/60">الكمية</th>
-                <th className="p-4 font-semibold text-ink/60 w-24 text-center">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <TableSkeleton cols={8} rows={6} />
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-14 text-center">
-                    <Package className="w-10 h-10 text-ink/20 mx-auto mb-3" />
-                    <p className="text-ink/40 font-bold">لا توجد منتجات</p>
-                    <p className="text-ink/20 text-sm mt-1">
-                      {search || catFilter
-                        ? 'جرب كلمة بحث أو تصنيف مختلف'
-                        : 'اضغط «إضافة منتج» لإضافة منتجات'}
-                    </p>
-                    {canManageProducts && !search && !catFilter && (
-                      <button
-                        onClick={() => setShowAdd(true)}
-                        className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition-all"
-                      >
-                        <Plus className="w-4 h-4" /> إضافة أول منتج
-                      </button>
+      {/* ── Table / states ──────────────────────────────────── */}
+      {isLoading ? (
+        <SkeletonTable rows={6} cols={8} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          variant={hasActiveFilter ? 'no-results' : 'no-data'}
+          query={search || undefined}
+          title={hasActiveFilter ? undefined : 'لا توجد منتجات'}
+          description={hasActiveFilter ? undefined : 'اضغط «إضافة منتج» لإضافة منتجات.'}
+          action={
+            !hasActiveFilter && canManageProducts ? (
+              <Button size="sm" onClick={() => setShowAdd(true)}>
+                <Plus /> إضافة أول منتج
+              </Button>
+            ) : hasActiveFilter ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearch('');
+                  setCatFilter('');
+                }}
+              >
+                <X /> مسح الفلتر
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeader>المنتج</TableHeader>
+              <TableHeader>الباركود</TableHeader>
+              <TableHeader>التصنيف</TableHeader>
+              <TableHeader>التكلفة</TableHeader>
+              <TableHeader>سعر البيع</TableHeader>
+              <TableHeader>الهامش</TableHeader>
+              <TableHeader>الكمية</TableHeader>
+              <TableHeader>إجراءات</TableHeader>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filtered.map((product) => {
+              const displayCat = product.category_name || product.category;
+              const isLow =
+                product.low_stock_threshold !== null &&
+                product.quantity <= (product.low_stock_threshold ?? 5);
+              const margin =
+                Number(product.sale_price) > 0
+                  ? ((Number(product.sale_price) - Number(product.cost_price)) /
+                      Number(product.sale_price)) *
+                    100
+                  : 0;
+
+              return (
+                <TableRow key={product.id}>
+                  {/* Product name */}
+                  <TableCell>
+                    <span className="font-bold">{product.name}</span>
+                  </TableCell>
+
+                  {/* SKU / Barcode */}
+                  <TableCell variant="metadata">
+                    {product.sku ? (
+                      <span className="font-mono">{product.sku}</span>
+                    ) : (
+                      '—'
                     )}
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((product) => {
-                  const displayCat = product.category_name || product.category;
-                  const isLow =
-                    product.low_stock_threshold !== null &&
-                    product.quantity <= (product.low_stock_threshold ?? 5);
-                  const margin =
-                    Number(product.sale_price) > 0
-                      ? ((Number(product.sale_price) - Number(product.cost_price)) /
-                          Number(product.sale_price)) *
-                        100
-                      : 0;
-                  return (
-                    <tr key={product.id} className="border-b border-line erp-table-row">
-                      <td className="p-4 font-bold text-ink">{product.name}</td>
-                      <td className="p-4 text-amber-300/70 font-mono text-xs">
-                        {product.sku || '—'}
-                      </td>
-                      <td className="p-4">
-                        {displayCat ? (
-                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20">
-                            {displayCat}
-                          </span>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="p-4 text-ink/70">
-                        {formatCurrency(Number(product.cost_price))}
-                      </td>
-                      <td className="p-4 font-bold text-emerald-400">
-                        {formatCurrency(Number(product.sale_price))}
-                      </td>
-                      <td className="p-4 text-center">
-                        <span
-                          className={`text-xs font-bold ${margin >= 30 ? 'text-emerald-400' : margin >= 15 ? 'text-yellow-400' : 'text-orange-400'}`}
+                  </TableCell>
+
+                  {/* Category */}
+                  <TableCell>
+                    {displayCat ? (
+                      <Badge variant="neutral">{displayCat}</Badge>
+                    ) : (
+                      '—'
+                    )}
+                  </TableCell>
+
+                  {/* Cost */}
+                  <TableCell variant="number">
+                    {formatCurrency(Number(product.cost_price))}
+                  </TableCell>
+
+                  {/* Sale price */}
+                  <TableCell variant="number">
+                    <span className="font-bold">
+                      {formatCurrency(Number(product.sale_price))}
+                    </span>
+                  </TableCell>
+
+                  {/* Margin */}
+                  <TableCell variant="number">
+                    <StatusBadge
+                      variant={
+                        margin >= 30 ? 'positive' : margin >= 15 ? 'neutral' : 'critical'
+                      }
+                      label={`${margin.toFixed(1)}%`}
+                      icon={<></>}
+                    />
+                  </TableCell>
+
+                  {/* Quantity */}
+                  <TableCell variant="number">
+                    {isLow ? (
+                      <StatusBadge variant="critical" label={String(product.quantity)} />
+                    ) : (
+                      <span className="font-bold">{product.quantity}</span>
+                    )}
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell variant="action">
+                    <div className="flex items-center gap-1.5">
+                      <IconButton
+                        aria-label="رمز QR"
+                        title="رمز QR"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setQrProduct({ id: product.id, name: product.name, sku: product.sku })
+                        }
+                      >
+                        <QrCode />
+                      </IconButton>
+                      {canManageProducts && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEdit(product)}
+                          title="تعديل المنتج"
                         >
-                          {margin.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${isLow ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}
+                          <Pencil /> تعديل
+                        </Button>
+                      )}
+                      {canManageProducts && (
+                        <IconButton
+                          aria-label="حذف المنتج"
+                          title="حذف المنتج"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setConfirmDeleteId(product.id)}
                         >
-                          {isLow && <AlertTriangle className="w-3 h-3" />}
-                          {product.quantity}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() =>
-                              setQrProduct({ id: product.id, name: product.name, sku: product.sku })
-                            }
-                            title="رمز QR"
-                            className="p-2 rounded-lg text-ink/40 hover:text-ink/70 hover:bg-surface transition-colors"
-                          >
-                            <QrCode className="w-4 h-4" />
-                          </button>
-                          {canManageProducts && (
-                            <button
-                              onClick={() => openEdit(product)}
-                              title="تعديل المنتج"
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-blue-400 text-xs font-bold cursor-pointer border border-blue-400/40 bg-blue-500/20 hover:bg-blue-500/30 transition-colors"
-                            >
-                              <Pencil style={{ width: '14px', height: '14px' }} /> تعديل
-                            </button>
-                          )}
-                          {canManageProducts && (
-                            <button
-                              onClick={() => setConfirmDeleteId(product.id)}
-                              title="حذف المنتج"
-                              className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                          <Trash2 />
+                        </IconButton>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
