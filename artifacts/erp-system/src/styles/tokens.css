@@ -1,383 +1,1074 @@
 /*
- * ════════════════════════════════════════════════════════════════
- *  MUHKAMPRO Design System — Token Layer  v4
- *  Single source of truth for ALL design tokens.
- *  ─────────────────────────────────────────────────────────────
- *  Brand: Teal (#2DD4BF dark / #0F766E light)
- *  Philosophy: Professional Workspace — Apple clarity, Linear calm
- *  Legacy --erp-* aliases kept for backward compatibility.
- * ════════════════════════════════════════════════════════════════
+ * ═══════════════════════════════════════════════════════════════════
+ *  MUHKAM V3 — Design System Token Layer
+ *  Phase 03, Step 01
+ *
+ *  Three-Layer Architecture (enforced by governance rules TG-01–TG-15):
+ *
+ *    LAYER 1  Primitive   Raw values, no semantic meaning.
+ *                         Hex lives ONLY here. No component may reference these.
+ *
+ *    LAYER 2  Semantic    Purpose-named, mode-aware.
+ *                         References Primitives only. Never other Semantics.
+ *
+ *    LAYER 3  Component   Component-scoped, references Semantics only.
+ *                         Never references Primitives directly.
+ *
+ *  Brand:     Muhkam Blue — #3B80FF (dark) / #1D64D8 (light)
+ *  RTL:       All logical properties. Physical left/right never used in
+ *             component styles. Governed by TG-05.
+ *
+ *  Backward-compat aliases at the bottom of this file map the old
+ *  token names (--bg-app, --brand, --erp-*, etc.) to the new system.
+ *  Delete progressively as each component is migrated in Phase 05.
+ * ═══════════════════════════════════════════════════════════════════
  */
 
-/* ── DARK (default) ──────────────────────────────────────────── */
+
+/* ════════════════════════════════════════════════════════════════════
+   LAYER 1 — PRIMITIVE TOKENS
+   Raw named values. No semantic meaning assigned here.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root {
+
+  /* ── Blue Scale (Muhkam Brand) ──────────────────────────────── */
+  --primitive-blue-50:  #EEF4FF;
+  --primitive-blue-100: #D9E8FF;
+  --primitive-blue-200: #BBD4FF;
+  --primitive-blue-300: #92B8FF;
+  --primitive-blue-400: #6097FF;
+  --primitive-blue-500: #3B80FF;   /* Dark mode accent */
+  --primitive-blue-600: #2563EB;
+  --primitive-blue-700: #1D64D8;   /* Light mode accent */
+  --primitive-blue-800: #1A4FB5;
+  --primitive-blue-900: #1B3E8A;
+
+  /* ── Slate Dark Scale (dark mode surfaces + text) ───────────── */
+  --primitive-slate-dark-0:  #06060F;   /* OLED mobile canvas */
+  --primitive-slate-dark-1:  #0A0A15;
+  --primitive-slate-dark-2:  #0E0E1A;
+  --primitive-slate-dark-3:  #14141F;   /* Default canvas */
+  --primitive-slate-dark-4:  #191926;
+  --primitive-slate-dark-5:  #1E1E2E;   /* surface-0 */
+  --primitive-slate-dark-6:  #242436;   /* surface-1 */
+  --primitive-slate-dark-7:  #2A2A40;   /* surface-2 */
+  --primitive-slate-dark-8:  #30304A;
+  --primitive-slate-dark-9:  #383855;
+  --primitive-slate-dark-10: #454568;
+  --primitive-slate-dark-11: #5C5C80;
+  --primitive-slate-dark-12: #7070A0;   /* text-disabled */
+  --primitive-slate-dark-13: #8888B8;
+  --primitive-slate-dark-14: #A8A8D0;   /* text-tertiary */
+  --primitive-slate-dark-15: #C0C0DC;   /* text-secondary */
+  --primitive-slate-dark-16: #D4D4EC;
+  --primitive-slate-dark-17: #E8E8F8;
+  --primitive-slate-dark-18: #F4F4FC;   /* text-primary */
+  --primitive-slate-dark-19: #FFFFFF;
+
+  /* ── Slate Light Scale (light mode surfaces + text) ─────────── */
+  --primitive-slate-light-0:  #FFFFFF;
+  --primitive-slate-light-1:  #F8F9FC;   /* canvas */
+  --primitive-slate-light-2:  #F0F2F7;
+  --primitive-slate-light-3:  #E8ECF4;   /* surface-0 equivalent */
+  --primitive-slate-light-4:  #DDE3EF;   /* border-structural */
+  --primitive-slate-light-5:  #C8D1E4;   /* border-interactive */
+  --primitive-slate-light-6:  #8FA0BE;   /* text-tertiary */
+  --primitive-slate-light-7:  #5B6F8F;   /* text-secondary */
+  --primitive-slate-light-8:  #364860;
+  --primitive-slate-light-9:  #1F3050;
+  --primitive-slate-light-10: #141A24;   /* text-primary */
+  --primitive-slate-light-11: #0A1018;
+
+  /* ── Green Scale (Positive — semantic only) ─────────────────── */
+  --primitive-green-50:  #F0FDF4;
+  --primitive-green-100: #DCFCE7;
+  --primitive-green-200: #BBF7D0;
+  --primitive-green-400: #4ADE80;
+  --primitive-green-500: #22C55E;
+  --primitive-green-600: #16A34A;
+  --primitive-green-700: #15803D;
+  --primitive-green-900: #14532D;
+
+  /* ── Amber Scale (Critical — semantic only, NEVER brand) ─────── */
+  --primitive-amber-50:  #FFFBEB;
+  --primitive-amber-100: #FEF3C7;
+  --primitive-amber-200: #FDE68A;
+  --primitive-amber-400: #FBBF24;
+  --primitive-amber-500: #F59E0B;
+  --primitive-amber-600: #D97706;
+  --primitive-amber-700: #B45309;
+  --primitive-amber-900: #78350F;
+
+  /* ── Red Scale (Negative — semantic only) ───────────────────── */
+  --primitive-red-50:  #FEF2F2;
+  --primitive-red-100: #FEE2E2;
+  --primitive-red-200: #FECACA;
+  --primitive-red-400: #F87171;
+  --primitive-red-500: #EF4444;
+  --primitive-red-600: #DC2626;
+  --primitive-red-700: #B91C1C;
+  --primitive-red-900: #7F1D1D;
+
+  /* ── Sky Scale (Informative — semantic only) ────────────────── */
+  --primitive-sky-50:  #F0F9FF;
+  --primitive-sky-100: #E0F2FE;
+  --primitive-sky-200: #BAE6FD;
+  --primitive-sky-400: #38BDF8;
+  --primitive-sky-500: #0EA5E9;
+  --primitive-sky-600: #0284C7;
+  --primitive-sky-700: #0369A1;
+
+  /* ── Violet Scale (Repair QC ONLY — restricted) ─────────────── */
+  --primitive-violet-50:  #F5F3FF;
+  --primitive-violet-100: #EDE9FE;
+  --primitive-violet-200: #DDD6FE;
+  --primitive-violet-400: #A78BFA;
+  --primitive-violet-500: #8B5CF6;
+  --primitive-violet-600: #7C3AED;
+  --primitive-violet-700: #6D28D9;
+
+  /* ── Space Scale (4px grid — 20 steps) ─────────────────────── */
+  --primitive-space-0:    0px;
+  --primitive-space-px:   1px;
+  --primitive-space-0-5:  2px;
+  --primitive-space-1:    4px;
+  --primitive-space-1-5:  6px;
+  --primitive-space-2:    8px;
+  --primitive-space-2-5:  10px;
+  --primitive-space-3:    12px;
+  --primitive-space-3-5:  14px;
+  --primitive-space-4:    16px;
+  --primitive-space-5:    20px;
+  --primitive-space-6:    24px;
+  --primitive-space-7:    28px;
+  --primitive-space-8:    32px;
+  --primitive-space-9:    36px;
+  --primitive-space-10:   40px;
+  --primitive-space-11:   44px;
+  --primitive-space-12:   48px;
+  --primitive-space-14:   56px;
+  --primitive-space-16:   64px;
+  --primitive-space-20:   80px;
+  --primitive-space-24:   96px;
+
+  /* ── Font Sizes (13-step scale) ─────────────────────────────── */
+  --primitive-font-size-2xs:  10px;   /* caption-2 */
+  --primitive-font-size-xs:   11px;
+  --primitive-font-size-sm:   12px;   /* caption-1 */
+  --primitive-font-size-base: 13px;   /* body-sm */
+  --primitive-font-size-md:   14px;   /* body */
+  --primitive-font-size-lg:   15px;
+  --primitive-font-size-xl:   16px;   /* body-large */
+  --primitive-font-size-2xl:  18px;   /* title-3 */
+  --primitive-font-size-3xl:  20px;   /* title-2 */
+  --primitive-font-size-4xl:  24px;   /* title-1 */
+  --primitive-font-size-5xl:  28px;   /* large-title */
+  --primitive-font-size-6xl:  32px;   /* display-sm / KPI-N2 */
+  --primitive-font-size-7xl:  40px;   /* display / KPI-N1 */
+
+  /* ── Font Weights ───────────────────────────────────────────── */
+  --primitive-font-weight-regular:   400;
+  --primitive-font-weight-medium:    500;
+  --primitive-font-weight-semibold:  600;
+  --primitive-font-weight-bold:      700;
+  --primitive-font-weight-extrabold: 800;
+
+  /* ── Line Heights ───────────────────────────────────────────── */
+  --primitive-line-height-tight:   1.25;
+  --primitive-line-height-snug:    1.375;
+  --primitive-line-height-normal:  1.5;    /* TG-07: min for Arabic body */
+  --primitive-line-height-relaxed: 1.625;
+  --primitive-line-height-loose:   2;
+
+  /* ── Border Radius ──────────────────────────────────────────── */
+  --primitive-radius-none: 0px;
+  --primitive-radius-sm:   4px;
+  --primitive-radius-md:   6px;
+  --primitive-radius-lg:   8px;
+  --primitive-radius-xl:   12px;
+  --primitive-radius-2xl:  16px;
+  --primitive-radius-3xl:  24px;
+  --primitive-radius-full: 9999px;
+
+  /* ── Border Width ───────────────────────────────────────────── */
+  --primitive-border-width-0: 0px;
+  --primitive-border-width-1: 1px;
+  --primitive-border-width-2: 2px;
+  --primitive-border-width-3: 3px;
+  --primitive-border-width-4: 4px;
+
+  /* ── Opacity ────────────────────────────────────────────────── */
+  --primitive-opacity-0:   0;
+  --primitive-opacity-5:   0.05;
+  --primitive-opacity-10:  0.10;
+  --primitive-opacity-15:  0.15;
+  --primitive-opacity-20:  0.20;
+  --primitive-opacity-25:  0.25;
+  --primitive-opacity-30:  0.30;
+  --primitive-opacity-40:  0.40;
+  --primitive-opacity-50:  0.50;
+  --primitive-opacity-60:  0.60;
+  --primitive-opacity-70:  0.70;
+  --primitive-opacity-80:  0.80;
+  --primitive-opacity-100: 1;
+
+  /* ── Duration ───────────────────────────────────────────────── */
+  --primitive-duration-instant:  50ms;
+  --primitive-duration-flash:    100ms;
+  --primitive-duration-fast:     150ms;
+  --primitive-duration-standard: 200ms;
+  --primitive-duration-moderate: 300ms;
+  --primitive-duration-slow:     400ms;
+  --primitive-duration-xslow:    600ms;
+  --primitive-duration-skeleton: 1500ms;
+
+  /* ── Easing ─────────────────────────────────────────────────── */
+  --primitive-easing-linear:   linear;
+  --primitive-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --primitive-easing-enter:    cubic-bezier(0, 0, 0.2, 1);
+  --primitive-easing-exit:     cubic-bezier(0.4, 0, 1, 1);
+  --primitive-easing-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Blur ───────────────────────────────────────────────────── */
+  --primitive-blur-none: 0px;
+  --primitive-blur-sm:   4px;
+  --primitive-blur-md:   8px;
+  --primitive-blur-lg:   12px;
+  --primitive-blur-xl:   20px;
+  --primitive-blur-2xl:  40px;
+
+  /* ── Z-Index ────────────────────────────────────────────────── */
+  --primitive-z-0:   0;
+  --primitive-z-10:  10;
+  --primitive-z-20:  20;
+  --primitive-z-50:  50;
+  --primitive-z-100: 100;
+  --primitive-z-200: 200;
+  --primitive-z-300: 300;
+  --primitive-z-400: 400;
+
+  /* ── Icon Sizes ─────────────────────────────────────────────── */
+  --primitive-icon-12: 12px;
+  --primitive-icon-14: 14px;
+  --primitive-icon-16: 16px;
+  --primitive-icon-20: 20px;
+  --primitive-icon-24: 24px;
+  --primitive-icon-32: 32px;
+  --primitive-icon-48: 48px;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   LAYER 2 — SEMANTIC TOKENS  (Dark Mode Default)
+   Purpose-named. References Layer 1 Primitives only.
+   ════════════════════════════════════════════════════════════════════ */
+
 :root,
 html,
 html.dark {
-  /* ── App backgrounds ── */
-  --bg-app:        #0B1110;
-  --bg-surface:    #111A18;
-  --bg-surface-alt:#17211F;
-  --bg-card:       #111A18;
-  --bg-elevated:   #17211F;
+  color-scheme: dark;
 
-  /* ── Transparent overlays (backward-compat surface system) ── */
-  --surface:        rgba(255, 255, 255, 0.04);
-  --surface-raised: rgba(255, 255, 255, 0.065);
+  /* ── Canvas & Surfaces ──────────────────────────────────────── */
+  --color-canvas:    var(--primitive-slate-dark-3);    /* #14141F */
+  --color-surface-0: var(--primitive-slate-dark-5);    /* #1E1E2E — cards, panels */
+  --color-surface-1: var(--primitive-slate-dark-6);    /* #242436 — drawers, dropdowns */
+  --color-surface-2: var(--primitive-slate-dark-7);    /* #2A2A40 — dialogs, toasts */
 
-  /* ── Structural backgrounds ── */
-  --bg-sidebar: #0E1715;
-  --bg-topbar:  rgba(11, 17, 16, 0.92);
-  --bg-input:   rgba(255, 255, 255, 0.05);
+  /* ── Text ───────────────────────────────────────────────────── */
+  --color-text-primary:     var(--primitive-slate-dark-18);  /* #F4F4FC */
+  --color-text-secondary:   var(--primitive-slate-dark-15);  /* #C0C0DC */
+  --color-text-tertiary:    var(--primitive-slate-dark-14);  /* #A8A8D0 */
+  --color-text-disabled:    var(--primitive-slate-dark-12);  /* #7070A0 */
+  --color-text-placeholder: var(--primitive-slate-dark-11);  /* #5C5C80 */
 
-  /* ── Text ── */
-  --text-1: #F8FAFC;
-  --text-2: #CBD5E1;
-  --text-3: #94A3B8;
-  --text-4: #64748B;
+  /* ── Accent (Brand Blue) ────────────────────────────────────── */
+  --color-accent:        var(--primitive-blue-500);      /* #3B80FF */
+  --color-accent-hover:  var(--primitive-blue-400);      /* #6097FF */
+  --color-accent-active: var(--primitive-blue-600);      /* #2563EB */
+  --color-accent-subtle: rgba(59, 128, 255, 0.12);
+  --color-accent-border: rgba(59, 128, 255, 0.25);
+  --color-accent-text:   var(--primitive-blue-400);
 
-  /* ── Borders ── */
-  --edge:        rgba(255, 255, 255, 0.08);
-  --edge-md:     rgba(255, 255, 255, 0.13);
-  --edge-strong: rgba(255, 255, 255, 0.18);
+  /* ── Border ─────────────────────────────────────────────────── */
+  --color-border-structural:  rgba(255, 255, 255, 0.06);
+  --color-border-interactive: rgba(255, 255, 255, 0.12);
+  --color-border-strong:      rgba(255, 255, 255, 0.18);
+  --color-border-focus:       var(--primitive-blue-500);
 
-  /* ── Brand (Teal) ── */
-  --brand:        #2DD4BF;
-  --brand-hover:  #5EEAD4;
-  --brand-dim:    rgba(45, 212, 191, 0.45);
-  --brand-muted:  rgba(45, 212, 191, 0.10);
-  --brand-border: rgba(45, 212, 191, 0.22);
-  --brand-glow:   rgba(45, 212, 191, 0.04);
+  /* ── Interaction Overlays ────────────────────────────────────── */
+  --color-hover-overlay:    rgba(255, 255, 255, 0.04);
+  --color-active-overlay:   rgba(255, 255, 255, 0.07);
+  --color-selected-overlay: rgba(59, 128, 255, 0.10);
 
-  /* ── Button primary text (dark text on light teal) ── */
-  --btn-primary-text: #0d1117;
+  /* ── Status: Positive (Green) ───────────────────────────────── */
+  --color-positive:        var(--primitive-green-500);   /* #22C55E */
+  --color-positive-text:   var(--primitive-green-400);   /* #4ADE80 */
+  --color-positive-subtle: rgba(34, 197, 94, 0.10);
+  --color-positive-border: rgba(34, 197, 94, 0.20);
 
-  /* ── Status ── */
-  --status-success: #34D399;
-  --status-warning: #FBBF24;
-  --status-danger:  #F87171;
-  --status-info:    #60A5FA;
+  /* ── Status: Critical (Amber — NEVER brand or accent) ──────── */
+  --color-critical:        var(--primitive-amber-500);   /* #F59E0B */
+  --color-critical-text:   var(--primitive-amber-400);   /* #FBBF24 */
+  --color-critical-subtle: rgba(245, 158, 11, 0.10);
+  --color-critical-border: rgba(245, 158, 11, 0.20);
 
-  /* ── Status tinted backgrounds/borders ── */
-  --status-danger-bg:     rgba(220, 38, 38, 0.10);
-  --status-danger-border: rgba(220, 38, 38, 0.25);
+  /* ── Status: Negative (Red) ─────────────────────────────────── */
+  --color-negative:        var(--primitive-red-500);     /* #EF4444 */
+  --color-negative-text:   var(--primitive-red-400);     /* #F87171 */
+  --color-negative-subtle: rgba(239, 68, 68, 0.10);
+  --color-negative-border: rgba(239, 68, 68, 0.20);
 
-  /* ── Special statuses ── */
-  --status-external-repair: #D8B4FE;
-  --status-urgent:          #F97316;
+  /* ── Status: Informative (Sky Blue) ─────────────────────────── */
+  --color-informative:        var(--primitive-sky-500);  /* #0EA5E9 */
+  --color-informative-text:   var(--primitive-sky-400);  /* #38BDF8 */
+  --color-informative-subtle: rgba(14, 165, 233, 0.10);
+  --color-informative-border: rgba(14, 165, 233, 0.20);
 
-  /* ── Status tinted surfaces ── */
-  --bg-success-tint: rgba(5, 150, 105, 0.08);
-  --bg-danger-tint:  rgba(220, 38, 38, 0.08);
-  --bg-warning-tint: rgba(245, 158, 11, 0.08);
-  --bg-success-mid:  rgba(5, 150, 105, 0.12);
-  --bg-danger-mid:   rgba(220, 38, 38, 0.12);
+  /* ── Status: Neutral (Slate) ────────────────────────────────── */
+  --color-neutral:        var(--primitive-slate-dark-12);
+  --color-neutral-text:   var(--primitive-slate-dark-13);
+  --color-neutral-subtle: rgba(255, 255, 255, 0.06);
+  --color-neutral-border: rgba(255, 255, 255, 0.12);
 
-  /* ── Status tinted borders ── */
-  --edge-success: rgba(5, 150, 105, 0.20);
-  --edge-danger:  rgba(220, 38, 38, 0.20);
-  --edge-warning: rgba(245, 158, 11, 0.20);
+  /* ── Repair QC (Violet — RESTRICTED to Repair QC stage only) ── */
+  --color-repair-qc:        var(--primitive-violet-500);  /* #8B5CF6 */
+  --color-repair-qc-text:   var(--primitive-violet-400);  /* #A78BFA */
+  --color-repair-qc-subtle: rgba(139, 92, 246, 0.10);
+  --color-repair-qc-border: rgba(139, 92, 246, 0.20);
 
-  /* ── Table row backgrounds ── */
-  --bg-row-alt:     rgba(255, 255, 255, 0.02);
-  --bg-row-section: rgba(255, 255, 255, 0.03);
-  --bg-row-subhead: rgba(255, 255, 255, 0.04);
-  --bg-row-header:  rgba(255, 255, 255, 0.055);
-  --edge-row:       rgba(255, 255, 255, 0.07);
+  /* ── Backdrop ───────────────────────────────────────────────── */
+  --color-backdrop:        rgba(0, 0, 0, 0.65);
+  --color-backdrop-drawer: rgba(0, 0, 0, 0.40);
+  --color-backdrop-light:  rgba(0, 0, 0, 0.20);
 
-  /* ── Text helpers ── */
-  --text-hint:    rgba(255, 255, 255, 0.32);
-  --text-neutral: rgba(255, 255, 255, 0.52);
+  /* ── Caret & Selection ──────────────────────────────────────── */
+  --color-caret:     var(--primitive-blue-500);
+  --color-selection: rgba(59, 128, 255, 0.18);
 
-  /* ── Floating panel ── */
-  --bg-panel: #131E1C;
+  /* ── Typography — Font Families ─────────────────────────────── */
+  --font-body:    'Tajawal', sans-serif;
+  --font-numeric: 'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Menlo', 'Consolas', monospace;
 
-  /* ── Deep background ── */
-  --bg-deep: #060C0B;
+  /* ── Typography — Semantic Sizes ────────────────────────────── */
+  --text-caption-2:   var(--primitive-font-size-2xs);   /* 10px */
+  --text-caption-1:   var(--primitive-font-size-sm);    /* 12px */
+  --text-body-sm:     var(--primitive-font-size-base);  /* 13px */
+  --text-body:        var(--primitive-font-size-md);    /* 14px */
+  --text-body-large:  var(--primitive-font-size-xl);    /* 16px */
+  --text-title-3:     var(--primitive-font-size-2xl);   /* 18px */
+  --text-title-2:     var(--primitive-font-size-3xl);   /* 20px */
+  --text-title-1:     var(--primitive-font-size-4xl);   /* 24px */
+  --text-large-title: var(--primitive-font-size-5xl);   /* 28px */
+  --text-display-sm:  var(--primitive-font-size-6xl);   /* 32px */
+  --text-display:     var(--primitive-font-size-7xl);   /* 40px */
 
-  /* ── Focus ── */
-  --focus-edge: rgba(45, 212, 191, 0.55);
-  --focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.15);
+  /* ── Typography — Semantic Weights ──────────────────────────── */
+  --font-weight-regular:   var(--primitive-font-weight-regular);
+  --font-weight-medium:    var(--primitive-font-weight-medium);
+  --font-weight-semibold:  var(--primitive-font-weight-semibold);
+  --font-weight-bold:      var(--primitive-font-weight-bold);
+  --font-weight-extrabold: var(--primitive-font-weight-extrabold);
 
-  /* ── Shadows ── */
-  --shadow-card:  0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.22);
-  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.28);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.65), 0 4px 20px rgba(0, 0, 0, 0.45);
+  /* ── Typography — Line Heights ───────────────────────────────── */
+  --line-height-tight:   var(--primitive-line-height-tight);   /* 1.25 */
+  --line-height-body:    var(--primitive-line-height-normal);  /* 1.5 — TG-07 min Arabic */
+  --line-height-relaxed: var(--primitive-line-height-relaxed); /* 1.625 */
 
-  /* ── Caret / selection ── */
-  --caret-color:  rgba(45, 212, 191, 0.85);
-  --selection-bg: rgba(45, 212, 191, 0.18);
+  /* ── Spacing — Semantic Aliases ─────────────────────────────── */
+  --space-1:  var(--primitive-space-1);    /* 4px */
+  --space-2:  var(--primitive-space-2);    /* 8px */
+  --space-3:  var(--primitive-space-3);    /* 12px */
+  --space-4:  var(--primitive-space-4);    /* 16px */
+  --space-5:  var(--primitive-space-5);    /* 20px */
+  --space-6:  var(--primitive-space-6);    /* 24px */
+  --space-8:  var(--primitive-space-8);    /* 32px */
+  --space-10: var(--primitive-space-10);   /* 40px */
+  --space-12: var(--primitive-space-12);   /* 48px */
+  --space-16: var(--primitive-space-16);   /* 64px */
+  --space-20: var(--primitive-space-20);   /* 80px */
+  --space-24: var(--primitive-space-24);   /* 96px */
 
-  /* ── Table surface helpers ── */
-  --table-header-bg:   rgba(255, 255, 255, 0.04);
-  --table-header-text: rgba(255, 255, 255, 0.42);
-  --table-border:      rgba(255, 255, 255, 0.06);
-  --table-row-hover:   rgba(255, 255, 255, 0.04);
+  /* Spacing — Component Intent ────────────────────────────────── */
+  --space-card-x:        var(--primitive-space-6);    /* 24px */
+  --space-card-y:        var(--primitive-space-5);    /* 20px */
+  --space-icon-gap:      var(--primitive-space-2);    /* 8px */
+  --space-form-gap:      var(--primitive-space-8);    /* 32px */
+  --space-section:       var(--primitive-space-8);    /* 32px */
+  --space-page-x:        var(--primitive-space-6);    /* 24px */
+  --space-page-top:      var(--primitive-space-8);    /* 32px */
+  --space-heading-above: var(--primitive-space-8);    /* 32px */
+  --space-heading-below: var(--primitive-space-4);    /* 16px */
 
-  /* ════════════════════════════════════════════════════════════
-     LEGACY --erp-* ALIASES — forward to primary tokens.
-     Keep so existing components using var(--erp-brand) etc.
-     continue to work without modification.
-     ════════════════════════════════════════════════════════════ */
+  /* ── Radius — Semantic ───────────────────────────────────────── */
+  --radius-none:         var(--primitive-radius-none);   /* 0px — tables */
+  --radius-sm:           var(--primitive-radius-sm);     /* 4px — tooltip */
+  --radius-button:       var(--primitive-radius-md);     /* 6px — buttons */
+  --radius-input:        var(--primitive-radius-md);     /* 6px — inputs */
+  --radius-badge:        var(--primitive-radius-sm);     /* 4px — status badges */
+  --radius-card:         var(--primitive-radius-lg);     /* 8px — cards */
+  --radius-dialog:       var(--primitive-radius-xl);     /* 12px — dialogs */
+  --radius-drawer:       var(--primitive-radius-xl);     /* 12px — drawer leading corners */
+  --radius-sheet:        var(--primitive-radius-3xl);    /* 24px — bottom sheet */
+  --radius-avatar:       var(--primitive-radius-full);   /* 9999px */
+  --radius-badge-pill:   var(--primitive-radius-full);   /* 9999px — count badges */
+  --radius-popover:      var(--primitive-radius-lg);     /* 8px */
+  --radius-tooltip:      var(--primitive-radius-sm);     /* 4px */
+  --radius-select-panel: var(--primitive-radius-lg);     /* 8px */
+  --radius-toast:        var(--primitive-radius-lg);     /* 8px */
+  --radius-sidebar:      var(--primitive-radius-md);     /* 6px — sidebar item active */
 
-  --erp-bg-app:      var(--bg-app);
-  --erp-bg-sidebar:  var(--bg-sidebar);
-  --erp-bg-topbar:   var(--bg-topbar);
-  --erp-bg-main:     var(--bg-app);
-  --erp-bg-surface:  var(--surface);
-  --erp-bg-card:     var(--bg-card);
-  --erp-bg-elevated: var(--bg-elevated);
-  --erp-bg-panel:    var(--bg-panel);
-  --erp-bg-soft:     var(--surface);
-  --erp-bg-hover:    var(--surface-raised);
-  --erp-bg-active:   rgba(255, 255, 255, 0.08);
-  --erp-bg-input:    var(--bg-input);
-  --erp-input-text:  var(--text-1);
-  --erp-text:        var(--text-1);
+  /* ── Border Width — Semantic ─────────────────────────────────── */
+  --border-width-structural:  var(--primitive-border-width-1);  /* 1px */
+  --border-width-interactive: var(--primitive-border-width-1);  /* 1px */
+  --border-width-focus:       var(--primitive-border-width-2);  /* 2px */
+  --border-width-active:      var(--primitive-border-width-3);  /* 3px — sidebar indicator */
 
-  --erp-brand:        var(--brand);
-  --erp-brand-hover:  var(--brand-hover);
-  --erp-brand-dim:    var(--brand-dim);
-  --erp-brand-muted:  var(--brand-muted);
-  --erp-brand-border: var(--brand-border);
-  --erp-brand-glow:   var(--brand-glow);
-  --erp-accent:       var(--brand);
-  --erp-accent-hover: var(--brand-hover);
+  /* ── Shadows — Semantic ──────────────────────────────────────── */
+  --shadow-card:     0 1px 2px rgba(0,0,0,0.40), 0 4px 16px rgba(0,0,0,0.22);
+  --shadow-dropdown: 0 4px 6px rgba(0,0,0,0.40), 0 8px 24px rgba(0,0,0,0.30);
+  --shadow-hover:    0 4px 12px rgba(0,0,0,0.40), 0 8px 28px rgba(0,0,0,0.28);
+  --shadow-drawer:   0 -4px 32px rgba(0,0,0,0.50);
+  --shadow-dialog:   0 20px 60px rgba(0,0,0,0.65), 0 4px 20px rgba(0,0,0,0.45);
+  --shadow-toast:    0 4px 16px rgba(0,0,0,0.40), 0 1px 4px rgba(0,0,0,0.30);
+  --shadow-tooltip:  0 2px 8px rgba(0,0,0,0.40);
 
-  --erp-text-1: var(--text-1);
-  --erp-text-2: var(--text-2);
-  --erp-text-3: var(--text-3);
-  --erp-text-4: var(--text-4);
+  /* ── Opacity — Semantic ──────────────────────────────────────── */
+  --opacity-disabled: var(--primitive-opacity-40);    /* 0.40 */
+  --opacity-muted:    var(--primitive-opacity-50);    /* 0.50 */
+  --opacity-backdrop: var(--primitive-opacity-60);    /* 0.60 */
+  --opacity-overlay:  var(--primitive-opacity-80);    /* 0.80 */
 
-  --erp-border:         var(--edge);
-  --erp-border-md:      var(--edge-md);
-  --erp-border-strong:  var(--edge-strong);
-  --erp-border-sidebar: var(--edge);
+  /* ── Motion — Duration ───────────────────────────────────────── */
+  --duration-instant:  var(--primitive-duration-instant);    /* 50ms */
+  --duration-flash:    var(--primitive-duration-flash);      /* 100ms */
+  --duration-fast:     var(--primitive-duration-fast);       /* 150ms */
+  --duration-standard: var(--primitive-duration-standard);   /* 200ms */
+  --duration-moderate: var(--primitive-duration-moderate);   /* 300ms */
+  --duration-slow:     var(--primitive-duration-slow);       /* 400ms */
+  --duration-skeleton: var(--primitive-duration-skeleton);   /* 1500ms */
 
-  --erp-focus-border: var(--focus-edge);
-  --erp-focus-shadow: var(--focus-ring);
+  /* Motion — Intent Aliases */
+  --duration-response:   var(--duration-instant);    /* tap feedback */
+  --duration-transition: var(--duration-fast);       /* state changes */
+  --duration-navigation: var(--duration-moderate);   /* page/drawer/dialog */
+  --duration-emphasis:   var(--duration-slow);       /* highlights */
+  --duration-ambient:    var(--duration-skeleton);   /* backgrounds */
 
-  --erp-success: var(--status-success);
-  --erp-warning: var(--status-warning);
-  --erp-danger:  var(--status-danger);
-  --erp-info:    var(--status-info);
+  /* ── Motion — Easing ─────────────────────────────────────────── */
+  --easing-linear:   var(--primitive-easing-linear);
+  --easing-standard: var(--primitive-easing-standard);
+  --easing-enter:    var(--primitive-easing-enter);
+  --easing-exit:     var(--primitive-easing-exit);
+  --easing-spring:   var(--primitive-easing-spring);
 
+  /* ── Blur (TG-11: sidebar + topbar ONLY) ────────────────────── */
+  --blur-glass:   var(--primitive-blur-lg);   /* 12px */
+  --blur-sidebar: var(--primitive-blur-lg);
+  --blur-topbar:  var(--primitive-blur-lg);
+
+  /* ── Z-Index — Semantic ──────────────────────────────────────── */
+  --z-base:            var(--primitive-z-0);
+  --z-above:           var(--primitive-z-10);
+  --z-sticky-header:   var(--primitive-z-20);
+  --z-sidebar:         var(--primitive-z-100);
+  --z-topbar:          var(--primitive-z-100);
+  --z-dropdown:        var(--primitive-z-200);
+  --z-drawer:          var(--primitive-z-200);
+  --z-backdrop:        var(--primitive-z-300);
+  --z-dialog:          var(--primitive-z-300);
+  --z-command-palette: var(--primitive-z-300);
+  --z-toast:           var(--primitive-z-400);
+  --z-tooltip:         var(--primitive-z-400);
+
+  /* ── Icon Size — Semantic ────────────────────────────────────── */
+  --icon-xs:  var(--primitive-icon-12);   /* 12px — badge icon */
+  --icon-sm:  var(--primitive-icon-14);   /* 14px */
+  --icon-md:  var(--primitive-icon-16);   /* 16px — button icon */
+  --icon-lg:  var(--primitive-icon-20);   /* 20px — nav icon */
+  --icon-xl:  var(--primitive-icon-24);   /* 24px */
+  --icon-2xl: var(--primitive-icon-32);   /* 32px */
+  --icon-3xl: var(--primitive-icon-48);   /* 48px — empty state */
+
+  /* ── Touch Targets ───────────────────────────────────────────── */
+  --touch-target-min:     44px;   /* WCAG AA */
+  --touch-target-primary: 48px;
+  --touch-target-sm:      32px;
+  --touch-target-nav:     56px;
+
+  /* ── Focus ───────────────────────────────────────────────────── */
+  --focus-ring-color:  var(--color-accent);
+  --focus-ring-width:  var(--border-width-focus);
+  --focus-ring-offset: var(--border-width-focus);
+  --focus-ring-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-accent);
+
+  /* ── Scrollbar ───────────────────────────────────────────────── */
+  --scrollbar-width:       6px;
+  --scrollbar-thumb:       rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.16);
+  --scrollbar-track:       transparent;
+
+  /* ── Skeleton ────────────────────────────────────────────────── */
+  --skeleton-base:      var(--color-surface-1);
+  --skeleton-highlight: var(--color-surface-2);
+  --skeleton-radius:    var(--primitive-radius-sm);
+  --skeleton-duration:  var(--duration-skeleton);
+
+  /* ── Containers & Layout ─────────────────────────────────────── */
+  --container-sidebar-expanded:  240px;
+  --container-sidebar-collapsed: 64px;
+  --container-topbar-height:     64px;
+  --container-page-max:          1440px;
+  --container-form-max:          800px;
+  --container-prose-max:         700px;
+  --container-dialog-sm:         400px;
+  --container-dialog-md:         560px;
+  --container-dialog-lg:         720px;
+  --container-dialog-xl:         880px;
+  --container-drawer-sm:         320px;
+  --container-drawer-md:         480px;
+  --container-drawer-lg:         640px;
+  --container-drawer-xl:         800px;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   LAYER 3 — COMPONENT TOKENS  (Dark Mode Default)
+   Component-scoped. References Layer 2 Semantics only.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root,
+html,
+html.dark {
+
+  /* ── Button ──────────────────────────────────────────────────── */
+  --btn-primary-bg:        var(--color-accent);
+  --btn-primary-bg-hover:  var(--color-accent-hover);
+  --btn-primary-bg-active: var(--color-accent-active);
+  --btn-primary-text:      #FFFFFF;
+  --btn-primary-radius:    var(--radius-button);
+
+  --btn-secondary-bg:       transparent;
+  --btn-secondary-bg-hover: var(--color-hover-overlay);
+  --btn-secondary-text:     var(--color-text-primary);
+  --btn-secondary-border:   var(--color-border-interactive);
+
+  --btn-ghost-bg-hover:   var(--color-hover-overlay);
+  --btn-ghost-text:       var(--color-text-secondary);
+  --btn-ghost-text-hover: var(--color-text-primary);
+
+  --btn-destructive-bg:        var(--color-negative);
+  --btn-destructive-bg-hover:  var(--primitive-red-400);
+  --btn-destructive-text:      #FFFFFF;
+
+  --btn-sm-height:     28px;
+  --btn-md-height:     36px;
+  --btn-lg-height:     44px;
+  --btn-sm-px:         var(--primitive-space-3);
+  --btn-md-px:         var(--primitive-space-4);
+  --btn-lg-px:         var(--primitive-space-5);
+  --btn-sm-font-size:  var(--text-body-sm);
+  --btn-md-font-size:  var(--text-body);
+  --btn-lg-font-size:  var(--text-body-large);
+  --btn-font-weight:   var(--font-weight-semibold);
+
+  /* ── Form / Input ────────────────────────────────────────────── */
+  --form-input-bg:            rgba(255, 255, 255, 0.05);
+  --form-input-bg-focus:      rgba(255, 255, 255, 0.07);
+  --form-input-border:        var(--color-border-interactive);
+  --form-input-border-focus:  var(--color-accent);
+  --form-input-border-error:  var(--color-negative);
+  --form-input-text:          var(--color-text-primary);
+  --form-input-placeholder:   var(--color-text-disabled);
+  --form-input-height-sm:     32px;
+  --form-input-height-md:     40px;
+  --form-input-height-lg:     48px;
+  --form-input-px:            var(--primitive-space-4);
+  --form-input-radius:        var(--radius-input);
+
+  --form-label-size:           var(--text-caption-1);
+  --form-label-weight:         var(--font-weight-medium);
+  --form-label-color:          var(--color-text-secondary);
+  --form-label-required-color: var(--color-negative-text);
+
+  --form-helper-size:  var(--text-caption-1);
+  --form-helper-color: var(--color-text-tertiary);
+
+  --form-error-size:   var(--text-caption-1);
+  --form-error-color:  var(--color-negative-text);
+  --form-error-weight: var(--font-weight-medium);
+
+  --form-section-gap: var(--space-form-gap);
+
+  /* ── Badge ───────────────────────────────────────────────────── */
+  --badge-font-size:   var(--text-caption-1);
+  --badge-font-weight: var(--font-weight-medium);
+  --badge-height:      22px;
+  --badge-px:          var(--primitive-space-2);
+  --badge-radius:      var(--radius-badge);
+  --badge-icon-size:   var(--icon-xs);
+
+  /* Status Badge — semantic state colors */
+  --badge-positive-bg:     var(--color-positive-subtle);
+  --badge-positive-border: var(--color-positive-border);
+  --badge-positive-text:   var(--color-positive-text);
+
+  --badge-critical-bg:     var(--color-critical-subtle);
+  --badge-critical-border: var(--color-critical-border);
+  --badge-critical-text:   var(--color-critical-text);
+
+  --badge-negative-bg:     var(--color-negative-subtle);
+  --badge-negative-border: var(--color-negative-border);
+  --badge-negative-text:   var(--color-negative-text);
+
+  --badge-neutral-bg:     var(--color-neutral-subtle);
+  --badge-neutral-border: var(--color-neutral-border);
+  --badge-neutral-text:   var(--color-text-tertiary);
+
+  --badge-informative-bg:     var(--color-informative-subtle);
+  --badge-informative-border: var(--color-informative-border);
+  --badge-informative-text:   var(--color-informative-text);
+
+  --badge-repair-qc-bg:     var(--color-repair-qc-subtle);
+  --badge-repair-qc-border: var(--color-repair-qc-border);
+  --badge-repair-qc-text:   var(--color-repair-qc-text);
+
+  /* ── Table ───────────────────────────────────────────────────── */
+  --table-row-height-compact:  32px;
+  --table-row-height-default:  40px;
+  --table-row-height-spacious: 48px;
+  --table-header-bg:           rgba(255, 255, 255, 0.04);
+  --table-header-size:         var(--text-caption-1);
+  --table-header-weight:       var(--font-weight-semibold);
+  --table-header-text:         var(--color-text-tertiary);
+  --table-border-width:        var(--border-width-structural);
+  --table-border-color:        var(--color-border-structural);
+  --table-cell-px:             var(--primitive-space-4);
+  --table-row-bg-hover:        var(--color-hover-overlay);
+  --table-row-bg-selected:     var(--color-selected-overlay);
+
+  /* ── KPI Card ────────────────────────────────────────────────── */
+  --kpi-value-size-primary:   var(--text-display);
+  --kpi-value-size-secondary: var(--text-display-sm);
+  --kpi-value-weight:         var(--font-weight-extrabold);
+  --kpi-label-size:           var(--text-caption-1);
+  --kpi-label-color:          var(--color-text-tertiary);
+  --kpi-period-size:          var(--text-caption-1);
+  --kpi-period-color:         var(--color-text-tertiary);
+  --kpi-trend-positive-color: var(--color-positive-text);
+  --kpi-trend-negative-color: var(--color-negative-text);
+
+  /* ── Navigation — Sidebar ────────────────────────────────────── */
+  --nav-item-height:                   44px;
+  --nav-item-x:                        var(--primitive-space-4);
+  --nav-item-icon-size:                var(--icon-lg);
+  --nav-item-label-size:               var(--text-body);
+  --nav-item-label-weight-inactive:    var(--font-weight-medium);
+  --nav-item-label-weight-active:      var(--font-weight-bold);
+  --nav-item-bg-active:                rgba(59, 128, 255, 0.10);
+  --nav-item-text-active:              var(--color-accent);
+  --nav-item-text-inactive:            var(--color-text-secondary);
+  --nav-item-indicator-width:          var(--border-width-active);
+
+  --nav-section-label-size:   10px;
+  --nav-section-label-color:  var(--color-text-disabled);
+  --nav-section-label-weight: var(--font-weight-semibold);
+
+  /* ── Navigation — Mobile ─────────────────────────────────────── */
+  --nav-mobile-tabbar-height: 56px;
+  --nav-mobile-icon-size:     var(--icon-lg);
+  --nav-mobile-label-size:    10px;
+
+  /* ── Topbar ──────────────────────────────────────────────────── */
+  --topbar-height: var(--container-topbar-height);
+  --topbar-bg:     rgba(20, 20, 31, 0.90);
+  --topbar-border: var(--color-border-structural);
+
+  /* ── Sidebar ─────────────────────────────────────────────────── */
+  --sidebar-bg:     rgba(20, 20, 31, 0.95);
+  --sidebar-border: var(--color-border-structural);
+
+  /* ── Modal / Dialog ──────────────────────────────────────────── */
+  --modal-bg:           var(--color-surface-1);
+  --modal-title-size:   var(--text-title-2);
+  --modal-title-weight: var(--font-weight-bold);
+  --modal-title-color:  var(--color-text-primary);
+  --modal-body-size:    var(--text-body);
+  --modal-body-color:   var(--color-text-secondary);
+  --modal-px:           var(--primitive-space-8);
+  --modal-py:           var(--primitive-space-6);
+  --modal-footer-gap:   var(--primitive-space-3);
+
+  /* ── Drawer ──────────────────────────────────────────────────── */
+  --drawer-padding: var(--primitive-space-8);
+
+  /* ── Financial Amounts (TG-08: tabular numerals required) ─────── */
+  --financial-amount-font:     var(--font-numeric);
+  --financial-amount-n1-size:  var(--text-display);       /* 40px — Grand Total KPI */
+  --financial-amount-n1-weight: var(--font-weight-extrabold);
+  --financial-amount-n2-size:  var(--text-display-sm);    /* 32px — Primary metric */
+  --financial-amount-n2-weight: var(--font-weight-extrabold);
+  --financial-amount-n3-size:  var(--text-large-title);   /* 28px — Section total */
+  --financial-amount-n3-weight: var(--font-weight-bold);
+  --financial-amount-n4-size:  var(--text-body-large);    /* 16px — Document total */
+  --financial-amount-n4-weight: var(--font-weight-bold);
+  --financial-amount-n5-size:  var(--text-body);          /* 14px — Table amount */
+  --financial-amount-n5-weight: var(--font-weight-regular);
+  --financial-amount-n6-size:  var(--text-caption-1);     /* 12px — Reference */
+  --financial-amount-n6-weight: var(--font-weight-regular);
+
+  /* ── POS ─────────────────────────────────────────────────────── */
+  --pos-cart-width:    38%;
+  --pos-catalog-width: 62%;
+  --pos-total-size:    var(--financial-amount-n1-size);
+  --pos-total-weight:  var(--financial-amount-n1-weight);
+
+  /* ── Repair Stage ────────────────────────────────────────────── */
+  --repair-stage-node-size:        24px;
+  --repair-stage-node-active:      28px;
+  --repair-stage-label-size:       var(--text-caption-1);
+  --repair-stage-intake-color:     var(--color-informative);
+  --repair-stage-assessment-color: var(--color-critical);
+  --repair-stage-repair-color:     var(--color-accent);
+  --repair-stage-qc-color:         var(--color-repair-qc);   /* Violet — restricted */
+  --repair-stage-ready-color:      var(--color-positive);
+  --repair-stage-handover-color:   var(--color-positive);
+  --repair-stage-done-color:       var(--color-neutral);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   LAYER 2+3 — LIGHT MODE OVERRIDES
+   Only values that differ from dark mode are listed here.
+   ════════════════════════════════════════════════════════════════════ */
+
+html.light {
+  color-scheme: light;
+
+  /* ── Canvas & Surfaces ──────────────────────────────────────── */
+  --color-canvas:    var(--primitive-slate-light-1);   /* #F8F9FC */
+  --color-surface-0: var(--primitive-slate-light-0);   /* #FFFFFF */
+  --color-surface-1: var(--primitive-slate-light-2);   /* #F0F2F7 */
+  --color-surface-2: var(--primitive-slate-light-3);   /* #E8ECF4 */
+
+  /* ── Text ───────────────────────────────────────────────────── */
+  --color-text-primary:     var(--primitive-slate-light-10);  /* #141A24 */
+  --color-text-secondary:   var(--primitive-slate-light-7);   /* #5B6F8F */
+  --color-text-tertiary:    var(--primitive-slate-light-6);   /* #8FA0BE */
+  --color-text-disabled:    var(--primitive-slate-light-5);   /* #C8D1E4 */
+  --color-text-placeholder: var(--primitive-slate-light-5);
+
+  /* ── Accent ─────────────────────────────────────────────────── */
+  --color-accent:        var(--primitive-blue-700);      /* #1D64D8 */
+  --color-accent-hover:  var(--primitive-blue-600);      /* #2563EB */
+  --color-accent-active: var(--primitive-blue-800);      /* #1A4FB5 */
+  --color-accent-subtle: rgba(29, 100, 216, 0.08);
+  --color-accent-border: rgba(29, 100, 216, 0.20);
+  --color-accent-text:   var(--primitive-blue-700);
+
+  /* ── Border ─────────────────────────────────────────────────── */
+  --color-border-structural:  var(--primitive-slate-light-4);
+  --color-border-interactive: var(--primitive-slate-light-5);
+  --color-border-strong:      var(--primitive-slate-light-5);
+  --color-border-focus:       var(--primitive-blue-700);
+
+  /* ── Overlays ───────────────────────────────────────────────── */
+  --color-hover-overlay:    rgba(0, 0, 0, 0.04);
+  --color-active-overlay:   rgba(0, 0, 0, 0.07);
+  --color-selected-overlay: rgba(29, 100, 216, 0.08);
+
+  /* ── Status: Positive ───────────────────────────────────────── */
+  --color-positive:        var(--primitive-green-600);   /* #16A34A */
+  --color-positive-text:   var(--primitive-green-700);   /* #15803D */
+  --color-positive-subtle: var(--primitive-green-50);    /* #F0FDF4 */
+  --color-positive-border: var(--primitive-green-200);   /* #BBF7D0 */
+
+  /* ── Status: Critical ───────────────────────────────────────── */
+  --color-critical:        var(--primitive-amber-600);   /* #D97706 */
+  --color-critical-text:   var(--primitive-amber-700);   /* #B45309 */
+  --color-critical-subtle: var(--primitive-amber-50);    /* #FFFBEB */
+  --color-critical-border: var(--primitive-amber-200);   /* #FDE68A */
+
+  /* ── Status: Negative ───────────────────────────────────────── */
+  --color-negative:        var(--primitive-red-600);     /* #DC2626 */
+  --color-negative-text:   var(--primitive-red-700);     /* #B91C1C */
+  --color-negative-subtle: var(--primitive-red-50);      /* #FEF2F2 */
+  --color-negative-border: var(--primitive-red-200);     /* #FECACA */
+
+  /* ── Status: Informative ────────────────────────────────────── */
+  --color-informative:        var(--primitive-sky-600);  /* #0284C7 */
+  --color-informative-text:   var(--primitive-sky-700);  /* #0369A1 */
+  --color-informative-subtle: var(--primitive-sky-50);   /* #F0F9FF */
+  --color-informative-border: var(--primitive-sky-200);  /* #BAE6FD */
+
+  /* ── Status: Neutral ────────────────────────────────────────── */
+  --color-neutral:        var(--primitive-slate-light-6);
+  --color-neutral-text:   var(--primitive-slate-light-7);
+  --color-neutral-subtle: rgba(0, 0, 0, 0.04);
+  --color-neutral-border: var(--primitive-slate-light-4);
+
+  /* ── Repair QC ──────────────────────────────────────────────── */
+  --color-repair-qc:        var(--primitive-violet-600);  /* #7C3AED */
+  --color-repair-qc-text:   var(--primitive-violet-700);  /* #6D28D9 */
+  --color-repair-qc-subtle: var(--primitive-violet-50);   /* #F5F3FF */
+  --color-repair-qc-border: var(--primitive-violet-200);  /* #DDD6FE */
+
+  /* ── Backdrop ───────────────────────────────────────────────── */
+  --color-backdrop:        rgba(0, 0, 0, 0.50);
+  --color-backdrop-drawer: rgba(0, 0, 0, 0.25);
+  --color-backdrop-light:  rgba(0, 0, 0, 0.15);
+
+  /* ── Caret & Selection ──────────────────────────────────────── */
+  --color-caret:     var(--primitive-blue-700);
+  --color-selection: rgba(29, 100, 216, 0.12);
+
+  /* ── Shadows ────────────────────────────────────────────────── */
+  --shadow-card:     0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
+  --shadow-dropdown: 0 4px 6px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.10);
+  --shadow-hover:    0 4px 16px rgba(0,0,0,0.12), 0 8px 28px rgba(0,0,0,0.07);
+  --shadow-drawer:   0 -4px 32px rgba(0,0,0,0.15);
+  --shadow-dialog:   0 20px 60px rgba(0,0,0,0.22), 0 4px 20px rgba(0,0,0,0.10);
+  --shadow-toast:    0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+  --shadow-tooltip:  0 2px 8px rgba(0,0,0,0.12);
+
+  /* ── Scrollbar ──────────────────────────────────────────────── */
+  --scrollbar-thumb:       rgba(0, 0, 0, 0.12);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.22);
+
+  /* ── Skeleton ───────────────────────────────────────────────── */
+  --skeleton-base:      var(--color-surface-1);
+  --skeleton-highlight: var(--color-surface-2);
+
+  /* ── Focus ──────────────────────────────────────────────────── */
+  --focus-ring-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-accent);
+
+  /* ── Component overrides for light mode ─────────────────────── */
+  --form-input-bg:       var(--primitive-slate-light-0);
+  --form-input-bg-focus: var(--primitive-slate-light-0);
+
+  --table-header-bg:    var(--primitive-slate-light-1);
+  --table-row-bg-hover: rgba(0, 0, 0, 0.03);
+  --table-border-color: var(--color-border-structural);
+
+  --topbar-bg:  rgba(255, 255, 255, 0.92);
+  --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --modal-bg:   var(--color-surface-0);
+
+  --nav-item-bg-active:   rgba(29, 100, 216, 0.08);
+  --nav-item-text-active: var(--color-accent);
+
+  --repair-stage-intake-color:     var(--color-informative);
+  --repair-stage-assessment-color: var(--color-critical);
+  --repair-stage-repair-color:     var(--color-accent);
+  --repair-stage-qc-color:         var(--color-repair-qc);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   BACKWARD COMPATIBILITY ALIASES
+   Maps old token names → new V3 names.
+   Every alias here represents technical debt.
+   Delete each line as the referencing component is migrated.
+   Target: empty by end of Phase 05.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root,
+html,
+html.dark {
+
+  /* Old surface names */
+  --bg-app:         var(--color-canvas);
+  --bg-surface:     var(--color-surface-0);
+  --bg-surface-alt: var(--color-surface-1);
+  --bg-card:        var(--color-surface-0);
+  --bg-elevated:    var(--color-surface-1);
+  --surface:        var(--color-hover-overlay);
+  --surface-raised: var(--color-active-overlay);
+  --bg-sidebar:     var(--sidebar-bg);
+  --bg-topbar:      var(--topbar-bg);
+  --bg-input:       var(--form-input-bg);
+  --bg-panel:       var(--color-surface-1);
+  --bg-deep:        var(--primitive-slate-dark-0);
+
+  /* Old text names */
+  --text-1:       var(--color-text-primary);
+  --text-2:       var(--color-text-secondary);
+  --text-3:       var(--color-text-tertiary);
+  --text-4:       var(--color-text-disabled);
+  --text-hint:    var(--color-text-placeholder);
+  --text-neutral: var(--color-text-tertiary);
+
+  /* Old border names */
+  --edge:         var(--color-border-structural);
+  --edge-md:      var(--color-border-interactive);
+  --edge-strong:  var(--color-border-strong);
+  --edge-row:     var(--color-border-structural);
+  --edge-success: var(--color-positive-border);
+  --edge-danger:  var(--color-negative-border);
+  --edge-warning: var(--color-critical-border);
+
+  /* Old brand names (brand CHANGED: Teal → Muhkam Blue) */
+  --brand:        var(--color-accent);
+  --brand-hover:  var(--color-accent-hover);
+  --brand-dim:    var(--color-accent-subtle);
+  --brand-muted:  var(--color-accent-subtle);
+  --brand-border: var(--color-accent-border);
+  --brand-glow:   rgba(59, 128, 255, 0.04);
+
+  /* Old status names */
+  --status-success:        var(--color-positive);
+  --status-warning:        var(--color-critical);
+  --status-danger:         var(--color-negative);
+  --status-info:           var(--color-informative);
+  --status-danger-bg:      var(--color-negative-subtle);
+  --status-danger-border:  var(--color-negative-border);
+  --status-external-repair: var(--color-repair-qc);
+  --status-urgent:          var(--color-critical);
+
+  /* Old status tint names */
+  --bg-success-tint: var(--color-positive-subtle);
+  --bg-danger-tint:  var(--color-negative-subtle);
+  --bg-warning-tint: var(--color-critical-subtle);
+  --bg-success-mid:  var(--color-positive-subtle);
+  --bg-danger-mid:   var(--color-negative-subtle);
+
+  /* Old table row names */
+  --bg-row-alt:     var(--color-hover-overlay);
+  --bg-row-section: var(--color-hover-overlay);
+  --bg-row-subhead: var(--color-hover-overlay);
+  --bg-row-header:  var(--table-header-bg);
+  --table-border:   var(--table-border-color);
+  --table-row-hover: var(--table-row-bg-hover);
+
+  /* Old focus names */
+  --focus-edge: var(--color-accent);
+  --focus-ring: var(--focus-ring-shadow);
+
+  /* Old shadow names */
+  --shadow-modal: var(--shadow-dialog);
+
+  /* Old caret/selection names */
+  --caret-color:  var(--color-caret);
+  --selection-bg: var(--color-selection);
+
+  /* Old amber compat names (now map to blue) */
+  --amber-glow:   rgba(59, 128, 255, 0.04);
+  --amber-border: rgba(59, 128, 255, 0.18);
+
+  /* Old --erp-* aliases */
+  --erp-bg-app:      var(--color-canvas);
+  --erp-bg-sidebar:  var(--sidebar-bg);
+  --erp-bg-topbar:   var(--topbar-bg);
+  --erp-bg-main:     var(--color-canvas);
+  --erp-bg-surface:  var(--color-hover-overlay);
+  --erp-bg-card:     var(--color-surface-0);
+  --erp-bg-elevated: var(--color-surface-1);
+  --erp-bg-panel:    var(--color-surface-1);
+  --erp-bg-soft:     var(--color-hover-overlay);
+  --erp-bg-hover:    var(--color-hover-overlay);
+  --erp-bg-active:   var(--color-active-overlay);
+  --erp-bg-input:    var(--form-input-bg);
+  --erp-input-text:  var(--color-text-primary);
+  --erp-text:        var(--color-text-primary);
+  --erp-text-1:      var(--color-text-primary);
+  --erp-text-2:      var(--color-text-secondary);
+  --erp-text-3:      var(--color-text-tertiary);
+  --erp-text-4:      var(--color-text-disabled);
+  --erp-brand:        var(--color-accent);
+  --erp-brand-hover:  var(--color-accent-hover);
+  --erp-brand-dim:    var(--color-accent-subtle);
+  --erp-brand-muted:  var(--color-accent-subtle);
+  --erp-brand-border: var(--color-accent-border);
+  --erp-brand-glow:   rgba(59, 128, 255, 0.04);
+  --erp-accent:       var(--color-accent);
+  --erp-accent-hover: var(--color-accent-hover);
+  --erp-border:         var(--color-border-structural);
+  --erp-border-md:      var(--color-border-interactive);
+  --erp-border-strong:  var(--color-border-strong);
+  --erp-border-sidebar: var(--color-border-structural);
+  --erp-focus-border:   var(--color-accent);
+  --erp-focus-shadow:   var(--focus-ring-shadow);
+  --erp-success: var(--color-positive);
+  --erp-warning: var(--color-critical);
+  --erp-danger:  var(--color-negative);
+  --erp-info:    var(--color-informative);
   --erp-shadow-card:  var(--shadow-card);
   --erp-shadow-hover: var(--shadow-hover);
-  --erp-shadow-modal: var(--shadow-modal);
+  --erp-shadow-modal: var(--shadow-dialog);
+  --erp-chip-bg:      var(--color-hover-overlay);
+  --erp-chip-border:  var(--color-border-structural);
+  --erp-caret:        var(--color-caret);
+  --erp-selection-bg: var(--color-selection);
 
-  --erp-chip-bg:     var(--surface);
-  --erp-chip-border: var(--edge);
-  --erp-caret:       var(--caret-color);
-  --erp-selection-bg: var(--selection-bg);
+  /* Old --erp-font-* and sizing aliases */
+  --erp-icon-size: var(--icon-lg);   /* 20px */
 
-  /* ── amber-* compat (components still reference these) ── */
-  --amber-glow:   rgba(45, 212, 191, 0.05);
-  --amber-border: rgba(45, 212, 191, 0.18);
+  /* Old card-shadow alias used in index.css */
+  --card-shadow: var(--shadow-card);
 }
 
-/* ── LIGHT override ──────────────────────────────────────────── */
 html.light {
-  /* ── App backgrounds ── */
-  --bg-app:        #F8FAFC;
-  --bg-surface:    #FFFFFF;
-  --bg-surface-alt:#F1F5F9;
-  --bg-card:       #FFFFFF;
-  --bg-elevated:   #F1F5F9;
-
-  /* ── Transparent overlays ── */
-  --surface:        rgba(0, 0, 0, 0.03);
-  --surface-raised: rgba(0, 0, 0, 0.055);
-
-  /* ── Structural ── */
-  --bg-sidebar: #FFFFFF;
-  --bg-topbar:  rgba(255, 255, 255, 0.95);
-  --bg-input:   #FFFFFF;
-
-  /* ── Text ── */
-  --text-1: #0F172A;
-  --text-2: #475569;
-  --text-3: #64748B;
-  --text-4: #94A3B8;
-
-  /* ── Borders ── */
-  --edge:        #E2E8F0;
-  --edge-md:     #CBD5E1;
-  --edge-strong: #94A3B8;
-
-  /* ── Brand (Teal) ── */
-  --brand:        #0F766E;
-  --brand-hover:  #115E59;
-  --brand-dim:    rgba(15, 118, 110, 0.60);
-  --brand-muted:  rgba(15, 118, 110, 0.10);
-  --brand-border: rgba(15, 118, 110, 0.22);
-  --brand-glow:   rgba(15, 118, 110, 0.05);
-
-  /* ── Button primary text (white on dark teal) ── */
-  --btn-primary-text: #ffffff;
-
-  /* ── Status ── */
-  --status-success: #16A34A;
-  --status-warning: #D97706;
-  --status-danger:  #DC2626;
-  --status-info:    #2563EB;
-
-  /* ── Status tinted backgrounds/borders ── */
-  --status-danger-bg:     #FEF2F2;
-  --status-danger-border: #FECACA;
-
-  /* ── Special statuses ── */
-  --status-external-repair: #6D28D9;
-  --status-urgent:          #EA580C;
-
-  /* ── Status tinted surfaces ── */
-  --bg-success-tint: #F0FDF4;
-  --bg-danger-tint:  #FEF2F2;
-  --bg-warning-tint: #FFFBEB;
-  --bg-success-mid:  #ECFDF5;
-  --bg-danger-mid:   #FEF2F2;
-
-  /* ── Status tinted borders ── */
-  --edge-success: #BBF7D0;
-  --edge-danger:  #FECACA;
-  --edge-warning: #FDE68A;
-
-  /* ── Table row backgrounds ── */
-  --bg-row-alt:     #FAFAFA;
-  --bg-row-section: #F9FAFB;
-  --bg-row-subhead: #F9FAFB;
-  --bg-row-header:  #F3F4F6;
-  --edge-row:       #E5E7EB;
-
-  /* ── Text helpers ── */
-  --text-hint:    #9CA3AF;
-  --text-neutral: #4B5563;
-
-  /* ── Floating panel ── */
-  --bg-panel: #FFFFFF;
-
-  /* ── Deep background ── */
-  --bg-deep: #EEF2F7;
-
-  /* ── Focus ── */
-  --focus-edge: rgba(15, 118, 110, 0.50);
-  --focus-ring: 0 0 0 3px rgba(15, 118, 110, 0.12);
-
-  /* ── Shadows ── */
-  --shadow-card:  0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.05);
-  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 28px rgba(0, 0, 0, 0.07);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.22), 0 4px 20px rgba(0, 0, 0, 0.10);
-
-  /* ── Caret / selection ── */
-  --caret-color:  rgba(15, 118, 110, 0.85);
-  --selection-bg: rgba(15, 118, 110, 0.15);
-
-  /* ── Table ── */
-  --table-header-bg:   #F8FAFC;
-  --table-header-text: #64748B;
-  --table-border:      #E2E8F0;
-  --table-row-hover:   rgba(15, 118, 110, 0.04);
-
-  /* ── Legacy --erp-* light overrides ── */
-  --erp-bg-app:      var(--bg-app);
-  --erp-bg-sidebar:  var(--bg-sidebar);
-  --erp-bg-topbar:   var(--bg-topbar);
-  --erp-bg-card:     var(--bg-card);
-  --erp-bg-surface:  var(--surface);
-  --erp-bg-elevated: var(--bg-elevated);
-  --erp-bg-panel:    var(--bg-panel);
-  --erp-bg-soft:     var(--surface);
-  --erp-bg-active:   rgba(0, 0, 0, 0.06);
-  --erp-bg-input:    var(--bg-input);
-  --erp-input-text:  var(--text-1);
-  --erp-text:        var(--text-1);
-  --erp-text-1:      var(--text-1);
-  --erp-text-2:      var(--text-2);
-  --erp-text-3:      var(--text-3);
-  --erp-text-4:      var(--text-4);
-  --erp-border:      var(--edge);
-  --erp-border-md:   var(--edge-md);
-  --erp-border-strong: var(--edge-strong);
-  --erp-brand:         var(--brand);
-  --erp-brand-hover:   var(--brand-hover);
-  --erp-brand-muted:   var(--brand-muted);
-  --erp-brand-border:  var(--brand-border);
-  --erp-brand-glow:    var(--brand-glow);
-  --erp-accent:        var(--brand);
-  --erp-accent-hover:  var(--brand-hover);
-  --erp-focus-border:  var(--focus-edge);
-  --erp-focus-shadow:  var(--focus-ring);
-  --erp-success:       var(--status-success);
-  --erp-warning:       var(--status-warning);
-  --erp-danger:        var(--status-danger);
-  --erp-info:          var(--status-info);
-  --erp-shadow-card:   var(--shadow-card);
-  --erp-shadow-hover:  var(--shadow-hover);
-  --erp-shadow-modal:  var(--shadow-modal);
-  --erp-chip-bg:       var(--surface);
-  --erp-chip-border:   var(--edge);
-  --erp-caret:         var(--caret-color);
-  --erp-selection-bg:  var(--selection-bg);
-
-  /* ── amber-* compat ── */
-  --amber-glow:   rgba(15, 118, 110, 0.05);
-  --amber-border: rgba(15, 118, 110, 0.18);
+  /* Light mode backward compat overrides */
+  --bg-deep:     var(--primitive-slate-light-3);
+  --sidebar-bg:  rgba(255, 255, 255, 0.95);
+  --topbar-bg:   rgba(255, 255, 255, 0.92);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   COMPONENT UTILITIES — apply once, auto-switch with theme
-   ════════════════════════════════════════════════════════════════ */
 
-/* ── Input focus ring ── */
-.erp-input:focus-visible {
-  border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
-  outline: none !important;
+/* ════════════════════════════════════════════════════════════════════
+   STRUCTURAL APPLICATION
+   Apply semantic tokens to root elements.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Scrollbar */
+::-webkit-scrollbar { width: var(--scrollbar-width); height: var(--scrollbar-width); }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: var(--radius-badge-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+/* Caret + Selection */
+input, textarea, [contenteditable] {
+  caret-color: var(--color-caret);
 }
-
-/* ── Glass-input focus ── */
-.glass-input:focus {
-  border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
-}
-
-/* ── Caret ── */
-.erp-input,
-.glass-input,
-input,
-textarea {
-  caret-color: var(--caret-color);
-}
-
-/* ── Selection highlight ── */
-.erp-input::selection,
-.glass-input::selection,
-input::selection,
-textarea::selection {
-  background: var(--selection-bg);
+::selection {
+  background: var(--color-selection);
   color: inherit;
 }
 
-/* ── Sidebar layout ── */
+/* Sidebar layout */
 .erp-sidebar {
-  background: var(--bg-sidebar);
-  border-left: 1px solid var(--edge);
+  background: var(--sidebar-bg);
+  border-inline-start: var(--border-width-structural) solid var(--sidebar-border);
+  backdrop-filter: blur(var(--blur-sidebar));
+  -webkit-backdrop-filter: blur(var(--blur-sidebar));
 }
 
-/* ── Topbar layout ── */
+/* Topbar layout */
 .erp-topbar {
-  background: var(--bg-topbar);
-  border-bottom: 1px solid var(--edge);
+  background: var(--topbar-bg);
+  border-block-end: var(--border-width-structural) solid var(--topbar-border);
+  backdrop-filter: blur(var(--blur-topbar));
+  -webkit-backdrop-filter: blur(var(--blur-topbar));
 }
 
-/* ── Theme-toggle track ── */
+/* Input focus (legacy class — replaced by component in Phase 05 Step 02) */
+.erp-input:focus-visible,
+.glass-input:focus-visible,
+.glass-input:focus {
+  border-color: var(--color-accent) !important;
+  box-shadow: var(--focus-ring-shadow) !important;
+}
+
+/* Toggle track */
 .erp-toggle-track {
-  background-color: var(--surface);
-  border: 1.5px solid var(--edge-md);
+  background-color: var(--color-hover-overlay);
+  border: 1.5px solid var(--color-border-interactive);
 }
 
-/* ── Purchases search/exchange focus — override hardcoded amber ── */
+/* Purchases compat (remove after Purchases module migrates in Phase 05) */
 .purch-search-wrap:focus-within,
 .purch-row:focus-within {
-  border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
+  border-color: var(--color-accent) !important;
+  box-shadow: var(--focus-ring-shadow) !important;
 }
