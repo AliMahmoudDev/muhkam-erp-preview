@@ -6,7 +6,6 @@ import {
   TrendingDown,
   RefreshCw,
   CheckCircle,
-  Filter,
   FileSpreadsheet,
   FileText,
   ShoppingCart,
@@ -20,6 +19,9 @@ import { POModal } from './alerts/components/POModal';
 import { AlertStatsCards } from './alerts/components/AlertStatsCards';
 import { AlertsTable } from './alerts/components/AlertsTable';
 import { ReorderPanel } from './alerts/components/ReorderPanel';
+
+import { Button } from '@/components/ui/button';
+import { SkeletonTable } from '@/components/ui/skeleton';
 
 function AlertsTab({
   warehouses: _warehouses,
@@ -79,6 +81,7 @@ function AlertsTab({
       rows: filtered,
     });
   }
+
   function handleExportPDF() {
     exportToPDF({
       filename: 'inventory-alerts',
@@ -93,6 +96,7 @@ function AlertsTab({
       rows: filtered,
     });
   }
+
   function handleExportReorderExcel() {
     if (!reorderData) return;
     void exportToExcel({
@@ -163,13 +167,7 @@ function AlertsTab({
     .filter((i) => !showZeroOnly || i.is_zero);
 
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-surface rounded-2xl animate-pulse" />
-        ))}
-      </div>
-    );
+    return <SkeletonTable rows={4} cols={6} />;
   }
 
   const reorderSuggestions = reorderData?.suggestions ?? [];
@@ -188,7 +186,7 @@ function AlertsTab({
         defaultThreshold="5"
       />
 
-      {/* إحصائيات سريعة — قابلة للضغط للتصفية */}
+      {/* Quick stats — clickable for filtering */}
       <AlertStatsCards
         zeroCount={zeroCount}
         lowCount={lowCount}
@@ -197,91 +195,87 @@ function AlertsTab({
         setFilterWH={setFilterWH}
       />
 
+      {/* All good state */}
       {allItems.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
           <CheckCircle className="w-14 h-14 text-emerald-500/30 mb-4" />
-          <h3 className="text-ink font-bold text-lg mb-1">المخزون في حالة ممتازة</h3>
-          <p className="text-ink/40 text-sm">لا توجد منتجات تحت حد الطلب الدنى في أي مخزن</p>
-          <button
-            onClick={() => refetch()}
-            className="mt-4 flex items-center gap-2 px-4 py-2 bg-surface hover:bg-raised text-ink text-sm rounded-xl transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" /> تحديث
-          </button>
+          <h3 className="font-bold text-lg mb-1">المخزون في حالة ممتازة</h3>
+          <p className="opacity-40 text-sm">لا توجد منتجات تحت حد الطلب الدنى في أي مخزن</p>
+          <Button variant="ghost" size="sm" className="mt-4" onClick={() => refetch()}>
+            <RefreshCw /> تحديث
+          </Button>
         </div>
       )}
 
       {allItems.length > 0 && (
         <>
+          {/* Toolbar */}
           <div className="flex gap-2 flex-wrap items-center">
-            <div className="flex items-center gap-1 text-ink/50 text-xs">
-              <Filter className="w-3.5 h-3.5" /> تصفية:
-            </div>
+            <span className="opacity-50 text-xs">تصفية:</span>
+
             <select
               value={filterWH}
               onChange={(e) =>
                 setFilterWH(e.target.value === 'all' ? 'all' : Number(e.target.value))
               }
-              className="bg-surface border border-line rounded-xl px-3 py-1.5 text-ink text-xs focus:outline-none focus:ring-1 focus:ring-violet-400/40"
+              className="erp-input h-8 w-auto cursor-pointer text-xs"
+              aria-label="تصفية حسب المخزن"
             >
-              <option value="all" className="bg-[#1a1a2e]">
-                جميع المخازن
-              </option>
+              <option value="all">جميع المخازن</option>
               {uniqueWarehouses.map((w) => (
-                <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
+                <option key={w.id} value={w.id}>
                   {w.name}
                 </option>
               ))}
             </select>
-            <button
+
+            <Button
+              variant={showZeroOnly ? 'outline' : 'ghost'}
+              size="sm"
+              className={showZeroOnly ? 'border-[var(--brand)] text-[var(--brand)]' : ''}
               onClick={() => setShowZeroOnly((p) => !p)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
-                showZeroOnly
-                  ? 'bg-red-500/20 border-red-500/30 text-red-300'
-                  : 'bg-surface border-line text-ink/50 hover:text-ink'
-              }`}
             >
-              <TrendingDown className="w-3 h-3" /> نافد فقط
-            </button>
+              <TrendingDown /> نافد فقط
+            </Button>
+
             <div className="flex-1" />
-            <button
+
+            <Button
+              variant={showReorder ? 'outline' : 'ghost'}
+              size="sm"
+              className={showReorder ? 'border-[var(--brand)] text-[var(--brand)]' : ''}
               onClick={() => {
                 setShowReorder((p) => !p);
-                if (showReorder) {
-                  setSelectedForPO(new Set());
-                }
+                if (showReorder) setSelectedForPO(new Set());
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
-                showReorder
-                  ? 'bg-amber-500/15 border-amber-500/25 text-amber-300'
-                  : 'bg-surface border-line text-ink/60 hover:text-ink'
-              }`}
             >
-              <ShoppingCart className="w-3 h-3" /> مقترحات التوريد
-            </button>
-            <button
+              <ShoppingCart /> مقترحات التوريد
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleExportExcel}
               disabled={filtered.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 disabled:opacity-40 text-emerald-300 text-xs rounded-xl transition-colors border border-emerald-500/20"
             >
-              <FileSpreadsheet className="w-3 h-3" /> Excel
-            </button>
-            <button
+              <FileSpreadsheet /> Excel
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleExportPDF}
               disabled={filtered.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 disabled:opacity-40 text-rose-300 text-xs rounded-xl transition-colors border border-rose-500/20"
             >
-              <FileText className="w-3 h-3" /> PDF
-            </button>
-            <button
-              onClick={() => refetch()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-surface text-ink/60 text-xs rounded-xl transition-colors border border-line"
-            >
-              <RefreshCw className="w-3 h-3" /> تحديث
-            </button>
+              <FileText /> PDF
+            </Button>
+
+            <Button variant="ghost" size="sm" onClick={() => refetch()}>
+              <RefreshCw /> تحديث
+            </Button>
           </div>
 
-          {/* لوحة مقترحات إعادة الطلب */}
+          {/* Reorder suggestions panel */}
           {showReorder && (
             <ReorderPanel
               reorderData={reorderData}
@@ -298,7 +292,7 @@ function AlertsTab({
             />
           )}
 
-          {/* جدول التنبيهات */}
+          {/* Alerts table */}
           <AlertsTable
             filtered={filtered}
             showZeroOnly={showZeroOnly}

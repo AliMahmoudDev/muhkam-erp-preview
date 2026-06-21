@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import type { Tab } from './_shared';
 
 export function TabBtn({
@@ -49,69 +50,8 @@ export function TabBtnBadge({
       {icon}
       {label}
       {badge > 0 && (
-        <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-red-500/30 text-red-300 min-w-[1.25rem] text-center">
-          {badge}
-        </span>
+        <Badge variant="count">{badge}</Badge>
       )}
     </button>
-  );
-}
-
-export function StatCard({
-  label,
-  value,
-  icon,
-  color,
-  bg,
-  onClick,
-  hint,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  color: string;
-  bg: string;
-  onClick?: () => void;
-  hint?: string;
-}) {
-  const isClickable = !!onClick;
-  return (
-    <div
-      role={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={
-        isClickable
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') onClick?.();
-            }
-          : undefined
-      }
-      title={hint}
-      className={`rounded-2xl p-4 border ${bg} flex items-center gap-3 transition-all ${
-        isClickable
-          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_24px_rgba(0,0,0,0.35)] hover:brightness-110 select-none'
-          : ''
-      }`}
-    >
-      <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center shrink-0">
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-ink/40 text-xs">{label}</p>
-        <p className={`text-lg font-bold truncate ${color}`}>{value}</p>
-        {isClickable && hint && <p className="text-ink/25 text-[10px] mt-0.5 truncate">{hint}</p>}
-      </div>
-      {isClickable && (
-        <svg
-          className="w-3.5 h-3.5 text-ink/20 shrink-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      )}
-    </div>
   );
 }

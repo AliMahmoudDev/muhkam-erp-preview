@@ -4,6 +4,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Package, X, Plus, Trash2, Warehouse, Loader2, FileSpreadsheet, Eye } from 'lucide-react';
 import { api } from './_shared';
 
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { StatusBadge } from '@/components/ui/status-badge';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
+
 interface WarehouseItem {
   id: number;
   name: string;
@@ -107,61 +123,63 @@ export default function WarehouseSection({
 }: WarehouseSectionProps) {
   return (
     <>
-      {/* ══ قسم إدارة المخازن ════════════════════════════════════════════════ */}
+      {/* ══ Warehouse management section ══════════════════════════════════════ */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-ink">المخازن</h2>
-            <p className="text-ink/40 text-sm mt-0.5">إدارة مواقع التخزين ومتابعة قيمة كل مخزن</p>
+            <h2 className="text-xl font-bold">المخازن</h2>
+            <p className="opacity-40 text-sm mt-0.5">إدارة مواقع التخزين ومتابعة قيمة كل مخزن</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => void handleOverviewExport()}
               disabled={allProducts.length === 0}
               title="تصدير نظرة عامة — Excel (3 ورقات)"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/15 border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-all"
             >
-              <FileSpreadsheet className="w-4 h-4" /> تصدير Excel
-            </button>
+              <FileSpreadsheet /> تصدير Excel
+            </Button>
             {isAdmin && (
-              <button
+              <Button
+                size="sm"
                 onClick={() => {
                   setWhForm(() => ({ name: '', address: '', branch_id: '' }));
                   setShowAddWH(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-all"
               >
-                <Plus className="w-4 h-4" /> إضافة مخزن
-              </button>
+                <Plus /> إضافة مخزن
+              </Button>
             )}
           </div>
         </div>
 
+        {/* Loading skeleton */}
         {loadingWH ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-32 bg-surface border border-line rounded-2xl animate-pulse"
-              />
+              <div key={i} className="h-32 bg-[var(--surface)] border border-[var(--line)] rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : warehouses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-14 text-center bg-surface border border-line rounded-2xl">
-            <Warehouse className="w-10 h-10 text-ink/15 mb-3" />
-            <p className="text-ink/40 font-bold">لا توجد مخازن بعد</p>
-            {isAdmin && (
-              <button
-                onClick={() => {
-                  setWhForm(() => ({ name: '', address: '', branch_id: '' }));
-                  setShowAddWH(true);
-                }}
-                className="mt-3 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-all"
-              >
-                إضافة أول مخزن
-              </button>
-            )}
-          </div>
+          <EmptyState
+            variant="no-data"
+            title="لا توجد مخازن بعد"
+            icon={<Warehouse />}
+            action={
+              isAdmin ? (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setWhForm(() => ({ name: '', address: '', branch_id: '' }));
+                    setShowAddWH(true);
+                  }}
+                >
+                  إضافة أول مخزن
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {warehouses.map((w) => {
@@ -177,10 +195,10 @@ export default function WarehouseSection({
                     if (e.key === 'Enter' || e.key === ' ') setWarehouseId(String(w.id));
                   }}
                   title="انقر لتعيين كمخزن نشط"
-                  className={`group relative rounded-2xl p-5 transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] select-none ${
+                  className={`group relative rounded-2xl p-5 transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] select-none border ${
                     isSelected
-                      ? 'bg-amber-500/8 border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
-                      : 'bg-[#111827] border border-line hover:border-amber-500/15'
+                      ? 'ring-2 ring-[var(--brand)] bg-[var(--surface)]'
+                      : 'bg-[var(--surface)] border-[var(--line)] hover:border-[var(--brand)]/20'
                   }`}
                 >
                   {isAdmin && (
@@ -195,15 +213,17 @@ export default function WarehouseSection({
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3">
-                    <Warehouse className="w-5 h-5 text-amber-400" />
+
+                  <div className="w-10 h-10 rounded-xl bg-[var(--brand)]/10 flex items-center justify-center mb-3">
+                    <Warehouse className="w-5 h-5 text-[var(--brand)]" />
                   </div>
-                  <p className="text-ink font-bold text-sm mb-1">{w.name}</p>
-                  {w.address && <p className="text-ink/40 text-xs truncate">{w.address}</p>}
-                  {/* الفرع */}
+                  <p className="font-bold text-sm mb-1">{w.name}</p>
+                  {w.address && <p className="opacity-40 text-xs truncate">{w.address}</p>}
+
+                  {/* Branch assignment */}
                   {isAdmin && branches.length > 0 ? (
                     <select
-                      className="mt-1.5 mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-surface border border-line text-ink/50 hover:border-amber-500/25 transition-colors outline-none cursor-pointer"
+                      className="mt-1.5 mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-[var(--surface)] border border-[var(--line)] opacity-50 hover:border-[var(--brand)]/25 transition-colors outline-none cursor-pointer"
                       value={w.branch_id ?? ''}
                       onClick={(e) => e.stopPropagation()}
                       onChange={async (e) => {
@@ -226,35 +246,37 @@ export default function WarehouseSection({
                       ))}
                     </select>
                   ) : w.branch_id ? (
-                    <p className="text-ink/40 text-[10px] mb-2">
+                    <p className="opacity-40 text-[10px] mb-2">
                       {branches.find((b) => b.id === w.branch_id)?.name ?? ''}
                     </p>
                   ) : (
                     <div className="mb-2" />
                   )}
+
+                  {/* Warehouse stats */}
                   {ws && (
-                    <div className="space-y-1 pt-2 border-t border-line">
+                    <div className="space-y-1 pt-2 border-t border-[var(--line)]">
                       <div className="flex items-center justify-between">
-                        <span className="text-ink/40 text-xs">قيمة المخزون</span>
+                        <span className="opacity-40 text-xs">قيمة المخزون</span>
                         <span className="text-emerald-400 text-xs font-bold">
                           {formatCurrency(ws.total_value)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-ink/40 text-xs">عدد المنتجات</span>
-                        <span className="text-ink/70 text-xs font-bold">{ws.item_count}</span>
+                        <span className="opacity-40 text-xs">عدد المنتجات</span>
+                        <span className="opacity-70 text-xs font-bold">{ws.item_count}</span>
                       </div>
                       {grandTotal > 0 && (
                         <div className="mt-1.5">
                           <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-ink/30 text-xs">من الإجمالي</span>
-                            <span className="text-ink/50 text-xs font-bold">
+                            <span className="opacity-30 text-xs">من الإجمالي</span>
+                            <span className="opacity-50 text-xs font-bold">
                               {ws.pct_of_total}%
                             </span>
                           </div>
-                          <div className="h-1 bg-surface rounded-full overflow-hidden">
+                          <div className="h-1 bg-[var(--surface)] rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-amber-400 rounded-full transition-all"
+                              className="h-full bg-[var(--brand)] rounded-full transition-all"
                               style={{ width: `${ws.pct_of_total}%` }}
                             />
                           </div>
@@ -262,32 +284,22 @@ export default function WarehouseSection({
                       )}
                     </div>
                   )}
+
+                  {/* Active badge */}
                   {isSelected && (
-                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-lg text-xs bg-amber-500/20 text-amber-300 font-bold border border-amber-500/25">
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2.5}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      المخزن النشط
-                    </span>
+                    <div className="mt-2">
+                      <Badge variant="neutral">✓ المخزن النشط</Badge>
+                    </div>
                   )}
-                  {/* زر عرض المنتجات */}
+
+                  {/* View products button */}
                   {ws && ws.item_count > 0 && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setWarehouseDetailId(w.id);
                       }}
-                      className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg text-[11px] bg-surface hover:bg-raised text-ink/50 hover:text-ink border border-line transition-all"
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg text-[11px] bg-[var(--surface)] hover:bg-[var(--raised)] opacity-50 hover:opacity-100 border border-[var(--line)] transition-all"
                     >
                       <Eye className="w-3 h-3" /> عرض المنتجات
                     </button>
@@ -299,45 +311,46 @@ export default function WarehouseSection({
         )}
       </section>
 
-      {/* ── Modal: إضافة مخزن ── */}
+      {/* ── Modal: add warehouse ────────────────────────────────────────────── */}
       {showAddWH && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setShowAddWH(false)}
         >
-          <div
-            className="bg-[#111827] border border-line rounded-2xl p-6 w-full max-w-md shadow-2xl"
+          <Card
+            className="p-6 w-full max-w-md shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-ink flex items-center gap-2">
-                <Warehouse className="w-5 h-5 text-amber-400" /> إضافة مخزن جديد
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Warehouse className="w-5 h-5 text-[var(--brand)]" /> إضافة مخزن جديد
               </h3>
-              <button
+              <IconButton
+                aria-label="إغلاق"
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowAddWH(false)}
-                className="p-1.5 rounded-lg bg-surface hover:bg-raised transition-colors"
               >
-                <X className="w-4 h-4 text-ink/60" />
-              </button>
+                <X />
+              </IconButton>
             </div>
+
             <div className="space-y-4">
               <div>
-                <label className="block text-ink/60 text-xs mb-1.5">
+                <label className="block opacity-60 text-xs mb-1.5">
                   اسم المخزن <span className="text-red-400">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
-                  className="glass-input"
                   placeholder="المخزن الرئيسي"
                   value={whForm.name}
                   onChange={(e) => setWhForm((f) => ({ ...f, name: e.target.value }))}
                 />
               </div>
               <div>
-                <label className="block text-ink/60 text-xs mb-1.5">العنوان (اختياري)</label>
-                <input
+                <label className="block opacity-60 text-xs mb-1.5">العنوان (اختياري)</label>
+                <Input
                   type="text"
-                  className="glass-input"
                   placeholder="القاهرة، مصر"
                   value={whForm.address}
                   onChange={(e) => setWhForm((f) => ({ ...f, address: e.target.value }))}
@@ -345,9 +358,9 @@ export default function WarehouseSection({
               </div>
               {branches.length > 0 && (
                 <div>
-                  <label className="block text-ink/60 text-xs mb-1.5">الفرع (اختياري)</label>
+                  <label className="block opacity-60 text-xs mb-1.5">الفرع (اختياري)</label>
                   <select
-                    className="glass-input w-full"
+                    className="erp-input w-full"
                     value={whForm.branch_id}
                     onChange={(e) => setWhForm((f) => ({ ...f, branch_id: e.target.value }))}
                   >
@@ -361,9 +374,12 @@ export default function WarehouseSection({
                 </div>
               )}
             </div>
+
             <div className="flex gap-3 mt-6">
-              <button
+              <Button
+                className="flex-1"
                 disabled={createWH.isPending}
+                loading={createWH.isPending}
                 onClick={async () => {
                   if (!whForm.name.trim()) {
                     toast({ title: 'الاسم مطلوب', variant: 'destructive' });
@@ -392,49 +408,43 @@ export default function WarehouseSection({
                     });
                   }
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm transition-colors flex items-center justify-center gap-2"
               >
-                {createWH.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-                إضافة
-              </button>
-              <button
-                onClick={() => setShowAddWH(false)}
-                className="flex-1 py-2.5 rounded-xl bg-surface hover:bg-raised text-ink/60 font-bold text-sm transition-colors"
-              >
+                <Plus /> إضافة
+              </Button>
+              <Button variant="ghost" className="flex-1" onClick={() => setShowAddWH(false)}>
                 إلغاء
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
-      {/* ── Modal: حذف مخزن ── */}
+      {/* ── Modal: delete warehouse ─────────────────────────────────────────── */}
       {deleteWHTarget && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setDeleteWHTarget(null)}
         >
-          <div
-            className="bg-[#111827] border border-line rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center"
+          <Card
+            className="p-6 w-full max-w-sm shadow-2xl text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
               <Warehouse className="w-7 h-7 text-red-400" />
             </div>
-            <h3 className="text-ink font-bold text-lg mb-1">حذف المخزن</h3>
-            <p className="text-ink/50 text-sm mb-1">
+            <h3 className="font-bold text-lg mb-1">حذف المخزن</h3>
+            <p className="opacity-50 text-sm mb-1">
               هل تريد حذف <span className="text-red-400 font-bold">"{deleteWHTarget.name}"</span>؟
             </p>
-            <p className="text-ink/30 text-xs mb-6">
+            <p className="opacity-30 text-xs mb-6">
               لا يمكن حذف مخزن له حركات أو جلسات جرد أو تحويلات مسجّلة
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="destructive"
+                className="flex-1"
                 disabled={deleteWH.isPending}
+                loading={deleteWH.isPending}
                 onClick={() =>
                   deleteWH.mutate(deleteWHTarget.id, {
                     onSuccess: () => {
@@ -452,77 +462,71 @@ export default function WarehouseSection({
                     },
                   })
                 }
-                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 disabled:opacity-50 text-ink font-bold text-sm transition-colors flex items-center justify-center gap-2"
               >
-                {deleteWH.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-                حذف
-              </button>
-              <button
-                onClick={() => setDeleteWHTarget(null)}
-                className="flex-1 py-2.5 rounded-xl bg-surface hover:bg-raised text-ink/60 font-bold text-sm transition-colors"
-              >
+                <Trash2 /> حذف
+              </Button>
+              <Button variant="ghost" className="flex-1" onClick={() => setDeleteWHTarget(null)}>
                 إلغاء
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
-      {/* ── Modal: تفاصيل مخزن (T2) ── */}
+      {/* ── Modal: warehouse product detail ────────────────────────────────── */}
       {warehouseDetailId !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setWarehouseDetailId(null)}
         >
-          <div
-            className="bg-[#111827] border border-line rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] flex flex-col"
+          <Card
+            className="p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* رأس الـ modal */}
+            {/* Modal header */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-ink flex items-center gap-2">
-                <Warehouse className="w-5 h-5 text-amber-400" />
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Warehouse className="w-5 h-5 text-[var(--brand)]" />
                 {warehouses.find((w) => w.id === warehouseDetailId)?.name ?? 'تفاصيل المخزن'}
               </h3>
-              <button
+              <IconButton
+                aria-label="إغلاق"
+                variant="ghost"
+                size="sm"
                 onClick={() => setWarehouseDetailId(null)}
-                className="p-1.5 rounded-lg bg-surface hover:bg-raised transition-colors"
               >
-                <X className="w-4 h-4 text-ink/60" />
-              </button>
+                <X />
+              </IconButton>
             </div>
 
-            {/* المحتوى */}
+            {/* Content */}
             {whDetailLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-ink/30" />
+                <Loader2 className="w-8 h-8 animate-spin opacity-30" />
               </div>
             ) : whDetailProducts.length === 0 ? (
-              <div className="text-center py-16 text-ink/30">
-                <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p>لا توجد منتجات في هذا المخزن</p>
-              </div>
+              <EmptyState
+                variant="no-data"
+                title="لا توجد منتجات في هذا المخزن"
+                icon={<Package />}
+              />
             ) : (
               <>
-                <p className="text-ink/40 text-xs mb-3">
+                <p className="opacity-40 text-xs mb-3">
                   {whDetailProducts.length} صنف في هذا المخزن
                 </p>
-                <div className="overflow-y-auto flex-1 rounded-xl border border-line">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-[#111827]">
-                      <tr className="border-b border-line bg-surface text-ink/50 font-medium">
-                        <th className="p-3 text-right">المنتج</th>
-                        <th className="p-3 text-center">التصنيف</th>
-                        <th className="p-3 text-center">الكمية</th>
-                        <th className="p-3 text-center">الحالة</th>
-                        <th className="p-3 text-center">قيمة المخزون</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div className="overflow-y-auto flex-1">
+                  <Table>
+                    <TableHead className="sticky top-0">
+                      <TableRow>
+                        <TableHeader>المنتج</TableHeader>
+                        <TableHeader>التصنيف</TableHeader>
+                        <TableHeader>الكمية</TableHeader>
+                        <TableHeader>الحالة</TableHeader>
+                        <TableHeader>قيمة المخزون</TableHeader>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                       {whDetailProducts.map((p) => {
                         const isZero = p.actual_qty <= 0;
                         const isLow =
@@ -530,70 +534,64 @@ export default function WarehouseSection({
                           p.actual_qty <= p.low_stock_threshold &&
                           !isZero;
                         return (
-                          <tr key={p.id} className="border-b border-line erp-table-row">
-                            <td className="p-3">
-                              <div className="text-ink font-medium">{p.name}</div>
-                              {p.sku && <div className="text-ink/30 text-xs">{p.sku}</div>}
-                            </td>
-                            <td className="p-3 text-center">
-                              {p.category ? (
-                                <span className="px-2 py-0.5 rounded-lg bg-surface text-ink/50 text-xs">
-                                  {p.category}
-                                </span>
-                              ) : (
-                                <span className="text-ink/20">—</span>
+                          <TableRow key={p.id}>
+                            <TableCell>
+                              <div className="font-medium">{p.name}</div>
+                              {p.sku && (
+                                <div className="opacity-30 text-xs">{p.sku}</div>
                               )}
-                            </td>
-                            <td className="p-3 text-center font-mono font-bold">
+                            </TableCell>
+                            <TableCell>
+                              {p.category ? (
+                                <Badge variant="neutral">{p.category}</Badge>
+                              ) : (
+                                <span className="opacity-20">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell variant="number">
                               <span
                                 className={
                                   isZero
-                                    ? 'text-red-400'
+                                    ? 'text-red-400 font-bold'
                                     : isLow
-                                      ? 'text-amber-400'
-                                      : 'text-emerald-400'
+                                      ? 'text-amber-400 font-bold'
+                                      : 'text-emerald-400 font-bold'
                                 }
                               >
                                 {p.actual_qty.toFixed(2)}
                               </span>
-                            </td>
-                            <td className="p-3 text-center">
+                            </TableCell>
+                            <TableCell variant="status">
                               {isZero ? (
-                                <span className="px-2 py-0.5 rounded-lg bg-red-500/15 text-red-400 text-xs">
-                                  نافد
-                                </span>
+                                <StatusBadge variant="critical" label="نافد" />
                               ) : isLow ? (
-                                <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-400 text-xs">
-                                  منخفض
-                                </span>
+                                <StatusBadge variant="neutral" label="منخفض" />
                               ) : (
-                                <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs">
-                                  متوفر
-                                </span>
+                                <StatusBadge variant="positive" label="متوفر" />
                               )}
-                            </td>
-                            <td className="p-3 text-center font-bold text-ink">
-                              {formatCurrency(p.total_value)}
-                            </td>
-                          </tr>
+                            </TableCell>
+                            <TableCell variant="number">
+                              <span className="font-bold">{formatCurrency(p.total_value)}</span>
+                            </TableCell>
+                          </TableRow>
                         );
                       })}
-                    </tbody>
+                    </TableBody>
                     <tfoot>
-                      <tr className="border-t border-line bg-surface">
-                        <td colSpan={4} className="p-3 text-ink/50 font-bold">
+                      <tr className="border-t border-[var(--line)] bg-[var(--surface)]">
+                        <td colSpan={4} className="p-3 opacity-50 font-bold">
                           الإجمالي
                         </td>
-                        <td className="p-3 text-center font-bold text-ink">
+                        <td className="p-3 text-end font-bold">
                           {formatCurrency(whDetailProducts.reduce((s, p) => s + p.total_value, 0))}
                         </td>
                       </tr>
                     </tfoot>
-                  </table>
+                  </Table>
                 </div>
               </>
             )}
-          </div>
+          </Card>
         </div>
       )}
     </>

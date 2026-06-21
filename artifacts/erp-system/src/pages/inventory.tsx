@@ -10,17 +10,15 @@ import {
   Package,
   AlertTriangle,
   TrendingDown,
-  ShieldX,
   ClipboardList,
   Truck,
-  Trash2,
-  Filter,
   BarChart3,
   Bell,
   LayoutDashboard,
   ArrowRight,
   Shield,
   Archive,
+  Trash2,
 } from 'lucide-react';
 import { Link, useLocation, useSearch } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
@@ -32,11 +30,17 @@ import ScrapInventory from '@/pages/scrap-inventory';
 
 import { api } from './inventory/_shared';
 import type { AuditSummary, LowStockItem, WarehouseSummaryItem, Tab } from './inventory/_shared';
-import { TabBtn, TabBtnBadge, StatCard } from './inventory/_components';
+import { TabBtn, TabBtnBadge } from './inventory/_components';
 import ReviewTab from './inventory/ReviewTab';
 import CountTab from './inventory/count';
 import AlertsTab from './inventory/AlertsTab';
 import WarehouseSection from './inventory/WarehouseSection';
+
+import { PageHeader } from '@/components/patterns';
+import { StatCard } from '@/components/ui/stat-card';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SkeletonTable } from '@/components/ui/skeleton';
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Main Component
@@ -74,6 +78,7 @@ export default function Inventory() {
     }
   }, [tabFromUrl]);
   const [movementsFilter, setMovementsFilter] = useState<'all' | 'zero' | 'low'>('all');
+
   /* ── warehouse detail modal ── */
   const [warehouseDetailId, setWarehouseDetailId] = useState<number | null>(null);
 
@@ -262,250 +267,275 @@ export default function Inventory() {
     navigate('/transfers');
   }
 
+  /* ── Permission gate ──────────────────────────────────────── */
   if (!canViewInventory) {
     return (
-      <div
-        className="p-6 flex flex-col items-center justify-center min-h-[60vh] text-center"
-        dir="rtl"
-      >
-        <ShieldX className="w-16 h-16 text-red-400/50 mb-4" />
-        <h2 className="text-xl font-bold text-ink/80 mb-2">غير مصرح بالوصول</h2>
-        <p className="text-ink/40 text-sm">ليس لديك صلاحية لعرض صفحة المخزون</p>
-      </div>
+      <EmptyState
+        variant="no-data"
+        title="غير مصرح بالوصول"
+        description="ليس لديك صلاحية لعرض صفحة المخزون"
+      />
     );
   }
 
   return (
-    <div className="erp-page" dir="rtl">
+    <div className="space-y-6">
       {/* ══ Page Header ═══════════════════════════════════════════════════════ */}
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title">المخزون</h1>
-          <p className="erp-page-subtitle">إدارة المنتجات والكميات وحركات المخزون</p>
-        </div>
-      </div>
-      {/* ══ تبويبات المخزون — في الأعلى دائماً ════════════════════════════════ */}
-      <div>
-        <div
-          className="erp-tab-bar erp-tab-bar--underline overflow-x-auto"
-          style={{ scrollbarWidth: 'none' }}
-        >
-          <TabBtn
-            id="overview"
-            label="نظرة عامة"
-            icon={<LayoutDashboard className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-          <TabBtn
-            id="movements"
-            label="الحركات"
-            icon={<Package className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-          {canAdjustInventory && (
-            <TabBtn
-              id="count"
-              label="الجرد"
-              icon={<ClipboardList className="w-4 h-4" />}
-              active={activeTab}
-              onClick={setActiveTab}
-            />
-          )}
-          {canAdjustInventory && (
-            <Link to="/transfers">
-              <button className="erp-tab">
-                <Truck className="w-4 h-4" />
-                التحويلات بين الفروع
-              </button>
-            </Link>
-          )}
-          {canAdjustInventory && (
-            <TabBtn
-              id="consignment"
-              label="الائتمان"
-              icon={<Archive className="w-4 h-4" />}
-              active={activeTab}
-              onClick={setActiveTab}
-            />
-          )}
-          <TabBtnBadge
-            id="alerts"
-            label="تنبيهات المخزون"
-            icon={<Bell className="w-4 h-4" />}
-            badge={alertsBadge}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-          <TabBtn
-            id="reports"
-            label="تقارير المخزون"
-            icon={<BarChart3 className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-          <TabBtn
-            id="scrap"
-            label="مخزن التوالف"
-            icon={<Trash2 className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-        </div>
+      <PageHeader
+        title="المخزون"
+        subtitle="إدارة المنتجات والكميات وحركات المخزون"
+      />
 
-        {/* ══ Overview tab: stats + warehouses + quick filters ══════════════════ */}
-        {activeTab === 'overview' && (
-          <>
-            {gs && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                  label="إجمالي المنتجات"
-                  value={String(gs.total_products)}
-                  icon={<Package className="w-5 h-5 text-amber-400" />}
-                  color="text-ink"
-                  bg="bg-amber-500/10 border-amber-500/20"
-                  onClick={() => setActiveTab('reports')}
-                  hint="عرض تقارير المخزون"
-                />
-                <StatCard
-                  label="قيمة المخزون الكلية"
-                  value={formatCurrency(grandTotal || gs.total_inventory_value)}
-                  icon={<BarChart3 className="w-5 h-5 text-emerald-400" />}
-                  color="text-emerald-400"
-                  bg="bg-emerald-500/10 border-emerald-500/20"
-                  onClick={() => setActiveTab('reports')}
-                  hint="عرض تقارير المخزون"
-                />
-                <StatCard
-                  label="تحت حد الطلب"
-                  value={String(gs.low_stock_count)}
-                  icon={<AlertTriangle className="w-5 h-5 text-amber-400" />}
-                  color={gs.low_stock_count > 0 ? 'text-amber-400' : 'text-ink/40'}
-                  bg={
-                    gs.low_stock_count > 0
-                      ? 'bg-amber-500/10 border-amber-500/20'
-                      : 'bg-surface border-line'
-                  }
-                  onClick={() => setActiveTab('alerts')}
-                  hint="عرض تنبيهات المخزون"
-                />
-                <StatCard
-                  label="نفد المخزون"
-                  value={String(gs.zero_stock_count)}
-                  icon={<TrendingDown className="w-5 h-5 text-red-400" />}
-                  color={gs.zero_stock_count > 0 ? 'text-red-400' : 'text-ink/40'}
-                  bg={
-                    gs.zero_stock_count > 0
-                      ? 'bg-red-500/10 border-red-500/20'
-                      : 'bg-surface border-line'
-                  }
-                  onClick={() => setActiveTab('alerts')}
-                  hint="عرض تنبيهات المخزون"
-                />
-              </div>
-            )}
-            {isAdmin && (
-              <div className="flex justify-end">
-                <Link
-                  href={api('/audit-log')}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border border-line bg-surface text-ink/60 hover:bg-surface hover:text-ink transition-all"
-                >
+      {/* ══ Tab bar ═══════════════════════════════════════════════════════════ */}
+      <div
+        className="erp-tab-bar erp-tab-bar--underline overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <TabBtn
+          id="overview"
+          label="نظرة عامة"
+          icon={<LayoutDashboard className="w-4 h-4" />}
+          active={activeTab}
+          onClick={setActiveTab}
+        />
+        <TabBtn
+          id="movements"
+          label="الحركات"
+          icon={<Package className="w-4 h-4" />}
+          active={activeTab}
+          onClick={setActiveTab}
+        />
+        {canAdjustInventory && (
+          <TabBtn
+            id="count"
+            label="الجرد"
+            icon={<ClipboardList className="w-4 h-4" />}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+        )}
+        {canAdjustInventory && (
+          <Link to="/transfers">
+            <button className="erp-tab">
+              <Truck className="w-4 h-4" />
+              التحويلات بين الفروع
+            </button>
+          </Link>
+        )}
+        {canAdjustInventory && (
+          <TabBtn
+            id="consignment"
+            label="الائتمان"
+            icon={<Archive className="w-4 h-4" />}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+        )}
+        <TabBtnBadge
+          id="alerts"
+          label="تنبيهات المخزون"
+          icon={<Bell className="w-4 h-4" />}
+          badge={alertsBadge}
+          active={activeTab}
+          onClick={setActiveTab}
+        />
+        <TabBtn
+          id="reports"
+          label="تقارير المخزون"
+          icon={<BarChart3 className="w-4 h-4" />}
+          active={activeTab}
+          onClick={setActiveTab}
+        />
+        <TabBtn
+          id="scrap"
+          label="مخزن التوالف"
+          icon={<Trash2 className="w-4 h-4" />}
+          active={activeTab}
+          onClick={setActiveTab}
+        />
+      </div>
+
+      {/* ══ Overview tab ══════════════════════════════════════════════════════ */}
+      {activeTab === 'overview' && !gs && (
+        <SkeletonTable rows={1} cols={4} />
+      )}
+
+      {activeTab === 'overview' && gs && (
+        <>
+          {/* ── KPI stat cards ── */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('reports')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('reports'); }}
+              title="عرض تقارير المخزون"
+              className="cursor-pointer"
+            >
+              <StatCard
+                label="إجمالي المنتجات"
+                value={String(gs.total_products)}
+                icon={<Package className="w-5 h-5" />}
+              />
+            </div>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('reports')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('reports'); }}
+              title="عرض تقارير المخزون"
+              className="cursor-pointer"
+            >
+              <StatCard
+                label="قيمة المخزون الكلية"
+                value={
+                  <span className="text-emerald-400">
+                    {formatCurrency(grandTotal || gs.total_inventory_value)}
+                  </span>
+                }
+                icon={<BarChart3 className="w-5 h-5" />}
+              />
+            </div>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('alerts')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('alerts'); }}
+              title="عرض تنبيهات المخزون"
+              className="cursor-pointer"
+            >
+              <StatCard
+                label="تحت حد الطلب"
+                value={
+                  <span className={gs.low_stock_count > 0 ? 'text-amber-400' : 'opacity-40'}>
+                    {String(gs.low_stock_count)}
+                  </span>
+                }
+                icon={<AlertTriangle className="w-5 h-5" />}
+              />
+            </div>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('alerts')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('alerts'); }}
+              title="عرض تنبيهات المخزون"
+              className="cursor-pointer"
+            >
+              <StatCard
+                label="نفد المخزون"
+                value={
+                  <span className={gs.zero_stock_count > 0 ? 'text-red-400' : 'opacity-40'}>
+                    {String(gs.zero_stock_count)}
+                  </span>
+                }
+                icon={<TrendingDown className="w-5 h-5" />}
+              />
+            </div>
+          </div>
+
+          {/* ── Audit log link (admin only) ── */}
+          {isAdmin && (
+            <div className="flex justify-end">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={api('/audit-log')}>
                   <Shield className="w-3.5 h-3.5" /> سجل المراجعات الكامل
                 </Link>
-              </div>
-            )}
-            {gs && (gs.low_stock_count > 0 || gs.zero_stock_count > 0) && (
-              <div className="flex gap-2 flex-wrap">
-                <span className="text-ink/40 text-xs flex items-center gap-1.5 me-1">
-                  <Filter className="w-3.5 h-3.5" /> فلاتر سريعة:
-                </span>
-                {gs.zero_stock_count > 0 && (
-                  <button
-                    onClick={() => handleQuickFilter('zero')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-all"
-                  >
-                    <TrendingDown className="w-3.5 h-3.5" /> عرض نافد المخزون ({gs.zero_stock_count}
-                    )
-                    <ArrowRight className="w-3 h-3 opacity-50" />
-                  </button>
-                )}
-                {gs.low_stock_count > 0 && (
-                  <button
-                    onClick={() => handleQuickFilter('low')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all"
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5" /> عرض تحت حد الطلب ({gs.low_stock_count}
-                    )
-                    <ArrowRight className="w-3 h-3 opacity-50" />
-                  </button>
-                )}
-              </div>
-            )}
+              </Button>
+            </div>
+          )}
 
-            <WarehouseSection
-              warehouses={warehouses}
-              branches={branches}
-              whSummaryMap={whSummaryMap}
-              grandTotal={grandTotal}
-              currentWarehouseIdNum={currentWarehouseIdNum}
-              isAdmin={isAdmin}
-              canAdjustInventory={canAdjustInventory}
-              loadingWH={loadingWH}
-              allProducts={allProducts}
-              whDetailProducts={whDetailProducts}
-              whDetailLoading={whDetailLoading}
-              setWarehouseId={setWarehouseId}
-              createWH={createWH}
-              deleteWH={deleteWH}
-              invalidateWH={invalidateWH}
-              qc={qc}
-              toast={toast}
-              handleOverviewExport={handleOverviewExport}
-              showAddWH={showAddWH}
-              setShowAddWH={setShowAddWH}
-              deleteWHTarget={deleteWHTarget}
-              setDeleteWHTarget={setDeleteWHTarget}
-              warehouseDetailId={warehouseDetailId}
-              setWarehouseDetailId={setWarehouseDetailId}
-              whForm={whForm}
-              setWhForm={setWhForm}
-            />
-          </>
-        )}
+          {/* ── Quick filter shortcuts ── */}
+          {(gs.low_stock_count > 0 || gs.zero_stock_count > 0) && (
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-xs opacity-50 flex items-center gap-1 me-1">
+                فلاتر سريعة:
+              </span>
+              {gs.zero_stock_count > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickFilter('zero')}
+                >
+                  <TrendingDown className="w-3.5 h-3.5" />
+                  عرض نافد المخزون ({gs.zero_stock_count})
+                  <ArrowRight className="w-3 h-3 opacity-50" />
+                </Button>
+              )}
+              {gs.low_stock_count > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickFilter('low')}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  عرض تحت حد الطلب ({gs.low_stock_count})
+                  <ArrowRight className="w-3 h-3 opacity-50" />
+                </Button>
+              )}
+            </div>
+          )}
 
-        {activeTab === 'overview' && !gs && (
-          <div className="text-center py-20 text-ink/30 text-sm">جاري تحميل بيانات المخزون...</div>
-        )}
-        {activeTab === 'movements' && (
-          <ReviewTab
-            currentWarehouseId={currentWarehouseIdNum}
+          {/* ── Warehouse section ── */}
+          <WarehouseSection
+            warehouses={warehouses}
+            branches={branches}
+            whSummaryMap={whSummaryMap}
+            grandTotal={grandTotal}
+            currentWarehouseIdNum={currentWarehouseIdNum}
+            isAdmin={isAdmin}
             canAdjustInventory={canAdjustInventory}
+            loadingWH={loadingWH}
+            allProducts={allProducts}
+            whDetailProducts={whDetailProducts}
+            whDetailLoading={whDetailLoading}
+            setWarehouseId={setWarehouseId}
+            createWH={createWH}
+            deleteWH={deleteWH}
+            invalidateWH={invalidateWH}
             qc={qc}
             toast={toast}
-            quickFilter={movementsFilter}
-            onFilterApplied={() => setMovementsFilter('all')}
+            handleOverviewExport={handleOverviewExport}
+            showAddWH={showAddWH}
+            setShowAddWH={setShowAddWH}
+            deleteWHTarget={deleteWHTarget}
+            setDeleteWHTarget={setDeleteWHTarget}
+            warehouseDetailId={warehouseDetailId}
+            setWarehouseDetailId={setWarehouseDetailId}
+            whForm={whForm}
+            setWhForm={setWhForm}
           />
-        )}
-        {activeTab === 'count' && (
-          <CountTab
-            warehouses={warehouses}
-            currentWarehouseId={currentWarehouseIdNum}
-            qc={qc}
-            toast={toast}
-          />
-        )}
-        {activeTab === 'alerts' && (
-          <AlertsTab
-            warehouses={warehouses}
-            currentWarehouseId={currentWarehouseIdNum}
-            onTransferPrefill={handleTransferPrefill}
-          />
-        )}
-        {activeTab === 'consignment' && <ConsignmentPage />}
-        {activeTab === 'reports' && <InventoryReport />}
-        {activeTab === 'scrap' && <ScrapInventory embedded />}
-      </div>
+        </>
+      )}
+
+      {/* ══ Other tabs ════════════════════════════════════════════════════════ */}
+      {activeTab === 'movements' && (
+        <ReviewTab
+          currentWarehouseId={currentWarehouseIdNum}
+          canAdjustInventory={canAdjustInventory}
+          qc={qc}
+          toast={toast}
+          quickFilter={movementsFilter}
+          onFilterApplied={() => setMovementsFilter('all')}
+        />
+      )}
+      {activeTab === 'count' && (
+        <CountTab
+          warehouses={warehouses}
+          currentWarehouseId={currentWarehouseIdNum}
+          qc={qc}
+          toast={toast}
+        />
+      )}
+      {activeTab === 'alerts' && (
+        <AlertsTab
+          warehouses={warehouses}
+          currentWarehouseId={currentWarehouseIdNum}
+          onTransferPrefill={handleTransferPrefill}
+        />
+      )}
+      {activeTab === 'consignment' && <ConsignmentPage />}
+      {activeTab === 'reports' && <InventoryReport />}
+      {activeTab === 'scrap' && <ScrapInventory embedded />}
     </div>
   );
 }
