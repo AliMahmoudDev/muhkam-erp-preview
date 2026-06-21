@@ -215,7 +215,7 @@
   padding-inline:  var(--space-1-5, 6px);
   border-radius:   var(--radius-full);
   background:      var(--brand);
-  color:           var(--color-on-brand, #fff);
+  color:           white;
   font-size:       10px;
   font-weight:     700;
   line-height:     1;
@@ -554,7 +554,7 @@
 .erp-stepper-step--completed .erp-stepper-indicator {
   background:   var(--brand);
   border-color: var(--brand);
-  color:        var(--color-on-brand, #fff);
+  color:        white;
 }
 
 .erp-stepper-step--current .erp-stepper-indicator {
@@ -566,7 +566,7 @@
 .erp-stepper-step--error .erp-stepper-indicator {
   background:   var(--status-error);
   border-color: var(--status-error);
-  color:        var(--color-on-error, #fff);
+  color:        white;
 }
 
 /* ── Connector colouring for completed ── */
@@ -632,9 +632,12 @@
   background:       var(--bg-panel);
 }
 
-/* Suppress Radix dialog styles on the content element */
+/* Suppress Radix dialog styles on the content element.
+   NOTE: `left` is intentional — Radix injects a physical `left: 50%` that must
+   be cancelled with the same physical property. A logical `inset-inline-start`
+   would not cancel the physical declaration. This is a justified RTL exception. */
 .erp-command-palette[data-radix-dialog-content] {
-  left:      unset;
+  left:      unset; /* justified: cancels Radix physical left:50% */
   top:       unset;
   translate: none;
 }

@@ -662,7 +662,7 @@ html.light .erp-skeleton {
 .erp-confirmation-flow-btn--confirm {
   background:  var(--brand);
   border:      1px solid transparent;
-  color:       var(--color-on-brand, #fff);
+  color:       white;
 }
 
 .erp-confirmation-flow-btn--confirm:hover {
@@ -673,7 +673,7 @@ html.light .erp-skeleton {
 .erp-confirmation-flow-btn--critical {
   background:  var(--status-error);
   border:      1px solid transparent;
-  color:       var(--color-on-error, #fff);
+  color:       white;
 }
 
 .erp-confirmation-flow-btn--critical:hover {

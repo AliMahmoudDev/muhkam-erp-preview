@@ -25,7 +25,7 @@
   box-shadow: var(--shadow-hover) !important;
 }
 html.light .erp-card--elevated {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10) !important;
+  box-shadow: var(--shadow-card) !important;
 }
 html.light .erp-card--elevated:hover {
   box-shadow: var(--shadow-hover) !important;
@@ -327,8 +327,8 @@ html.light .erp-popover {
    ══════════════════════════════════════════════════════════════ */
 
 .erp-tooltip {
-  background: var(--color-neutral-9, #1e1e2e) !important;
-  color: var(--color-text-on-dark, #f0f0f5) !important;
+  background: var(--bg-panel) !important;
+  color: var(--text-1) !important;
   border: 1px solid var(--edge-md) !important;
   border-radius: var(--radius-sm) !important;
   box-shadow: var(--shadow-dropdown) !important;
@@ -345,9 +345,9 @@ html.light .erp-popover {
 
 /* Light mode tooltip inverts to dark surface for visibility */
 html.light .erp-tooltip {
-  background: var(--color-neutral-9, #1a1a28) !important;
-  color: #f0f0f5 !important;
-  border-color: var(--color-neutral-8, #2a2a3e) !important;
+  background: var(--bg-panel) !important;
+  color: var(--text-1) !important;
+  border-color: var(--edge) !important;
 }
 
 

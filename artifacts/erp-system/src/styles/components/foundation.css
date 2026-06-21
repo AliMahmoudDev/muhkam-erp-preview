@@ -578,7 +578,7 @@ button.erp-btn:focus-visible {
   height:        var(--switch-thumb-size);
   border-radius: var(--radius-avatar);
   background:    var(--switch-thumb-color);
-  box-shadow:    0 1px 3px rgba(0, 0, 0, 0.30);
+  box-shadow:    var(--shadow-tooltip);
   /* RTL-safe: use inline-start offset and translate for thumb travel */
   margin-inline-start: 3px;
   transition:    transform var(--duration-fast) var(--easing-spring);
@@ -796,7 +796,7 @@ button.erp-btn:focus-visible {
 /* Intent variants */
 .erp-spinner-accent   { color: var(--spinner-color); }
 .erp-spinner-muted    { color: var(--color-text-disabled); }
-.erp-spinner-inverted { color: #FFFFFF; }
+.erp-spinner-inverted { color: white; }
 
 
 /* ══════════════════════════════════════════════════════════════════
