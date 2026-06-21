@@ -1,7 +1,17 @@
 import { FileText, DollarSign, Pencil, Trash2, CreditCard, Smartphone } from 'lucide-react';
-import { TableSkeleton } from '@/components/skeletons';
-import { PaginationBar } from '@/components/PaginationBar';
 import { formatCurrency } from '@/lib/format';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Badge } from '@/components/ui/badge';
 
 interface Customer {
   id: number;
@@ -18,12 +28,7 @@ interface Customer {
 }
 
 interface CustomerListProps {
-  isLoading: boolean;
-  filtered: Customer[];
   paginatedCustomers: Customer[];
-  custPage: number;
-  CUST_PAGE_SIZE: number;
-  setCustPage: (v: number) => void;
   canManageCustomers: boolean;
   isMaintenanceCustomer: (c: object) => boolean;
   setShowStatement: (
@@ -56,12 +61,7 @@ interface CustomerListProps {
 }
 
 export function CustomerList({
-  isLoading,
-  filtered,
   paginatedCustomers,
-  custPage,
-  CUST_PAGE_SIZE,
-  setCustPage,
   canManageCustomers,
   isMaintenanceCustomer,
   setShowStatement,
@@ -74,179 +74,164 @@ export function CustomerList({
   setDeleteConfirmId,
 }: CustomerListProps) {
   return (
-    <div className="glass-panel rounded-3xl overflow-hidden border border-line">
-      <div className="overflow-x-auto">
-        <table className="w-full text-right text-ink/80 whitespace-nowrap">
-          <thead className="bg-surface border-b border-line">
-            <tr>
-              <th className="p-4 font-semibold text-ink/60">الكود</th>
-              <th className="p-4 font-semibold text-ink/60">العميل</th>
-              <th className="p-4 font-semibold text-ink/60">رقم الهاتف</th>
-              <th className="p-4 font-semibold text-ink/60">
-                الرصيد
-                <span className="text-ink/25 text-xs font-normal mr-1">(+ عليه | − له)</span>
-              </th>
-              <th className="p-4 font-semibold text-ink/60">الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <TableSkeleton cols={5} rows={5} />
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-12 text-center text-ink/40">
-                  لا يوجد عملاء
-                </td>
-              </tr>
-            ) : (
-              paginatedCustomers.map((customer) => (
-                <tr key={customer.id} className="border-b border-line erp-table-row">
-                  <td className="p-4">
-                    <span className="font-mono text-xs font-bold px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      {customer.customer_code ?? '—'}
-                    </span>
-                  </td>
-                  <td className="p-4 font-bold text-ink">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {isMaintenanceCustomer(customer) && (
-                        <span
-                          title="عميل صيانة"
-                          className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0"
-                        >
-                          <Smartphone className="w-3.5 h-3.5" />
-                        </span>
-                      )}
-                      {customer.name}
-                      {isMaintenanceCustomer(customer) && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
-                          عميل صيانة
-                        </span>
-                      )}
-                      {customer.is_supplier && (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0">
-                          يتم الشراء منه
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4 text-ink/60">{customer.phone || '-'}</td>
-                  <td className="p-4 font-bold">
-                    {Number(customer.balance) > 0 ? (
-                      <span className="text-amber-400 flex items-center gap-1.5">
-                        {formatCurrency(Number(customer.balance))}
-                        <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/20">
-                          AR عليه
-                        </span>
-                      </span>
-                    ) : Number(customer.balance) < 0 ? (
-                      <span className="text-red-400 flex items-center gap-1.5">
-                        {formatCurrency(Math.abs(Number(customer.balance)))}
-                        <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-red-500/15 text-red-400 border border-red-500/20">
-                          AP له
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-ink/30">متسوّى</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        onClick={() =>
-                          setShowStatement({
-                            id: customer.id,
-                            name: customer.name,
-                            phone: customer.phone || '',
-                            balance: Number(customer.balance),
-                            isSupplier: customer.is_supplier ?? false,
-                          })
-                        }
-                        className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-blue-500/30"
-                      >
-                        <FileText className="w-3.5 h-3.5" /> كشف حساب
-                      </button>
-                      <button
-                        onClick={() => {
-                          setReceiptData({ amount: '', notes: '', safe_id: '' });
-                          setShowReceipt({
-                            id: customer.id,
-                            name: customer.name,
-                            balance: Number(customer.balance),
-                          });
-                        }}
-                        className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-emerald-500/30"
-                      >
-                        <DollarSign className="w-3.5 h-3.5" /> قبض دفعة
-                      </button>
-                      {customer.is_supplier && (
-                        <button
-                          onClick={() => {
-                            setSupplierPaymentData({ amount: '', notes: '', safe_id: '' });
-                            setShowSupplierPayment({
-                              id: customer.id,
-                              name: customer.name,
-                              balance: Number(customer.balance),
-                            });
-                          }}
-                          className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-emerald-500/30"
-                        >
-                          <CreditCard className="w-3.5 h-3.5" /> تسديد دفعة
-                        </button>
-                      )}
-                      {canManageCustomers && (
-                        <button
-                          onClick={() => {
-                            setShowEdit({
-                              id: customer.id,
-                              name: customer.name,
-                              phone: customer.phone || '',
-                              is_customer: customer.is_customer ?? true,
-                              is_supplier: customer.is_supplier ?? false,
-                              classification_id: customer.classification_id ?? null,
-                            });
-                            setEditFormData({
-                              name: customer.name,
-                              phone: customer.phone || '',
-                              is_customer: customer.is_customer ?? true,
-                              is_supplier: customer.is_supplier ?? false,
-                              classification_id: customer.classification_id ?? null,
-                              price_list_id: customer.price_list_id ?? null,
-                              price_list_markup:
-                                customer.price_list_markup != null
-                                  ? String(customer.price_list_markup)
-                                  : '',
-                            });
-                          }}
-                          className="p-1.5 rounded-lg bg-surface text-ink/50 hover:bg-surface hover:text-ink/80 transition-colors border border-line"
-                          title="تعديل"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {canManageCustomers && (
-                        <button
-                          onClick={() => setDeleteConfirmId(customer.id)}
-                          className="p-1.5 rounded-lg bg-red-500/5 text-red-400/50 hover:bg-red-500/15 hover:text-red-400 transition-colors border border-red-500/10"
-                          title="حذف"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      <PaginationBar
-        page={custPage}
-        totalItems={filtered.length}
-        pageSize={CUST_PAGE_SIZE}
-        onPageChange={setCustPage}
-        itemLabel="عميل"
-      />
-    </div>
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableHeader>الكود</TableHeader>
+          <TableHeader>العميل</TableHeader>
+          <TableHeader>رقم الهاتف</TableHeader>
+          <TableHeader>
+            الرصيد
+            <span className="opacity-40 text-xs font-normal mr-1">(+ عليه | − له)</span>
+          </TableHeader>
+          <TableHeader>الإجراءات</TableHeader>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {paginatedCustomers.map((customer) => (
+          <TableRow key={customer.id}>
+            {/* Code */}
+            <TableCell variant="metadata">
+              <Badge variant="neutral">{customer.customer_code ?? '—'}</Badge>
+            </TableCell>
+
+            {/* Name + badges */}
+            <TableCell>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold">{customer.name}</span>
+                {isMaintenanceCustomer(customer) && (
+                  <StatusBadge
+                    variant="informative"
+                    label="عميل صيانة"
+                    icon={<Smartphone className="size-3.5" />}
+                  />
+                )}
+                {customer.is_supplier && (
+                  <StatusBadge variant="neutral" label="يتم الشراء منه" />
+                )}
+              </div>
+            </TableCell>
+
+            {/* Phone */}
+            <TableCell variant="metadata">{customer.phone || '—'}</TableCell>
+
+            {/* Balance */}
+            <TableCell variant="number">
+              {Number(customer.balance) > 0 ? (
+                <span className="flex items-center gap-1.5 justify-end">
+                  {formatCurrency(Number(customer.balance))}
+                  <StatusBadge variant="critical" label="AR عليه" icon={<></>} />
+                </span>
+              ) : Number(customer.balance) < 0 ? (
+                <span className="flex items-center gap-1.5 justify-end">
+                  {formatCurrency(Math.abs(Number(customer.balance)))}
+                  <StatusBadge variant="negative" label="AP له" icon={<></>} />
+                </span>
+              ) : (
+                <span className="opacity-40">متسوّى</span>
+              )}
+            </TableCell>
+
+            {/* Actions */}
+            <TableCell variant="action">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setShowStatement({
+                      id: customer.id,
+                      name: customer.name,
+                      phone: customer.phone || '',
+                      balance: Number(customer.balance),
+                      isSupplier: customer.is_supplier ?? false,
+                    })
+                  }
+                >
+                  <FileText /> كشف حساب
+                </Button>
+
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => {
+                    setReceiptData({ amount: '', notes: '', safe_id: '' });
+                    setShowReceipt({
+                      id: customer.id,
+                      name: customer.name,
+                      balance: Number(customer.balance),
+                    });
+                  }}
+                >
+                  <DollarSign /> قبض دفعة
+                </Button>
+
+                {customer.is_supplier && (
+                  <Button
+                    variant="success"
+                    size="sm"
+                    onClick={() => {
+                      setSupplierPaymentData({ amount: '', notes: '', safe_id: '' });
+                      setShowSupplierPayment({
+                        id: customer.id,
+                        name: customer.name,
+                        balance: Number(customer.balance),
+                      });
+                    }}
+                  >
+                    <CreditCard /> تسديد دفعة
+                  </Button>
+                )}
+
+                {canManageCustomers && (
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    aria-label="تعديل"
+                    title="تعديل"
+                    onClick={() => {
+                      setShowEdit({
+                        id: customer.id,
+                        name: customer.name,
+                        phone: customer.phone || '',
+                        is_customer: customer.is_customer ?? true,
+                        is_supplier: customer.is_supplier ?? false,
+                        classification_id: customer.classification_id ?? null,
+                      });
+                      setEditFormData({
+                        name: customer.name,
+                        phone: customer.phone || '',
+                        is_customer: customer.is_customer ?? true,
+                        is_supplier: customer.is_supplier ?? false,
+                        classification_id: customer.classification_id ?? null,
+                        price_list_id: customer.price_list_id ?? null,
+                        price_list_markup:
+                          customer.price_list_markup != null
+                            ? String(customer.price_list_markup)
+                            : '',
+                      });
+                    }}
+                  >
+                    <Pencil />
+                  </IconButton>
+                )}
+
+                {canManageCustomers && (
+                  <IconButton
+                    variant="destructive"
+                    size="sm"
+                    aria-label="حذف"
+                    title="حذف"
+                    onClick={() => setDeleteConfirmId(customer.id)}
+                  >
+                    <Trash2 />
+                  </IconButton>
+                )}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

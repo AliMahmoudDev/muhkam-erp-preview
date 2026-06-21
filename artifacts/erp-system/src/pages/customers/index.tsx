@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   Plus,
-  Search,
   X,
   TrendingUp,
   TrendingDown,
@@ -23,6 +22,17 @@ import { formatCurrency } from '@/lib/format';
 import { exportCustomersExcel } from '@/lib/export-excel';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
 import BadDebts from '@/pages/bad-debts';
+import { cn } from '@/lib/utils';
+
+import { ListPagePattern, PageHeader, PageToolbar } from '@/components/patterns';
+import type { ListPageState } from '@/components/patterns';
+import { SearchInput } from '@/components/ui/search-input';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { StatCard } from '@/components/ui/stat-card';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { Pagination } from '@/components/ui/pagination';
 
 import { CustomerList } from './CustomerList';
 import { CustomerStatementModal } from './CustomerLedger';
@@ -40,33 +50,12 @@ import {
   type ReportFilters,
 } from './CustomerClassifications';
 
-function AccessDenied({ msg }: { msg: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <svg
-        className="w-14 h-14 text-red-400/40 mb-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 115.636 5.636m12.728 12.728L5.636 5.636"
-        />
-      </svg>
-      <p className="text-ink/60 font-bold text-lg">غير مصرح</p>
-      <p className="text-ink/30 text-sm mt-1">{msg}</p>
-    </div>
-  );
-}
-
 export default function Customers() {
   const { data: customers = [], isLoading } = useGetCustomers();
   const { user } = useAuth();
   const canViewCustomers = hasPermission(user, 'can_view_customers') === true;
   const canManageCustomers = hasPermission(user, 'can_manage_customers') === true;
+
   const createMutation = useMutation({
     mutationFn: async (data: {
       name: string;
@@ -85,6 +74,7 @@ export default function Customers() {
       return j;
     },
   });
+
   const { data: safesRaw } = useGetSettingsSafes();
   const safes = safeArray(safesRaw);
   const queryClient = useQueryClient();
@@ -523,191 +513,314 @@ export default function Customers() {
     deleteMutation.mutate(deleteConfirmId);
   };
 
+  /* ── Permission gate ──────────────────────────────────────── */
   if (!canViewCustomers)
-    return <AccessDenied msg="غير مصرح لك بالوصول إلى العملاء — تواصل مع المدير لتفعيل الصلاحية" />;
+    return (
+      <EmptyState
+        variant="no-data"
+        title="غير مصرح"
+        description="غير مصرح لك بالوصول إلى العملاء — تواصل مع المدير لتفعيل الصلاحية"
+      />
+    );
+
+  /* ── Derived state for ListPagePattern ───────────────────── */
+  const pageState: ListPageState = isLoading
+    ? 'loading'
+    : filtered.length === 0
+      ? 'empty'
+      : 'idle';
+
+  const hasActiveFilter = typeFilter !== 'all' || search !== '';
+  const totalPages = Math.ceil(filtered.length / CUST_PAGE_SIZE);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-3 border-b border-line">
-        <div className="flex gap-1">
-          {(
-            [
-              { id: 'customers', label: 'العملاء والموردون' },
-              { id: 'bad-debts', label: 'الديون المعدومة' },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setPageView(t.id)}
-              className={`px-5 py-2.5 text-sm font-bold border-b-2 transition-all ${pageView === t.id ? 'border-amber-400 text-amber-400' : 'border-transparent text-ink/40 hover:text-ink/70'}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        {pageView === 'customers' && (
-          <div className="flex items-center gap-2 pb-2">
-            <button
-              onClick={() => {
-                setShowReports(true);
-                setReportData(null);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all whitespace-nowrap"
-            >
-              <BarChart2 className="w-4 h-4" /> تقارير العملاء
-            </button>
-            <button
-              onClick={() => exportCustomersExcel(customers)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition-all whitespace-nowrap"
-            >
-              <FileDown className="w-4 h-4" /> Excel
-            </button>
-            {canManageCustomers && (
-              <button
-                onClick={() => setShowAdd(true)}
-                className="btn-primary flex items-center gap-2 whitespace-nowrap py-1.5"
-              >
-                <Plus className="w-4 h-4" /> إضافة عميل
-              </button>
+      {/* ── Page-view tabs (customers / bad-debts) ─────────── */}
+      <div className="flex items-end gap-1 border-b border-[var(--line)]">
+        {(
+          [
+            { id: 'customers', label: 'العملاء والموردون' },
+            { id: 'bad-debts', label: 'الديون المعدومة' },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setPageView(t.id)}
+            className={cn(
+              'px-5 py-2.5 text-sm font-bold border-b-2 transition-all',
+              pageView === t.id
+                ? 'border-[var(--brand)] text-[var(--brand)]'
+                : 'border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]'
             )}
-          </div>
-        )}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
+      {/* ── Bad-debts sub-page ─────────────────────────────── */}
       {pageView === 'bad-debts' && <BadDebts embedded />}
 
+      {/* ── Customers main view ────────────────────────────── */}
       {pageView === 'customers' && (
         <>
-          <div className="relative max-w-sm">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/40" />
-            <input
-              type="text"
-              placeholder="بحث بالاسم أو الهاتف..."
-              className="glass-input pl-3 icon-pr w-full py-2 text-sm"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <ListPagePattern
+            state={pageState}
+            /* 1. Header */
+            headerSlot={
+              <PageHeader
+                title="العملاء والموردون"
+                subtitle={
+                  customers.length > 0 ? `${customers.length} عميل / مورد مسجّل` : undefined
+                }
+                actionsSlot={
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowReports(true);
+                        setReportData(null);
+                      }}
+                    >
+                      <BarChart2 /> تقارير العملاء
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportCustomersExcel(customers)}
+                    >
+                      <FileDown /> Excel
+                    </Button>
+                    {canManageCustomers && (
+                      <Button size="sm" onClick={() => setShowAdd(true)}>
+                        <Plus /> إضافة عميل
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+            }
+            /* 2. Toolbar — search + filter chips */
+            toolbarSlot={
+              <PageToolbar
+                searchSlot={
+                  <SearchInput
+                    placeholder="بحث بالاسم أو الهاتف أو الكود..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onClear={() => setSearch('')}
+                  />
+                }
+                filtersSlot={
+                  <FilterBar>
+                    {(
+                      [
+                        { key: 'all', label: 'الكل' },
+                        { key: 'customers', label: 'عملاء فقط' },
+                        { key: 'suppliers', label: 'موردون فقط' },
+                        { key: 'debtors', label: 'عليهم رصيد (AR)' },
+                        { key: 'creditors', label: 'لهم رصيد (AP)' },
+                        { key: 'maintenance', label: 'عملاء صيانة' },
+                      ] as const
+                    ).map((f) => (
+                      <Button
+                        key={f.key}
+                        size="sm"
+                        variant={typeFilter === f.key ? 'default' : 'outline'}
+                        onClick={() => setTypeFilter((v) => (v === f.key ? 'all' : f.key))}
+                      >
+                        {f.label}
+                        {typeFilter === f.key && filtered.length > 0 && (
+                          <span className="opacity-70">({filtered.length})</span>
+                        )}
+                      </Button>
+                    ))}
+                    {hasActiveFilter && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setTypeFilter('all');
+                          setSearch('');
+                        }}
+                      >
+                        <X /> مسح الفلتر
+                      </Button>
+                    )}
+                  </FilterBar>
+                }
+              />
+            }
+            /* 3. KPI — clickable stat cards + debt alert */
+            kpiSlot={
+              customers.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {/* AR — click to filter debtors */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        setTypeFilter((f) => (f === 'debtors' ? 'all' : 'debtors'))
+                      }
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' &&
+                        setTypeFilter((f) => (f === 'debtors' ? 'all' : 'debtors'))
+                      }
+                      className={cn(
+                        'cursor-pointer rounded-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]',
+                        typeFilter === 'debtors' && 'ring-2 ring-[var(--brand)]'
+                      )}
+                    >
+                      <StatCard
+                        label="ذمم مدينة (AR)"
+                        value={formatCurrency(totalAR)}
+                        icon={<TrendingUp />}
+                      >
+                        <p className="text-xs opacity-50 mt-1">{debtorCount} عميل عليه رصيد</p>
+                      </StatCard>
+                    </div>
 
-          {customers.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div
-                className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
-                style={{
-                  borderColor:
-                    typeFilter === 'debtors' ? 'rgba(245,158,11,0.5)' : 'rgba(245,158,11,0.15)',
-                  background: typeFilter === 'debtors' ? 'rgba(245,158,11,0.08)' : undefined,
-                }}
-                onClick={() => setTypeFilter((f) => (f === 'debtors' ? 'all' : 'debtors'))}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-                  <p className="text-ink/40 text-xs font-bold">ذمم مدينة (AR)</p>
-                </div>
-                <p className="text-xl font-black text-amber-400">{formatCurrency(totalAR)}</p>
-                <p className="text-ink/30 text-xs mt-0.5">{debtorCount} عميل عليه رصيد</p>
-              </div>
-              <div
-                className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
-                style={{
-                  borderColor:
-                    typeFilter === 'creditors' ? 'rgba(239,68,68,0.5)' : 'rgba(239,68,68,0.15)',
-                  background: typeFilter === 'creditors' ? 'rgba(239,68,68,0.06)' : undefined,
-                }}
-                onClick={() => setTypeFilter((f) => (f === 'creditors' ? 'all' : 'creditors'))}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                  <p className="text-ink/40 text-xs font-bold">ذمم دائنة (AP)</p>
-                </div>
-                <p className="text-xl font-black text-red-400">{formatCurrency(totalAP)}</p>
-                <p className="text-ink/30 text-xs mt-0.5">
-                  {customers.filter((c) => Number(c.balance) < -0.001).length} له رصيد عليك
-                </p>
-              </div>
-              <div className="glass-panel rounded-2xl p-4 border border-line">
-                <div className="flex items-center gap-2 mb-1">
-                  <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                  <p className="text-ink/40 text-xs font-bold">الصافي</p>
-                </div>
-                <p
-                  className={`text-xl font-black ${totalAR - totalAP >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
-                >
-                  {formatCurrency(Math.abs(totalAR - totalAP))}
-                </p>
-                <p className="text-ink/30 text-xs mt-0.5">
-                  {totalAR - totalAP >= 0 ? 'لصالحك' : 'عليك صافياً'}
-                </p>
-              </div>
-              <div
-                className="glass-panel rounded-2xl p-4 border cursor-pointer transition-all"
-                style={{
-                  borderColor:
-                    typeFilter === 'suppliers' ? 'rgba(245,158,11,0.4)' : 'rgba(245,158,11,0.15)',
-                  background: typeFilter === 'suppliers' ? 'rgba(245,158,11,0.06)' : undefined,
-                }}
-                onClick={() => setTypeFilter((f) => (f === 'suppliers' ? 'all' : 'suppliers'))}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <ArrowDownToLine className="w-3.5 h-3.5 text-ink/50" />
-                  <p className="text-ink/40 text-xs font-bold">موردون</p>
-                </div>
-                <p className="text-xl font-black text-ink/70">{totalSuppliers}</p>
-                <p className="text-ink/30 text-xs mt-0.5">جهة يتم الشراء منها</p>
-              </div>
-            </div>
-          )}
+                    {/* AP — click to filter creditors */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        setTypeFilter((f) => (f === 'creditors' ? 'all' : 'creditors'))
+                      }
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' &&
+                        setTypeFilter((f) => (f === 'creditors' ? 'all' : 'creditors'))
+                      }
+                      className={cn(
+                        'cursor-pointer rounded-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]',
+                        typeFilter === 'creditors' && 'ring-2 ring-[var(--brand)]'
+                      )}
+                    >
+                      <StatCard
+                        label="ذمم دائنة (AP)"
+                        value={formatCurrency(totalAP)}
+                        icon={<TrendingDown />}
+                      >
+                        <p className="text-xs opacity-50 mt-1">
+                          {customers.filter((c) => Number(c.balance) < -0.001).length} له رصيد عليك
+                        </p>
+                      </StatCard>
+                    </div>
 
-          <AlertSettingBanner
-            enabledKey="alert_debt_enabled"
-            thresholdKey="alert_debt_days"
-            title="تنبيه الديون المتأخرة"
-            thresholdLabel="التنبيه بعد"
-            thresholdUnit="يوم"
-            icon="💰"
-            color="amber"
-            defaultThreshold="30"
+                    {/* Net — display only */}
+                    <StatCard
+                      label="الصافي"
+                      value={formatCurrency(Math.abs(totalAR - totalAP))}
+                      icon={<RotateCcw />}
+                    >
+                      <p className="text-xs opacity-50 mt-1">
+                        {totalAR - totalAP >= 0 ? 'لصالحك' : 'عليك صافياً'}
+                      </p>
+                    </StatCard>
+
+                    {/* Suppliers — click to filter suppliers */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        setTypeFilter((f) => (f === 'suppliers' ? 'all' : 'suppliers'))
+                      }
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' &&
+                        setTypeFilter((f) => (f === 'suppliers' ? 'all' : 'suppliers'))
+                      }
+                      className={cn(
+                        'cursor-pointer rounded-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]',
+                        typeFilter === 'suppliers' && 'ring-2 ring-[var(--brand)]'
+                      )}
+                    >
+                      <StatCard
+                        label="موردون"
+                        value={totalSuppliers}
+                        icon={<ArrowDownToLine />}
+                      >
+                        <p className="text-xs opacity-50 mt-1">جهة يتم الشراء منها</p>
+                      </StatCard>
+                    </div>
+                  </div>
+
+                  <AlertSettingBanner
+                    enabledKey="alert_debt_enabled"
+                    thresholdKey="alert_debt_days"
+                    title="تنبيه الديون المتأخرة"
+                    thresholdLabel="التنبيه بعد"
+                    thresholdUnit="يوم"
+                    icon="💰"
+                    color="amber"
+                    defaultThreshold="30"
+                  />
+                </div>
+              ) : null
+            }
+            /* 4. Table */
+            tableSlot={
+              <CustomerList
+                paginatedCustomers={paginatedCustomers}
+                canManageCustomers={canManageCustomers}
+                isMaintenanceCustomer={isMaintenanceCustomer}
+                setShowStatement={setShowStatement}
+                setReceiptData={setReceiptData}
+                setShowReceipt={setShowReceipt}
+                setSupplierPaymentData={setSupplierPaymentData}
+                setShowSupplierPayment={setShowSupplierPayment}
+                setShowEdit={setShowEdit}
+                setEditFormData={setEditFormData}
+                setDeleteConfirmId={setDeleteConfirmId}
+              />
+            }
+            /* 5. Pagination */
+            paginationSlot={
+              <Pagination
+                currentPage={custPage}
+                totalPages={totalPages}
+                onPageChange={setCustPage}
+                showFirstLast
+              />
+            }
+            /* 6. Loading skeleton */
+            loadingSlot={<SkeletonTable rows={8} cols={5} />}
+            /* 7. Empty state */
+            emptySlot={
+              <EmptyState
+                variant={hasActiveFilter ? 'no-results' : 'no-data'}
+                query={search || undefined}
+                title={hasActiveFilter ? undefined : 'لا يوجد عملاء بعد'}
+                description={
+                  hasActiveFilter
+                    ? undefined
+                    : 'ابدأ بإضافة أول عميل أو مورد للقائمة.'
+                }
+                action={
+                  hasActiveFilter ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setTypeFilter('all');
+                        setSearch('');
+                      }}
+                    >
+                      <X /> مسح الفلتر
+                    </Button>
+                  ) : canManageCustomers ? (
+                    <Button size="sm" onClick={() => setShowAdd(true)}>
+                      <Plus /> إضافة عميل
+                    </Button>
+                  ) : undefined
+                }
+              />
+            }
           />
 
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                { key: 'all', label: 'الكل' },
-                { key: 'customers', label: 'عملاء فقط' },
-                { key: 'suppliers', label: 'موردون فقط' },
-                { key: 'debtors', label: 'عليهم رصيد (AR)' },
-                { key: 'creditors', label: 'لهم رصيد (AP)' },
-                { key: 'maintenance', label: 'عملاء صيانة' },
-              ] as const
-            ).map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setTypeFilter((v) => (v === f.key ? 'all' : f.key))}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                  typeFilter === f.key
-                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                    : 'bg-surface border-line text-ink/40 hover:text-ink/60'
-                }`}
-              >
-                {f.label}
-                {typeFilter === f.key && filtered.length > 0 && (
-                  <span className="mr-1.5 text-amber-400/70">({filtered.length})</span>
-                )}
-              </button>
-            ))}
-            {(typeFilter !== 'all' || search) && (
-              <button
-                onClick={() => {
-                  setTypeFilter('all');
-                  setSearch('');
-                }}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 transition-all flex items-center gap-1"
-              >
-                <X className="w-3 h-3" /> مسح الفلتر
-              </button>
-            )}
-          </div>
-
+          {/* ── Modals — all functionally unchanged ─────────── */}
           {showStatement && (
             <CustomerStatementModal
               customerId={showStatement.id}
@@ -788,25 +901,6 @@ export default function Customers() {
             isPending={deleteMutation.isPending}
             handleDelete={handleDelete}
             onClose={() => setDeleteConfirmId(null)}
-          />
-
-          <CustomerList
-            isLoading={isLoading}
-            filtered={filtered}
-            paginatedCustomers={paginatedCustomers}
-            custPage={custPage}
-            CUST_PAGE_SIZE={CUST_PAGE_SIZE}
-            setCustPage={setCustPage}
-            canManageCustomers={canManageCustomers}
-            isMaintenanceCustomer={isMaintenanceCustomer}
-            setShowStatement={setShowStatement}
-            setReceiptData={setReceiptData}
-            setShowReceipt={setShowReceipt}
-            setSupplierPaymentData={setSupplierPaymentData}
-            setShowSupplierPayment={setShowSupplierPayment}
-            setShowEdit={setShowEdit}
-            setEditFormData={setEditFormData}
-            setDeleteConfirmId={setDeleteConfirmId}
           />
 
           <CustomerReportsModal
