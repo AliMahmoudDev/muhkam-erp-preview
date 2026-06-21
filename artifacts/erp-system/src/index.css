@@ -123,12 +123,13 @@
 
   /* ── Global input / form normalization ─────────────────────────── */
 
-  /* 1. Kill browser default outline on EVERY interactive element */
+  /* 1. Remove browser default outline — component-level focus rings use
+        box-shadow: var(--focus-ring-shadow) on :focus-visible instead */
   input,
   textarea,
   select,
   button {
-    outline: none !important;
+    outline: none;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -250,13 +251,10 @@
   box-shadow: none !important;
 }
 
-/* ══ Global outline kill — outside @layer so nothing overrides it ══ */
-*,
-*::before,
-*::after {
-  outline: none !important;
-  outline-offset: 0 !important;
-}
+/* ══ Focus rings: component-level box-shadow on :focus-visible replaces outline ══
+   outline is suppressed only inside @layer base (without !important) so that
+   component-level focus-visible rules using box-shadow: var(--focus-ring-shadow)
+   always take precedence. Do NOT add outline: none !important here. */
 
 /* ══ Number spinner kill — display:none is the only reliable cross-browser fix ══ */
 input[type='number']::-webkit-inner-spin-button,

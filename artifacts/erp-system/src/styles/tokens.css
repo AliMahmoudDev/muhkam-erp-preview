@@ -724,6 +724,108 @@ html.dark {
   --pos-total-size:    var(--financial-amount-n1-size);
   --pos-total-weight:  var(--financial-amount-n1-weight);
 
+  /* ── Icon Button ─────────────────────────────────────────────── */
+  --icon-btn-border:         var(--color-border-interactive);
+  --icon-btn-bg-hover:       var(--color-hover-overlay);
+  --icon-btn-bg-active:      var(--color-active-overlay);
+  --icon-btn-color:          var(--color-text-secondary);
+  --icon-btn-color-hover:    var(--color-text-primary);
+  --icon-btn-radius:         var(--radius-button);
+
+  /* ── Search Input ────────────────────────────────────────────── */
+  --search-input-bg:         var(--form-input-bg);
+  --search-input-border:     var(--form-input-border);
+  --search-input-icon-color: var(--color-text-disabled);
+  --search-input-clear-color:var(--color-text-tertiary);
+
+  /* ── Combobox ────────────────────────────────────────────────── */
+  --combobox-panel-bg:       var(--color-surface-2);
+  --combobox-panel-border:   var(--color-border-interactive);
+  --combobox-panel-shadow:   var(--shadow-dropdown);
+  --combobox-item-bg-hover:  var(--color-hover-overlay);
+  --combobox-item-bg-selected: var(--color-selected-overlay);
+  --combobox-item-color-selected: var(--color-accent-text);
+  --combobox-search-border:  var(--color-border-structural);
+
+  /* ── Checkbox ────────────────────────────────────────────────── */
+  --checkbox-size:           18px;
+  --checkbox-radius:         var(--primitive-radius-sm);
+  --checkbox-bg:             transparent;
+  --checkbox-bg-checked:     var(--color-accent);
+  --checkbox-border:         var(--color-border-interactive);
+  --checkbox-border-checked: var(--color-accent);
+  --checkbox-icon-color:     #FFFFFF;
+  --checkbox-icon-size:      var(--icon-sm);
+
+  /* ── Radio ───────────────────────────────────────────────────── */
+  --radio-size:              18px;
+  --radio-indicator-size:    8px;
+  --radio-border:            var(--color-border-interactive);
+  --radio-border-checked:    var(--color-accent);
+  --radio-indicator-color:   var(--color-accent);
+  --radio-bg:                transparent;
+
+  /* ── Switch ──────────────────────────────────────────────────── */
+  --switch-width:            40px;
+  --switch-height:           22px;
+  --switch-thumb-size:       16px;
+  --switch-bg-off:           var(--color-border-strong);
+  --switch-bg-on:            var(--color-accent);
+  --switch-thumb-color:      #FFFFFF;
+  --switch-radius:           var(--radius-badge-pill);
+
+  /* ── Helper Text ─────────────────────────────────────────────── */
+  --helper-text-size:        var(--form-helper-size);
+  --helper-text-color:       var(--form-helper-color);
+
+  /* ── Error Text ──────────────────────────────────────────────── */
+  --error-text-size:         var(--form-error-size);
+  --error-text-color:        var(--form-error-color);
+  --error-text-weight:       var(--form-error-weight);
+  --error-text-icon-size:    var(--icon-sm);
+
+  /* ── Divider ─────────────────────────────────────────────────── */
+  --divider-color:           var(--color-border-structural);
+  --divider-thickness:       var(--border-width-structural);
+  --divider-label-size:      var(--text-caption-1);
+  --divider-label-color:     var(--color-text-disabled);
+  --divider-label-weight:    var(--font-weight-medium);
+
+  /* ── Avatar ──────────────────────────────────────────────────── */
+  --avatar-bg:               var(--color-surface-2);
+  --avatar-text:             var(--color-text-secondary);
+  --avatar-border:           var(--color-border-structural);
+  --avatar-size-sm:          var(--primitive-icon-24);
+  --avatar-size-md:          var(--primitive-space-9);
+  --avatar-size-lg:          var(--primitive-space-12);
+  --avatar-size-xl:          var(--primitive-space-16);
+  --avatar-radius-circle:    var(--radius-avatar);
+  --avatar-radius-square:    var(--radius-card);
+  --avatar-font-size-sm:     var(--text-caption-2);
+  --avatar-font-size-md:     var(--text-caption-1);
+  --avatar-font-size-lg:     var(--text-body);
+  --avatar-font-size-xl:     var(--text-title-3);
+
+  /* ── Icon ────────────────────────────────────────────────────── */
+  /* (uses --icon-* from Semantic layer) */
+
+  /* ── Spinner ─────────────────────────────────────────────────── */
+  --spinner-color:       var(--color-accent);
+  --spinner-track-color: var(--color-border-structural);
+  --spinner-size-xs:     var(--primitive-icon-12);
+  --spinner-size-sm:     var(--primitive-icon-16);
+  --spinner-size-md:     var(--primitive-icon-20);
+  --spinner-size-lg:     var(--primitive-icon-32);
+
+  /* ── Progress ────────────────────────────────────────────────── */
+  --progress-track-bg:   var(--color-surface-2);
+  --progress-fill-bg:    var(--color-accent);
+  --progress-radius:     var(--radius-badge-pill);
+  --progress-height-xs:  var(--primitive-space-0-5);
+  --progress-height-sm:  var(--primitive-space-1);
+  --progress-height-md:  var(--primitive-space-1-5);
+  --progress-height-lg:  var(--primitive-space-2);
+
   /* ── Repair Stage ────────────────────────────────────────────── */
   --repair-stage-node-size:        24px;
   --repair-stage-node-active:      28px;

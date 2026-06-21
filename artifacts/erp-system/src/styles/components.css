@@ -36,3 +36,6 @@
 
 /* ── Toolbar, Tabs & Loading ─────────────────── */
 @import "./components/toolbar.css";
+
+/* ── Phase 03 Foundation Components ─────────── */
+@import "./components/foundation.css";
