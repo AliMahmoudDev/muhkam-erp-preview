@@ -33,3 +33,15 @@ export type { LoadingPagePatternProps, LoadingPageVariant } from './loading-page
 
 export { ErrorPagePattern }     from './error-page-pattern';
 export type { ErrorPagePatternProps, ErrorPageVariant } from './error-page-pattern';
+
+export { POSPattern }           from './pos-pattern';
+export type { POSPatternProps, POSState } from './pos-pattern';
+
+export { AuthPattern }          from './auth-pattern';
+export type { AuthPatternProps, AuthCardSize } from './auth-pattern';
+
+export { LandingPattern }       from './landing-pattern';
+export type { LandingPatternProps } from './landing-pattern';
+
+export { SuperAdminPattern }    from './super-admin-pattern';
+export type { SuperAdminPatternProps, SuperAdminState } from './super-admin-pattern';

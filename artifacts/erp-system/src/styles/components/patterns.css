@@ -919,6 +919,362 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   §13 POSPattern
+   Full-viewport POS: catalog (main) | sidebar (customer+cart+payment)
+   RTL: catalog on RIGHT, sidebar on LEFT
+═══════════════════════════════════════════════════════════════════ */
+
+/* Root — full viewport height, no scroll on shell */
+.erp-pos {
+  display: flex;
+  flex-direction: row;
+  block-size: 100dvh;
+  overflow: hidden;
+}
+
+/* Main catalog area — scrollable product grid */
+.erp-pos-catalog {
+  flex: 1;
+  min-inline-size: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-4, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+/* State overlay inside catalog */
+.erp-pos-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-block-size: 320px;
+}
+
+/* Built-in catalog loading placeholder */
+.erp-pos-loading-placeholder {
+  inline-size: 100%;
+  block-size: 300px;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  animation: erp-pulse 1.6s ease-in-out infinite;
+}
+
+/* Sidebar: customer + cart + payment */
+.erp-pos-sidebar {
+  inline-size: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-inline-start: 1px solid var(--edge);
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+/* Customer search — pinned top of sidebar */
+.erp-pos-customer {
+  flex-shrink: 0;
+  padding-block: var(--space-3, 0.75rem);
+  padding-inline: var(--space-3, 0.75rem);
+  border-block-end: 1px solid var(--edge);
+}
+
+/* Cart items — fills available height, scrolls internally */
+.erp-pos-cart {
+  flex: 1;
+  overflow-y: auto;
+  padding-block: var(--space-3, 0.75rem);
+  padding-inline: var(--space-3, 0.75rem);
+}
+
+/* Payment / totals — pinned to bottom of sidebar */
+.erp-pos-payment {
+  flex-shrink: 0;
+  border-block-start: 1px solid var(--edge);
+  padding-block: var(--space-4, 1rem);
+  padding-inline: var(--space-4, 1rem);
+  background: var(--bg-surface);
+}
+
+/* Mobile cart bottom sheet — hidden on desktop */
+.erp-pos-mobile-cart {
+  display: none;
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Stack vertically; hide desktop sidebar */
+  .erp-pos {
+    flex-direction: column;
+    block-size: auto;
+    min-block-size: 100dvh;
+    overflow: visible;
+  }
+  .erp-pos-catalog {
+    overflow-y: visible;
+  }
+  .erp-pos-sidebar {
+    display: none;
+  }
+  /* Mobile cart bottom sheet appears */
+  .erp-pos-mobile-cart {
+    display: block;
+    position: fixed;
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    z-index: var(--z-modal, 50);
+    background: var(--bg-surface);
+    border-block-start: 1px solid var(--edge);
+    box-shadow: var(--shadow-dialog);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §14 AuthPattern
+   Centered card on full-viewport shell
+═══════════════════════════════════════════════════════════════════ */
+
+/* Full-viewport centering shell */
+.erp-auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 100dvh;
+  padding-block: var(--space-8, 2rem);
+  padding-inline: var(--space-4, 1rem);
+  background: var(--bg-base);
+}
+
+/* Auth card */
+.erp-auth-card {
+  inline-size: 100%;
+  max-inline-size: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-xl, 1rem);
+  padding-block: var(--space-8, 2rem);
+  padding-inline: var(--space-8, 2rem);
+  box-shadow: var(--shadow-dialog);
+}
+
+/* Width variants */
+.erp-auth-card--sm { max-inline-size: 360px; }
+.erp-auth-card--lg { max-inline-size: 520px; }
+
+/* Brand / logo area — centered */
+.erp-auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  text-align: center;
+}
+
+/* Feedback — aria-live status/error region */
+.erp-auth-feedback {
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-3, 0.75rem);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--edge);
+}
+
+/* Form fields */
+.erp-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+/* Footer links — separated from form */
+.erp-auth-footer {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  padding-block-start: var(--space-2, 0.5rem);
+  border-block-start: 1px solid var(--edge);
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .erp-auth-card {
+    padding-block: var(--space-6, 1.5rem);
+    padding-inline: var(--space-5, 1.25rem);
+    border-radius: var(--radius-lg, 0.75rem);
+    box-shadow: none;
+    border: none;
+    background: transparent;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §15 LandingPattern
+   Public marketing shell — full-width stacked sections
+═══════════════════════════════════════════════════════════════════ */
+
+/* Root — stacks sections vertically, full width */
+.erp-landing {
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+}
+
+/* Hero — full viewport opening section */
+.erp-landing-hero {
+  inline-size: 100%;
+}
+
+/* Generic section base — all feature/proof/pricing sections */
+.erp-landing-section {
+  inline-size: 100%;
+}
+
+/* Footer — always at document end */
+.erp-landing-footer {
+  inline-size: 100%;
+  margin-block-start: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §16 SuperAdminPattern
+   Control-room shell: header + alerts + (nav | content | audit)
+   Same design system — header uses status-error border as
+   a visual marker for the elevated privilege context.
+═══════════════════════════════════════════════════════════════════ */
+
+/* Root shell */
+.erp-super-admin {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvh;
+  gap: 0;
+}
+
+/* 1. Control-room header */
+.erp-super-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  flex-shrink: 0;
+  padding-block: var(--space-3, 0.75rem);
+  padding-inline: var(--space-5, 1.25rem);
+  background: var(--bg-surface);
+  /* status-error top border = visual privilege marker */
+  border-block-end: 2px solid var(--status-error);
+}
+
+/* 2. Critical alerts strip */
+.erp-super-admin-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding-block: var(--space-3, 0.75rem);
+  padding-inline: var(--space-5, 1.25rem);
+  background: var(--bg-base);
+  border-block-end: 1px solid var(--edge);
+}
+
+/* 3. Shell — nav | content | audit */
+.erp-super-admin-shell {
+  display: flex;
+  flex: 1;
+  min-block-size: 0;
+  gap: var(--space-5, 1.25rem);
+  padding-block: var(--space-5, 1.25rem);
+  padding-inline: var(--space-5, 1.25rem);
+  padding-block-end: var(--space-8, 2rem);
+}
+
+/* Nav sidebar — sticky */
+.erp-super-admin-nav {
+  inline-size: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  inset-block-start: var(--space-4, 1rem);
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+/* Main content — flex 1 */
+.erp-super-admin-main {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+/* State containers */
+.erp-super-admin-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 320px;
+  padding-block: var(--space-8, 2rem);
+  padding-inline: var(--space-4, 1rem);
+}
+
+/* Built-in loading placeholder */
+.erp-super-admin-loading-placeholder {
+  inline-size: 100%;
+  block-size: 300px;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  animation: erp-pulse 1.6s ease-in-out infinite;
+}
+
+/* Audit / activity aside */
+.erp-super-admin-aside {
+  inline-size: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+
+/* ≤1200px: hide audit aside */
+@media (max-width: 1200px) {
+  .erp-super-admin-aside {
+    display: none;
+  }
+}
+
+/* ≤768px: nav collapses, shell stacks */
+@media (max-width: 768px) {
+  .erp-super-admin-shell {
+    flex-direction: column;
+    padding-inline: var(--space-4, 1rem);
+  }
+  .erp-super-admin-nav {
+    inline-size: 100%;
+    position: static;
+  }
+  .erp-super-admin-header {
+    padding-inline: var(--space-4, 1rem);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .erp-super-admin-alerts {
+    padding-inline: var(--space-4, 1rem);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Responsive overrides
 ═══════════════════════════════════════════════════════════════════ */
 
