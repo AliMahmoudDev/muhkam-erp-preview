@@ -1,0 +1,1453 @@
+/*
+ * Business Components — Phase 03 Step 07
+ * =========================================
+ * §1  EntityHeader
+ * §2  FinancialSummary
+ * §3  WorkflowStageBar
+ * §4  Timeline
+ * §5  ActivityFeed
+ * §6  LedgerRow / LedgerTable
+ * §7  InvoiceSummary
+ * §8  POSCart
+ * §9  RepairJobCard
+ * §10 ApprovalFlow
+ *
+ * Rules:
+ *  – Layer 3 component tokens only (--brand, --text-*, --bg-*, --edge*, --shadow-*, --radius-*, --status-*, --color-repair-qc*)
+ *  – No hardcoded hex / rgb / hsl
+ *  – No physical CSS (no left/right/margin-left; use logical properties)
+ *  – No inline visual styles; no page-specific class names
+ *  – Every interactive state has visible focus
+ *  – All financial numbers: font-variant-numeric: tabular-nums
+ *  – RTL-first (dir=rtl on <html> — default for this project)
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   §1  EntityHeader
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-entity-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  padding-block: var(--space-5, 1.25rem);
+}
+
+/* Top row: identity + actions */
+.erp-entity-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+  flex-wrap: wrap;
+}
+
+/* Identity: subtitle + name */
+.erp-entity-header-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* Subtitle row: type label + id */
+.erp-entity-header-sub {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.erp-entity-header-subtitle {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.erp-entity-header-id {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono, monospace);
+}
+
+/* Name row: h1 + status */
+.erp-entity-header-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  flex-wrap: wrap;
+}
+
+.erp-entity-header-name {
+  font-size: var(--text-2xl, 1.5rem);
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.25;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.erp-entity-header-status {
+  flex-shrink: 0;
+}
+
+/* Actions slot */
+.erp-entity-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Metrics row */
+.erp-entity-header-metrics {
+  display: flex;
+  gap: var(--space-3, 0.75rem);
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §2  FinancialSummary
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-financial-summary {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-1);
+}
+
+.erp-financial-row {
+  border-block-end: 1px solid transparent;
+}
+
+.erp-financial-row td {
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-1, 0.25rem);
+}
+
+/* Labels column */
+.erp-financial-label {
+  color: var(--text-2);
+  text-align: start;
+}
+
+.erp-financial-note {
+  display: inline-block;
+  margin-inline-start: var(--space-2, 0.5rem);
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+}
+
+/* Values column */
+.erp-financial-value {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+}
+
+/* Normal row — no decoration */
+.erp-financial-row--normal { /* base */ }
+
+/* Subtotal — single underline above */
+.erp-financial-row--subtotal td {
+  padding-block-start: var(--space-3, 0.75rem);
+  border-block-start: 1px solid var(--edge);
+}
+
+.erp-financial-row--subtotal .erp-financial-label,
+.erp-financial-row--subtotal .erp-financial-value {
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+/* Discount row */
+.erp-financial-row--discount .erp-financial-value {
+  color: var(--status-success);
+}
+
+/* Tax row */
+.erp-financial-row--tax .erp-financial-label {
+  color: var(--text-2);
+}
+
+/* Payment row */
+.erp-financial-row--payment .erp-financial-value {
+  color: var(--status-success);
+}
+
+/* Grand total — double underline: top single + bottom double */
+.erp-financial-row--grand-total td {
+  padding-block-start: var(--space-3, 0.75rem);
+  border-block-start: 1px solid var(--edge);
+  border-block-end: 3px double var(--text-1);
+}
+
+.erp-financial-row--grand-total .erp-financial-label,
+.erp-financial-row--grand-total .erp-financial-value {
+  font-size: var(--text-base, 1rem);
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+/* Negative value */
+.erp-financial-row--negative .erp-financial-value {
+  color: var(--status-error);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §3  WorkflowStageBar
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-workflow-bar {
+  /* Container */
+}
+
+.erp-workflow-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+/* ── Horizontal layout (desktop default) ── */
+.erp-workflow-bar--h .erp-workflow-list {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding-block: var(--space-2, 0.5rem);
+}
+
+.erp-workflow-bar--h .erp-workflow-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex: 1;
+  min-inline-size: 80px;
+  position: relative;
+}
+
+.erp-workflow-bar--h .erp-workflow-stage-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.erp-workflow-bar--h .erp-workflow-connector {
+  position: absolute;
+  inset-block-start: calc(var(--space-5, 1.25rem) / 2);
+  inset-inline-start: calc(50% + var(--space-5, 1.25rem) / 2);
+  inline-size: calc(100% - var(--space-5, 1.25rem));
+  block-size: 2px;
+  background: var(--edge);
+}
+
+.erp-workflow-bar--h .erp-workflow-connector--filled {
+  background: var(--status-success);
+}
+
+/* ── Stacked layout (mobile/narrow) ── */
+.erp-workflow-bar--v .erp-workflow-list {
+  flex-direction: column;
+  gap: 0;
+}
+
+.erp-workflow-bar--v .erp-workflow-stage {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-3, 0.75rem);
+  position: relative;
+  padding-block-end: var(--space-4, 1rem);
+}
+
+.erp-workflow-bar--v .erp-workflow-stage-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+  padding-block-start: 2px;
+}
+
+.erp-workflow-bar--v .erp-workflow-connector {
+  position: absolute;
+  inset-inline-start: calc(var(--space-5, 1.25rem) / 2);
+  inset-block-start: var(--space-5, 1.25rem);
+  inline-size: 2px;
+  block-size: calc(100% - var(--space-5, 1.25rem));
+  background: var(--edge);
+}
+
+.erp-workflow-bar--v .erp-workflow-connector--filled {
+  background: var(--status-success);
+}
+
+/* ── Stage indicator (circle) ── */
+.erp-workflow-indicator {
+  inline-size: var(--space-8, 2rem);
+  block-size: var(--space-8, 2rem);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--edge);
+  background: var(--bg-surface);
+  color: var(--text-3);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.erp-workflow-indicator svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+.erp-workflow-indicator-dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Stage states */
+.erp-workflow-stage--pending .erp-workflow-indicator {
+  border-color: var(--edge);
+  background: var(--bg-surface);
+  color: var(--text-3);
+}
+
+.erp-workflow-stage--current .erp-workflow-indicator {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  color: var(--brand);
+}
+
+.erp-workflow-stage--completed .erp-workflow-indicator {
+  border-color: var(--status-success);
+  background: color-mix(in srgb, var(--status-success) 15%, transparent);
+  color: var(--status-success);
+}
+
+.erp-workflow-stage--error .erp-workflow-indicator {
+  border-color: var(--status-error);
+  background: color-mix(in srgb, var(--status-error) 15%, transparent);
+  color: var(--status-error);
+}
+
+.erp-workflow-stage--repair-qc .erp-workflow-indicator {
+  border-color: var(--color-repair-qc);
+  background: var(--color-repair-qc-subtle);
+  color: var(--color-repair-qc-text);
+}
+
+/* Stage label */
+.erp-workflow-stage-label {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.erp-workflow-stage--current .erp-workflow-stage-label {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.erp-workflow-stage--completed .erp-workflow-stage-label {
+  color: var(--status-success);
+}
+
+.erp-workflow-stage--error .erp-workflow-stage-label {
+  color: var(--status-error);
+}
+
+.erp-workflow-stage--repair-qc .erp-workflow-stage-label {
+  color: var(--color-repair-qc-text);
+}
+
+/* Stage timestamp */
+.erp-workflow-stage-time {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §4  Timeline
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.erp-timeline-item {
+  display: flex;
+  gap: var(--space-3, 0.75rem);
+  align-items: flex-start;
+}
+
+/* ── Track: icon + line ── */
+.erp-timeline-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.erp-timeline-icon {
+  inline-size: var(--space-8, 2rem);
+  block-size: var(--space-8, 2rem);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid var(--edge);
+  background: var(--bg-surface-alt);
+  color: var(--text-2);
+}
+
+.erp-timeline-icon svg {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+}
+
+.erp-timeline-icon--default {
+  background: var(--bg-surface-alt);
+  border-color: var(--edge);
+  color: var(--text-2);
+}
+
+.erp-timeline-icon--success {
+  background: color-mix(in srgb, var(--status-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--status-success) 40%, transparent);
+  color: var(--status-success);
+}
+
+.erp-timeline-icon--warning {
+  background: color-mix(in srgb, var(--status-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--status-warning) 40%, transparent);
+  color: var(--status-warning);
+}
+
+.erp-timeline-icon--error {
+  background: color-mix(in srgb, var(--status-error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--status-error) 40%, transparent);
+  color: var(--status-error);
+}
+
+.erp-timeline-icon--info {
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--brand);
+}
+
+.erp-timeline-line {
+  inline-size: 2px;
+  flex: 1;
+  min-block-size: var(--space-6, 1.5rem);
+  background: var(--edge);
+  margin-block: var(--space-1, 0.25rem);
+}
+
+/* ── Content ── */
+.erp-timeline-content {
+  flex: 1;
+  min-inline-size: 0;
+  padding-block-end: var(--space-5, 1.25rem);
+}
+
+.erp-timeline-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-wrap: wrap;
+  margin-block-end: var(--space-1, 0.25rem);
+}
+
+.erp-timeline-actor {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.erp-timeline-time {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-timeline-body {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §5  ActivityFeed
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 1.5rem);
+}
+
+.erp-activity-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+.erp-activity-group-label {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-block-end: var(--space-2, 0.5rem);
+  border-block-end: 1px solid var(--edge);
+  margin-block-end: var(--space-2, 0.5rem);
+}
+
+.erp-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+.erp-activity-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  border-radius: var(--radius-sm);
+  transition: background 0.12s;
+}
+
+.erp-activity-item:hover {
+  background: var(--bg-surface-alt);
+}
+
+.erp-activity-item-icon {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-surface-alt);
+  color: var(--text-3);
+  border: 1px solid var(--edge);
+}
+
+.erp-activity-item-icon svg {
+  inline-size: 0.75rem;
+  block-size: 0.75rem;
+}
+
+.erp-activity-item-body {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.erp-activity-item-text {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 0.25rem);
+}
+
+.erp-activity-item-user {
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.erp-activity-item-action {
+  color: var(--text-2);
+}
+
+.erp-activity-item-entity {
+  color: var(--brand);
+  font-weight: 500;
+}
+
+.erp-activity-item-time {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.erp-activity-empty {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-3);
+  text-align: center;
+  padding: var(--space-8, 2rem);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §6  LedgerRow / LedgerTable
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Table shell ── */
+.erp-ledger-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm, 0.875rem);
+}
+
+/* ── Head ── */
+.erp-ledger-head-row {
+  border-block-end: 2px solid var(--edge);
+}
+
+.erp-ledger-th {
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-3, 0.75rem);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  color: var(--text-3);
+  text-align: start;
+  white-space: nowrap;
+}
+
+.erp-ledger-th--debit,
+.erp-ledger-th--credit {
+  text-align: end;
+}
+
+/* ── Row (table & div modes) ── */
+.erp-ledger-row {
+  border-block-end: 1px solid var(--edge);
+  transition: background 0.1s;
+}
+
+.erp-ledger-row:hover {
+  background: var(--bg-surface-alt);
+}
+
+/* Div-mode: grid layout */
+.erp-ledger-row--div {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+/* ── Cells ── */
+.erp-ledger-cell {
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-3, 0.75rem);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.erp-ledger-cell--date {
+  color: var(--text-3);
+  font-size: var(--text-xs, 0.75rem);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-ledger-cell--account {
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.erp-ledger-cell--account-indent {
+  padding-inline-start: var(--space-6, 1.5rem);
+}
+
+.erp-ledger-account-code {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono, monospace);
+  margin-inline-end: var(--space-2, 0.5rem);
+}
+
+.erp-ledger-account-name {
+  color: var(--text-1);
+}
+
+.erp-ledger-cell--desc {
+  color: var(--text-2);
+  font-size: var(--text-xs, 0.75rem);
+}
+
+.erp-ledger-cell--ref {
+  color: var(--text-3);
+  font-size: var(--text-xs, 0.75rem);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.erp-ledger-cell--debit,
+.erp-ledger-cell--credit {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Footer totals ── */
+.erp-ledger-foot-row {
+  border-block-start: 2px solid var(--edge);
+}
+
+.erp-ledger-foot-label {
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-3, 0.75rem);
+  font-weight: 700;
+  color: var(--text-1);
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.erp-ledger-total {
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §7  InvoiceSummary
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-invoice-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5, 1.25rem);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Header */
+.erp-invoice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+}
+
+.erp-invoice-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+.erp-invoice-no {
+  font-size: var(--text-base, 1rem);
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono, monospace);
+}
+
+.erp-invoice-date {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-invoice-status {
+  flex-shrink: 0;
+}
+
+/* Customer */
+.erp-invoice-customer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+  padding-block-end: var(--space-3, 0.75rem);
+  border-block-end: 1px solid var(--edge);
+}
+
+.erp-invoice-customer-label {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+}
+
+.erp-invoice-customer-name {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+/* Items table */
+.erp-invoice-items {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.erp-invoice-th {
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-2, 0.5rem);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  color: var(--text-3);
+  text-align: start;
+  border-block-end: 1px solid var(--edge);
+}
+
+.erp-invoice-th--num {
+  text-align: end;
+}
+
+.erp-invoice-item-row {
+  border-block-end: 1px solid var(--edge);
+}
+
+.erp-invoice-td {
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-2, 0.5rem);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.erp-invoice-td--num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.erp-invoice-unit {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+}
+
+/* Totals block */
+.erp-invoice-totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding-block-start: var(--space-2, 0.5rem);
+}
+
+.erp-invoice-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+}
+
+.erp-invoice-total-row--discount .erp-invoice-amount {
+  color: var(--status-success);
+}
+
+.erp-invoice-total-row--grand {
+  padding-block-start: var(--space-2, 0.5rem);
+  border-block-start: 1px solid var(--edge);
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+/* Amount values */
+.erp-invoice-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.erp-invoice-amount--grand {
+  font-size: var(--text-base, 1rem);
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.erp-invoice-amount--paid {
+  color: var(--status-success);
+  font-weight: 600;
+}
+
+.erp-invoice-amount--remaining {
+  color: var(--status-error);
+  font-weight: 600;
+}
+
+.erp-invoice-amount--settled {
+  color: var(--status-success);
+  font-weight: 600;
+}
+
+/* Payment block */
+.erp-invoice-payment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding-block-start: var(--space-3, 0.75rem);
+  border-block-start: 1px solid var(--edge);
+}
+
+.erp-invoice-payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.erp-invoice-payment-label {
+  color: var(--text-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §8  POSCart
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-pos-cart {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Scrollable body */
+.erp-pos-cart-body {
+  flex: 1;
+  overflow-y: auto;
+  min-block-size: 0;
+}
+
+/* Empty state */
+.erp-pos-cart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-10, 2.5rem);
+  block-size: 100%;
+  min-block-size: 200px;
+}
+
+.erp-pos-cart-empty-icon {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  color: var(--text-3);
+}
+
+.erp-pos-cart-empty-text {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-3);
+  margin: 0;
+}
+
+/* Items list */
+.erp-pos-cart-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.erp-pos-cart-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border-block-end: 1px solid var(--edge);
+  transition: background 0.1s;
+}
+
+.erp-pos-cart-item:hover {
+  background: var(--bg-surface-alt);
+}
+
+.erp-pos-cart-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.erp-pos-cart-item-name {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.erp-pos-cart-item-sku {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-pos-cart-item-price {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-pos-cart-item-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+}
+
+.erp-pos-cart-qty {
+  display: flex;
+  align-items: center;
+}
+
+.erp-pos-cart-item-total {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-inline-size: 4rem;
+  text-align: end;
+}
+
+.erp-pos-cart-item-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* Totals block */
+.erp-pos-cart-totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border-block-start: 1px solid var(--edge);
+  background: var(--bg-surface-alt);
+}
+
+.erp-pos-cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+}
+
+.erp-pos-cart-total-row--discount .erp-pos-cart-amount {
+  color: var(--status-success);
+}
+
+.erp-pos-cart-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Grand total — hero number */
+.erp-pos-cart-grand {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block-start: var(--space-2, 0.5rem);
+  border-block-start: 2px solid var(--edge);
+}
+
+.erp-pos-cart-grand-label {
+  font-size: var(--text-base, 1rem);
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.erp-pos-cart-grand-value {
+  font-size: var(--text-2xl, 1.5rem);
+  font-weight: 800;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Actions */
+.erp-pos-cart-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border-block-start: 1px solid var(--edge);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §9  RepairJobCard
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-repair-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4, 1rem);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.erp-repair-card--interactive {
+  cursor: pointer;
+  outline: none;
+}
+
+.erp-repair-card--interactive:hover {
+  border-color: var(--brand);
+  box-shadow: var(--shadow-md);
+}
+
+.erp-repair-card--interactive:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Header */
+.erp-repair-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+}
+
+.erp-repair-card-id-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.erp-repair-card-job-no {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono, monospace);
+}
+
+.erp-repair-card-stage {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+}
+
+.erp-repair-card-status {
+  flex-shrink: 0;
+}
+
+/* Device + customer rows */
+.erp-repair-card-device {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+.erp-repair-card-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.erp-repair-card-meta-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.erp-repair-card-customer {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.erp-repair-card-device-name {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+}
+
+/* Problem */
+.erp-repair-card-problem {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer */
+.erp-repair-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  padding-block-start: var(--space-2, 0.5rem);
+  border-block-start: 1px solid var(--edge);
+}
+
+.erp-repair-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.erp-repair-card-row--meta {
+  font-size: var(--text-xs, 0.75rem);
+}
+
+.erp-repair-card-technician,
+.erp-repair-card-created,
+.erp-repair-card-due {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-repair-card-due {
+  color: var(--status-warning);
+}
+
+.erp-repair-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 0.25rem);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §10 ApprovalFlow
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-approval-flow {
+  /* Container */
+}
+
+.erp-approval-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.erp-approval-step {
+  display: flex;
+  gap: var(--space-4, 1rem);
+  align-items: flex-start;
+  position: relative;
+}
+
+/* Track */
+.erp-approval-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Indicator circle */
+.erp-approval-indicator {
+  inline-size: var(--space-9, 2.25rem);
+  block-size: var(--space-9, 2.25rem);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--edge);
+  background: var(--bg-surface);
+  color: var(--text-3);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 700;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.erp-approval-indicator svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+.erp-approval-indicator-num {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* State colours */
+.erp-approval-indicator--pending {
+  border-color: var(--edge);
+  background: var(--bg-surface-alt);
+  color: var(--text-3);
+}
+
+.erp-approval-indicator--current {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  color: var(--brand);
+}
+
+.erp-approval-indicator--approved {
+  border-color: var(--status-success);
+  background: color-mix(in srgb, var(--status-success) 12%, transparent);
+  color: var(--status-success);
+}
+
+.erp-approval-indicator--rejected {
+  border-color: var(--status-error);
+  background: color-mix(in srgb, var(--status-error) 12%, transparent);
+  color: var(--status-error);
+}
+
+/* Connector line */
+.erp-approval-connector {
+  inline-size: 2px;
+  flex: 1;
+  min-block-size: var(--space-8, 2rem);
+  background: var(--edge);
+  margin-block: var(--space-1, 0.25rem);
+}
+
+.erp-approval-connector--done {
+  background: var(--status-success);
+}
+
+/* Step content */
+.erp-approval-content {
+  flex: 1;
+  min-inline-size: 0;
+  padding-block-end: var(--space-5, 1.25rem);
+}
+
+.erp-approval-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  margin-block-end: var(--space-2, 0.5rem);
+}
+
+.erp-approval-label {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.erp-approval-step--current .erp-approval-label {
+  color: var(--brand);
+}
+
+.erp-approval-time {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-approval-approver {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  margin-block-end: var(--space-1, 0.25rem);
+}
+
+.erp-approval-approver-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.erp-approval-note {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  margin: 0 0 var(--space-2, 0.5rem) 0;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-sm);
+  border-inline-start: 3px solid var(--edge);
+}
+
+.erp-approval-step--rejected .erp-approval-note {
+  border-inline-start-color: var(--status-error);
+}
+
+.erp-approval-rejection {
+  margin-block-start: var(--space-2, 0.5rem);
+}
+
+.erp-approval-step-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-wrap: wrap;
+  margin-block-start: var(--space-3, 0.75rem);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive overrides — WorkflowStageBar horizontal → stacked
+═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+  .erp-workflow-bar--h .erp-workflow-list {
+    flex-direction: column;
+  }
+
+  .erp-workflow-bar--h .erp-workflow-stage {
+    flex-direction: row;
+    align-items: flex-start;
+    flex: none;
+    inline-size: 100%;
+  }
+
+  .erp-workflow-bar--h .erp-workflow-stage-content {
+    align-items: flex-start;
+    text-align: start;
+  }
+
+  .erp-workflow-bar--h .erp-workflow-connector--h {
+    position: static;
+    inline-size: 2px;
+    block-size: var(--space-4, 1rem);
+    margin-inline-start: calc(var(--space-8, 2rem) / 2 - 1px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Reduced motion
+═══════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-repair-card,
+  .erp-activity-item,
+  .erp-workflow-indicator,
+  .erp-approval-indicator {
+    transition: none;
+  }
+}

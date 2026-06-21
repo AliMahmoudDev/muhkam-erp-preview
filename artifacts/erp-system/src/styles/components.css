@@ -51,3 +51,6 @@
 
 /* ── Phase 03 Feedback Components ────────────── */
 @import "./components/feedback.css";
+
+/* ── Phase 03 Business Components ────────────── */
+@import "./components/business.css";
