@@ -1,23 +1,22 @@
 /**
- * Dashboard v2 — Sprint 08: Information Architecture Implementation
+ * Dashboard V3 — Phase 05 Step 01
+ *
+ * Rebuilt with DashboardPattern + V3 ui/ components.
+ * All business logic, queries, and calculations preserved verbatim from V2.
  *
  * Structure:
- *   HEADER  — title + date + quick actions (erp-btn system)
- *   ZONE 1  — Business Pulse: 4 KPI cards (sales, profit, treasury, targets)
- *   ZONE 2  — Business Alerts: low stock · customer debts · supplier payables
- *   ZONE 3  — Trends: daily bar chart (TODO → weekly line chart)
- *   ZONE 4  — Recent Activity: last 7 transactions
+ *   1. Header    — title · date · shortcut actions
+ *   2. Status    — system health signal (StatusBadge)
+ *   3. Alerts    — low-stock · customer debts · supplier payables
+ *   4. KPI row   — 4 cards: sales · profit · treasury · targets
+ *   5. Chart     — daily bar chart (ChartContainer)
+ *   6. Table     — last 7 financial transactions
  *
- * Removed:
- *   - Hero strip (erp-hero-strip) — data duplicated from KPI cards
- *   - 5-card KPI grid with gradients/glow — replaced by clean 4-card zone
- *   - Bottom duplicate low-stock panel — moved to Zone 2
- *   - Duplicate net-profit / stock KPI cards — each metric appears once
- *   - SalesTargetsWidget at page bottom — moved to Zone 1 (compact)
- *
- * Fixed:
- *   - "مستحقات لعملاء" (supplier debts mislabelled as customer receivables)
- *     → "مستحقات الموردين" (what the company owes suppliers)
+ * CSS classes used:
+ *   erp-* system classes from card.css / data.css / dashboard.css
+ *   Tailwind utilities for fine-grained internal layout (flex, gap, truncate …)
+ *   No hardcoded colours. No inline visual styles (except Recharts API props).
+ *   Physical CSS avoided; inline layout uses flex/gap which are direction-agnostic.
  */
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,18 +30,16 @@ import { useLocation } from 'wouter';
 import {
   TrendingUp,
   TrendingDown,
-  Users,
-  AlertTriangle,
-  PackageX,
   ShoppingCart,
   DollarSign,
+  PackageX,
+  Truck,
+  Users,
   ArrowUpRight,
   ArrowDownRight,
-  Package,
-  Truck,
-  Settings2,
   Landmark,
   Target,
+  Settings2,
 } from 'lucide-react';
 import {
   XAxis,
@@ -56,8 +53,25 @@ import {
 } from 'recharts';
 import { api } from '@/lib/api';
 import { TX_LABELS, TX_ICONS, TX_IS_INCOME, DEFAULT_SHORTCUTS } from './dashboard/constants';
-import { KpiCard } from './dashboard/KpiCard';
-import { EmptyState } from './dashboard/EmptyState';
+
+/* ── V3 Patterns ───────────────────────────────────────────── */
+import { DashboardPattern, PageHeader } from '@/components/patterns';
+
+/* ── V3 UI components ──────────────────────────────────────── */
+import { KPICard } from '@/components/ui/kpi-card';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { ChartContainer } from '@/components/ui/chart-container';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 
 /* ── Local types ───────────────────────────────────────────── */
 interface Safe {
@@ -74,69 +88,8 @@ interface TargetItem {
   achieved_amount: number;
 }
 
-/* ── Zone section label ───────────────────────────────────── */
-function ZoneLabel({ label }: { label: string }) {
-  return (
-    <p
-      style={{
-        fontSize: 10.5,
-        fontWeight: 800,
-        textTransform: 'uppercase',
-        letterSpacing: '0.10em',
-        color: 'var(--text-hint)',
-        marginBottom: -8,
-      }}
-    >
-      {label}
-    </p>
-  );
-}
-
-/* ── Inline loading shimmer (no new CSS class needed) ────── */
-function KpiSkeleton({ index }: { index: number }) {
-  return (
-    <div
-      className="erp-kpi"
-      style={{ animationDelay: `${index * 0.08}s`, minHeight: 148 }}
-      aria-hidden="true"
-    >
-      <div
-        style={{
-          height: 12,
-          width: '55%',
-          borderRadius: 6,
-          background: 'var(--edge)',
-          animation: 'erp-shimmer-wave 1.6s ease-in-out infinite',
-          marginBottom: 16,
-        }}
-      />
-      <div
-        style={{
-          height: 32,
-          width: '75%',
-          borderRadius: 8,
-          background: 'var(--edge)',
-          animation: 'erp-shimmer-wave 1.6s ease-in-out infinite',
-          animationDelay: `${index * 0.12 + 0.15}s`,
-          marginBottom: 12,
-        }}
-      />
-      <div
-        style={{
-          height: 10,
-          width: '40%',
-          borderRadius: 4,
-          background: 'var(--edge)',
-          animation: 'erp-shimmer-wave 1.6s ease-in-out infinite',
-          animationDelay: `${index * 0.12 + 0.3}s`,
-        }}
-      />
-    </div>
-  );
-}
-
 /* ══════════════════════════════════════════════════════════
-   DASHBOARD v2
+   DASHBOARD V3
 ══════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   const { currentWarehouseId } = useWarehouse();
@@ -182,7 +135,7 @@ export default function Dashboard() {
 
   const handleSaveShortcuts = useCallback(
     (ids: string[]) => saveMutation.mutateAsync(ids),
-    [saveMutation]
+    [saveMutation],
   );
 
   /* ── Dashboard stats ───────────────────────────────────── */
@@ -190,6 +143,7 @@ export default function Dashboard() {
     data: stats,
     isLoading,
     isError,
+    refetch,
   } = useQuery<DashboardStats>({
     queryKey: ['/api/dashboard/stats', currentWarehouseId],
     queryFn: () =>
@@ -199,7 +153,7 @@ export default function Dashboard() {
       }),
   });
 
-  /* ── Treasury balance (existing endpoint — no new API needed) ── */
+  /* ── Treasury balance ───────────────────────────────────── */
   const { data: safes, isLoading: safesLoading } = useQuery<Safe[]>({
     queryKey: ['/api/settings/safes'],
     queryFn: () =>
@@ -210,7 +164,7 @@ export default function Dashboard() {
     ? safes.reduce((sum, s) => sum + Number(s.balance ?? 0), 0)
     : 0;
 
-  /* ── Sales targets (existing endpoint) ──────────────────── */
+  /* ── Sales targets ──────────────────────────────────────── */
   const ym = new Date().toISOString().slice(0, 7);
   const { data: targetsData, isLoading: targetsLoading } = useQuery<{
     month: string;
@@ -223,92 +177,54 @@ export default function Dashboard() {
   });
   const activeTargets = (targetsData?.items ?? []).filter((r) => r.target_amount > 0);
   const totalAchieved = activeTargets.reduce((sum, r) => sum + r.achieved_amount, 0);
-  const totalTarget = activeTargets.reduce((sum, r) => sum + r.target_amount, 0);
+  const totalTarget   = activeTargets.reduce((sum, r) => sum + r.target_amount, 0);
   const overallPct =
     activeTargets.length > 0 && totalTarget > 0
       ? Math.min(100, Math.round((totalAchieved / totalTarget) * 100))
       : null;
 
-  /* ── Chart colors — theme-aware tokens ─────────────────── */
-  const chartGridStroke = 'var(--edge)';
-  const chartAxisStroke = 'var(--text-hint)';
-  const chartTickColor = 'var(--text-2)';
-  const tooltipBg = 'var(--bg-panel)';
-  const tooltipBorder = 'var(--edge-md)';
-  const tooltipLabelClr = 'var(--text-2)';
-
-  /* ── Loading state ─────────────────────────────────────── */
+  /* ── Loading skeleton ───────────────────────────────────── */
   if (isLoading) {
     return (
-      <div className="erp-page" dir="rtl">
-        <div
-          style={{
-            height: 56,
-            borderRadius: 12,
-            background: 'var(--edge)',
-            animation: 'erp-shimmer-wave 1.6s ease-in-out infinite',
-          }}
-        />
-        <div className="erp-kpi-grid">
-          {[0, 1, 2, 3].map((i) => (
-            <KpiSkeleton key={i} index={i} />
-          ))}
-        </div>
-        <div className="erp-card-grid--3">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="erp-card"
-              style={{
-                height: 180,
-                animation: 'erp-shimmer-wave 1.6s ease-in-out infinite',
-                animationDelay: `${i * 0.15}s`,
-              }}
-            />
-          ))}
-        </div>
-        <div
-          className="erp-card"
-          style={{
-            height: 300,
-            animation: 'erp-shimmer-wave 1.6s ease-in-out infinite',
-            animationDelay: '0.2s',
-          }}
-        />
-      </div>
+      <DashboardPattern
+        kpiSlot={
+          <div className="erp-kpi-grid">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} variant="card" />
+            ))}
+          </div>
+        }
+        primaryChartSlot={<Skeleton variant="block" />}
+      />
     );
   }
 
-  /* ── Error state ───────────────────────────────────────── */
+  /* ── Error state ────────────────────────────────────────── */
   if (isError || !stats) {
     return (
-      <div
-        className="erp-empty-state"
-        dir="rtl"
-        style={{ padding: '80px 0' }}
-        role="alert"
-      >
-        <AlertTriangle
-          style={{
-            width: 44,
-            height: 44,
-            color: 'var(--status-warning)',
-            margin: '0 auto 16px',
-            opacity: 0.7,
-          }}
-        />
-        <p style={{ color: 'var(--text-2)', fontSize: 15 }}>حدث خطأ في تحميل البيانات</p>
-      </div>
+      <DashboardPattern
+        headerSlot={<PageHeader title="لوحة التحكم" subtitle={todayLabel} />}
+        kpiSlot={
+          <ErrorState
+            variant="server"
+            title="حدث خطأ في تحميل البيانات"
+            onRetry={() => void refetch()}
+          />
+        }
+      />
     );
   }
 
+  /* ── Derived values ─────────────────────────────────────── */
   const netIsPositive = stats.net_profit >= 0;
+  const lowStockCount = stats.low_stock_products?.length ?? 0;
+  const supplierDebts = stats.total_supplier_debts ?? 0;
 
-  /* ── Chart data (TODO: replace with /api/dashboard/weekly for 7-day line chart) ── */
+  /* ── Chart data ─────────────────────────────────────────── */
   const barData = [
-    { name: 'المبيعات', amount: stats.total_sales_today, fill: 'var(--status-warning)' },
-    { name: 'المصروفات', amount: stats.total_expenses_today, fill: 'var(--status-danger)' },
-    { name: 'الإيرادات', amount: stats.total_income_today, fill: 'var(--status-info)' },
+    { name: 'المبيعات',  amount: stats.total_sales_today,    fill: 'var(--status-warning)' },
+    { name: 'المصروفات', amount: stats.total_expenses_today, fill: 'var(--status-danger)'  },
+    { name: 'الإيرادات', amount: stats.total_income_today,   fill: 'var(--status-info)'    },
     {
       name: 'صافي الربح',
       amount: Math.abs(stats.net_profit),
@@ -316,52 +232,30 @@ export default function Dashboard() {
     },
   ];
 
-  const lowStockCount = stats.low_stock_products?.length ?? 0;
-  const supplierDebts = stats.total_supplier_debts ?? 0;
+  /* ── System health ──────────────────────────────────────── */
+  const hasCriticalAlert = lowStockCount > 0;
+  const statusVariant: 'positive' | 'critical' | 'neutral' =
+    hasCriticalAlert ? 'critical' : !netIsPositive ? 'neutral' : 'positive';
+  const statusLabel =
+    hasCriticalAlert
+      ? `${lowStockCount} منتج بمخزون منخفض`
+      : !netIsPositive
+      ? 'لا توجد ربحية اليوم'
+      : 'كل شيء على ما يرام';
+
+  /* ── Target progress intent ─────────────────────────────── */
+  const targetIntent =
+    overallPct === null ? 'default'
+    : overallPct >= 100 ? 'positive'
+    : overallPct < 60   ? 'negative'
+    : 'default';
 
   /* ══════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════ */
   return (
-    <div dir="rtl" className="erp-page page-enter">
+    <>
       <OnboardingPanel />
-
-      {/* ════════════════════════════════════════
-          HEADER — title · date · quick actions
-      ════════════════════════════════════════ */}
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title">لوحة التحكم</h1>
-          <p className="erp-page-subtitle">{todayLabel}</p>
-        </div>
-        <div className="erp-page-actions">
-          {shortcuts.map((id) => {
-            const def = ALL_SHORTCUTS.find((s) => s.id === id);
-            if (!def) return null;
-            const Icon = def.icon;
-            return (
-              <button
-                key={id}
-                onClick={() => navigate(def.path)}
-                className="erp-btn erp-btn-ghost erp-btn-sm"
-                style={{ borderColor: `${def.color}33`, color: 'var(--text-1)' }}
-              >
-                <Icon style={{ width: 14, height: 14, color: def.color, flexShrink: 0 }} />
-                {def.label}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setCustomizerOpen(true)}
-            className="erp-btn erp-btn-ghost erp-btn-sm"
-            title="تخصيص الاختصارات"
-            aria-label="تخصيص الاختصارات"
-          >
-            <Settings2 style={{ width: 14, height: 14 }} />
-            تخصيص
-          </button>
-        </div>
-      </div>
 
       {customizerOpen && (
         <ShortcutsCustomizer
@@ -372,478 +266,302 @@ export default function Dashboard() {
         />
       )}
 
-      {/* ════════════════════════════════════════
-          ZONE 1 — BUSINESS PULSE
-          4 KPIs: sales · profit · treasury · targets
-      ════════════════════════════════════════ */}
-      <div>
-        <ZoneLabel label="نبض الأعمال" />
-        <div className="erp-kpi-grid">
+      <DashboardPattern
+        className="page-enter"
 
-          {/* KPI 1 — Sales Today */}
-          <KpiCard
-            card={{
-              label: 'مبيعات اليوم',
-              value: stats.total_sales_today,
-              icon: ShoppingCart,
-              badge: { up: true, label: 'اليوم' },
-            }}
-            index={0}
-          />
-
-          {/* KPI 2 — Net Profit */}
-          <KpiCard
-            card={{
-              label: 'صافي الربح',
-              value: stats.net_profit,
-              icon: netIsPositive ? TrendingUp : TrendingDown,
-              badge: {
-                up: netIsPositive,
-                label: netIsPositive ? 'ربح' : 'خسارة',
-              },
-            }}
-            index={1}
-          />
-
-          {/* KPI 3 — Treasury Balance (from /api/settings/safes) */}
-          {safesLoading ? (
-            <KpiSkeleton index={2} />
-          ) : (
-            <KpiCard
-              card={{
-                label: 'رصيد الخزينة',
-                value: treasuryTotal,
-                icon: Landmark,
-                badge: {
-                  up: treasuryTotal >= 0,
-                  label: `${safes?.length ?? 0} خزائن`,
-                },
-              }}
-              index={2}
-            />
-          )}
-
-          {/* KPI 4 — Sales Targets (compact — from /api/sales-targets) */}
-          {targetsLoading ? (
-            <KpiSkeleton index={3} />
-          ) : (
-            <div className="erp-kpi" style={{ animationDelay: '0.24s' }}>
-              <div className="erp-kpi-header">
-                <p className="erp-kpi-label">أهداف المبيعات</p>
-                <div className="erp-kpi-icon">
-                  <Target />
-                </div>
-              </div>
-
-              {overallPct !== null ? (
-                <>
-                  <p className="erp-kpi-value">{overallPct}%</p>
-                  {/* Progress bar */}
-                  <div
-                    role="progressbar"
-                    aria-valuenow={overallPct}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`تقدم الهدف: ${overallPct}%`}
-                    style={{
-                      height: 4,
-                      borderRadius: 2,
-                      background: 'var(--edge)',
-                      overflow: 'hidden',
-                      margin: '6px 0 8px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: '100%',
-                        width: `${overallPct}%`,
-                        background:
-                          overallPct >= 100
-                            ? 'var(--status-success)'
-                            : overallPct >= 60
-                              ? 'var(--status-warning)'
-                              : 'var(--status-danger)',
-                        borderRadius: 2,
-                        transition: 'width 0.7s ease',
-                      }}
-                    />
-                  </div>
-                  <div
-                    className={`erp-kpi-trend ${overallPct >= 100 ? 'erp-kpi-trend--up' : 'erp-kpi-trend--down'}`}
-                  >
-                    {overallPct >= 100 ? <ArrowUpRight /> : <ArrowDownRight />}
-                    <span>{activeTargets.length} مستخدمون نشطون</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p
-                    className="erp-kpi-value"
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 500,
-                      color: 'var(--text-hint)',
-                    }}
-                  >
-                    لا أهداف مُعيَّنة
-                  </p>
-                  <div className="erp-kpi-trend erp-kpi-trend--neutral">
-                    <span>هذا الشهر</span>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════
-          ZONE 2 — BUSINESS ALERTS
-          Low stock · customer debts · supplier payables
-          Each metric appears ONCE.
-      ════════════════════════════════════════ */}
-      <div>
-        <ZoneLabel label="تنبيهات الأعمال" />
-        <div className="erp-card-grid--3">
-
-          {/* Alert 1 — Low Stock */}
-          <div className="erp-card" style={{ padding: '20px 20px 16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                marginBottom: 14,
-                gap: 8,
-              }}
-            >
-              <div>
-                <h3
-                  style={{
-                    fontSize: 13.5,
-                    fontWeight: 700,
-                    color: 'var(--text-1)',
-                    margin: 0,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  تنبيهات المخزون
-                </h3>
-                <p
-                  style={{ fontSize: 11.5, color: 'var(--text-3)', margin: '3px 0 0' }}
-                >
-                  منتجات تحتاج تجديداً
-                </p>
-              </div>
-              {lowStockCount > 0 && (
-                <span className="erp-status erp-status-pending">
-                  {lowStockCount} منتج
-                </span>
-              )}
-            </div>
-
-            {lowStockCount === 0 ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '16px 0',
-                  gap: 8,
-                }}
-              >
-                <PackageX
-                  style={{
-                    width: 28,
-                    height: 28,
-                    color: 'var(--status-success)',
-                    opacity: 0.7,
-                  }}
-                />
-                <p style={{ fontSize: 12.5, color: 'var(--text-3)' }}>المخزون بخير ✓</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {stats.low_stock_products.slice(0, 5).map((prod) => {
-                  const outOfStock = Number(prod.quantity) === 0;
+        /* ── 1. Header ──────────────────────────────────────── */
+        headerSlot={
+          <PageHeader
+            title="لوحة التحكم"
+            subtitle={todayLabel}
+            actionsSlot={
+              <>
+                {shortcuts.map((id) => {
+                  const def = ALL_SHORTCUTS.find((s) => s.id === id);
+                  if (!def) return null;
+                  const Icon = def.icon;
                   return (
-                    <div
-                      key={prod.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '7px 0',
-                        borderBottom: '1px solid var(--edge)',
-                      }}
+                    <button
+                      key={id}
+                      onClick={() => navigate(def.path)}
+                      className="erp-btn erp-btn-ghost erp-btn-sm"
                     >
-                      <Package
-                        style={{
-                          width: 13,
-                          height: 13,
-                          color: outOfStock
-                            ? 'var(--status-danger)'
-                            : 'var(--status-warning)',
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span
-                        style={{
-                          flex: 1,
-                          fontSize: 12.5,
-                          color: 'var(--text-1)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {prod.name}
-                      </span>
-                      <span
-                        className={`erp-status ${outOfStock ? 'erp-status-unpaid' : 'erp-status-pending'}`}
-                        style={{ fontSize: 10.5, flexShrink: 0 }}
-                      >
-                        {outOfStock ? 'نفد' : `${prod.quantity}`}
-                      </span>
-                    </div>
+                      <Icon aria-hidden="true" />
+                      {def.label}
+                    </button>
                   );
                 })}
-                {lowStockCount > 5 && (
-                  <p
-                    style={{
-                      fontSize: 11,
-                      color: 'var(--text-hint)',
-                      textAlign: 'center',
-                      marginTop: 8,
-                    }}
-                  >
-                    +{lowStockCount - 5} منتجات أخرى
-                  </p>
+                <button
+                  onClick={() => setCustomizerOpen(true)}
+                  className="erp-btn erp-btn-ghost erp-btn-sm"
+                  aria-label="تخصيص الاختصارات"
+                >
+                  <Settings2 aria-hidden="true" />
+                  تخصيص
+                </button>
+              </>
+            }
+          />
+        }
+
+        /* ── 2. Status strip ────────────────────────────────── */
+        statusSlot={
+          <StatusBadge
+            variant={statusVariant}
+            label={statusLabel}
+            aria-label={`حالة النظام: ${statusLabel}`}
+          />
+        }
+
+        /* ── 3. Business alert cards — 3-column grid ────────── */
+        alertsSlot={
+          <div className="erp-card-grid--3">
+
+            {/* A — Inventory alerts */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>تنبيهات المخزون</CardTitle>
+                  <CardDescription>منتجات تحتاج تجديداً</CardDescription>
+                </div>
+                {lowStockCount > 0 && (
+                  <StatusBadge variant="critical" label={`${lowStockCount} منتج`} />
                 )}
+              </CardHeader>
+              <CardContent>
+                {lowStockCount === 0 ? (
+                  <EmptyState
+                    icon={<PackageX aria-hidden="true" />}
+                    title="المخزون بخير ✓"
+                    description="لا توجد منتجات بمخزون منخفض"
+                  />
+                ) : (
+                  <ul role="list" aria-label="منتجات بمخزون منخفض">
+                    {stats.low_stock_products.slice(0, 5).map((prod) => {
+                      const outOfStock = Number(prod.quantity) === 0;
+                      return (
+                        <li
+                          key={prod.id}
+                          className="flex items-center gap-2 py-1.5"
+                        >
+                          <span className="flex-1 min-w-0 erp-kpi-label truncate">
+                            {prod.name}
+                          </span>
+                          <StatusBadge
+                            variant={outOfStock ? 'negative' : 'critical'}
+                            label={outOfStock ? 'نفد' : String(prod.quantity)}
+                          />
+                        </li>
+                      );
+                    })}
+                    {lowStockCount > 5 && (
+                      <li className="erp-kpi-period text-center pt-2">
+                        +{lowStockCount - 5} منتجات أخرى
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* B — Customer debts */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>ديون العملاء</CardTitle>
+                  <CardDescription>مستحق على العملاء للشركة</CardDescription>
+                </div>
+                <div className="erp-kpi-icon" aria-hidden="true">
+                  <Users />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="erp-kpi-body">
+                  <p className="erp-kpi-value">
+                    {formatCurrency(stats.total_customer_debts)}
+                  </p>
+                  <div
+                    className={
+                      stats.total_customer_debts === 0
+                        ? 'erp-kpi-trend erp-kpi-trend--up'
+                        : 'erp-kpi-trend erp-kpi-trend--down'
+                    }
+                  >
+                    {stats.total_customer_debts === 0
+                      ? <ArrowUpRight aria-hidden="true" />
+                      : <ArrowDownRight aria-hidden="true" />
+                    }
+                    <span>
+                      {stats.total_customer_debts === 0
+                        ? 'لا ديون مستحقة'
+                        : 'مستحق التحصيل'}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* C — Supplier payables */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>مستحقات الموردين</CardTitle>
+                  <CardDescription>ديون على الشركة للموردين</CardDescription>
+                </div>
+                <div className="erp-kpi-icon" aria-hidden="true">
+                  <Truck />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="erp-kpi-body">
+                  <p className="erp-kpi-value">
+                    {formatCurrency(supplierDebts)}
+                  </p>
+                  <div
+                    className={
+                      supplierDebts === 0
+                        ? 'erp-kpi-trend erp-kpi-trend--up'
+                        : 'erp-kpi-trend erp-kpi-trend--down'
+                    }
+                  >
+                    {supplierDebts === 0
+                      ? <ArrowUpRight aria-hidden="true" />
+                      : <ArrowDownRight aria-hidden="true" />
+                    }
+                    <span>
+                      {supplierDebts === 0 ? 'لا مستحقات للموردين' : 'مستحق الدفع'}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+          </div>
+        }
+
+        /* ── 4. KPI row ─────────────────────────────────────── */
+        kpiSlot={
+          <div className="erp-kpi-grid">
+
+            {/* KPI 1 — Sales today */}
+            <KPICard
+              label="مبيعات اليوم"
+              value={formatCurrency(stats.total_sales_today)}
+              icon={<ShoppingCart aria-hidden="true" />}
+              comparisonLabel="اليوم"
+            />
+
+            {/* KPI 2 — Net profit */}
+            <KPICard
+              label="صافي الربح"
+              value={formatCurrency(stats.net_profit)}
+              icon={
+                netIsPositive
+                  ? <TrendingUp aria-hidden="true" />
+                  : <TrendingDown aria-hidden="true" />
+              }
+              comparisonLabel={netIsPositive ? 'ربح' : 'خسارة'}
+            />
+
+            {/* KPI 3 — Treasury (own async loader) */}
+            {safesLoading ? (
+              <Skeleton variant="card" />
+            ) : (
+              <KPICard
+                label="رصيد الخزينة"
+                value={formatCurrency(treasuryTotal)}
+                icon={<Landmark aria-hidden="true" />}
+                comparisonLabel={`${safes?.length ?? 0} خزائن`}
+              />
+            )}
+
+            {/* KPI 4 — Sales targets with progress bar */}
+            {targetsLoading ? (
+              <Skeleton variant="card" />
+            ) : (
+              <div className="erp-kpi-card">
+                <div className="erp-kpi-icon" aria-hidden="true">
+                  <Target />
+                </div>
+                <div className="erp-kpi-body">
+                  <p className="erp-kpi-label">أهداف المبيعات</p>
+                  {overallPct !== null ? (
+                    <>
+                      <p className="erp-kpi-value">{overallPct}%</p>
+                      <Progress
+                        value={overallPct}
+                        size="xs"
+                        intent={targetIntent}
+                        aria-label={`تقدم الهدف: ${overallPct}%`}
+                      />
+                      <div
+                        className={
+                          overallPct >= 100
+                            ? 'erp-kpi-delta erp-kpi-delta--positive'
+                            : 'erp-kpi-delta erp-kpi-delta--negative'
+                        }
+                      >
+                        {overallPct >= 100
+                          ? <TrendingUp aria-hidden="true" />
+                          : <TrendingDown aria-hidden="true" />
+                        }
+                        <span>{activeTargets.length} مستخدمون نشطون</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="erp-kpi-period">لا أهداف مُعيَّنة هذا الشهر</p>
+                  )}
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Alert 2 — Customer Debts */}
-          <div className="erp-card" style={{ padding: '20px 20px 16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                marginBottom: 14,
-                gap: 8,
-              }}
-            >
-              <div>
-                <h3
-                  style={{
-                    fontSize: 13.5,
-                    fontWeight: 700,
-                    color: 'var(--text-1)',
-                    margin: 0,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  ديون العملاء
-                </h3>
-                <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: '3px 0 0' }}>
-                  مستحق على العملاء للشركة
-                </p>
+          </div>
+        }
+
+        /* ── 5. Primary chart ───────────────────────────────── */
+        primaryChartSlot={
+          <ChartContainer
+            title="النظرة المالية اليوم"
+            legend={
+              /* Legend colour swatches are dynamically coloured from CSS token strings.
+                 The style prop here only references var(--token) values, never raw hex. */
+              <div className="flex flex-wrap gap-4">
+                {barData.map((d) => (
+                  <div key={d.name} className="flex items-center gap-1.5">
+                    <span
+                      className="w-2.5 h-2.5 rounded shrink-0"
+                      style={{ background: d.fill }}
+                      aria-hidden="true"
+                    />
+                    <span className="erp-kpi-label">{d.name}</span>
+                  </div>
+                ))}
               </div>
-              <Users
-                style={{
-                  width: 18,
-                  height: 18,
-                  color: 'var(--status-info)',
-                  opacity: 0.65,
-                  flexShrink: 0,
-                }}
-              />
-            </div>
-            <p
-              style={{
-                fontSize: 26,
-                fontWeight: 800,
-                color:
-                  stats.total_customer_debts > 0
-                    ? 'var(--status-danger)'
-                    : 'var(--text-1)',
-                margin: '4px 0 12px',
-                lineHeight: 1.15,
-              }}
-            >
-              {formatCurrency(stats.total_customer_debts)}
-            </p>
-            <div
-              className={`erp-kpi-trend ${stats.total_customer_debts === 0 ? 'erp-kpi-trend--up' : 'erp-kpi-trend--down'}`}
-            >
-              {stats.total_customer_debts === 0 ? (
-                <ArrowUpRight />
-              ) : (
-                <ArrowDownRight />
-              )}
-              <span>
-                {stats.total_customer_debts === 0
-                  ? 'لا ديون مستحقة'
-                  : 'مستحق التحصيل'}
-              </span>
-            </div>
-          </div>
-
-          {/* Alert 3 — Supplier Payables — FIXED: was "مستحقات لعملاء" (wrong) */}
-          <div className="erp-card" style={{ padding: '20px 20px 16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                marginBottom: 14,
-                gap: 8,
-              }}
-            >
-              <div>
-                <h3
-                  style={{
-                    fontSize: 13.5,
-                    fontWeight: 700,
-                    color: 'var(--text-1)',
-                    margin: 0,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  مستحقات الموردين
-                </h3>
-                <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: '3px 0 0' }}>
-                  ديون على الشركة للموردين
-                </p>
-              </div>
-              <Truck
-                style={{
-                  width: 18,
-                  height: 18,
-                  color: 'var(--status-warning)',
-                  opacity: 0.65,
-                  flexShrink: 0,
-                }}
-              />
-            </div>
-            <p
-              style={{
-                fontSize: 26,
-                fontWeight: 800,
-                color:
-                  supplierDebts > 0
-                    ? 'var(--status-warning)'
-                    : 'var(--text-1)',
-                margin: '4px 0 12px',
-                lineHeight: 1.15,
-              }}
-            >
-              {formatCurrency(supplierDebts)}
-            </p>
-            <div
-              className={`erp-kpi-trend ${supplierDebts === 0 ? 'erp-kpi-trend--up' : 'erp-kpi-trend--down'}`}
-            >
-              {supplierDebts === 0 ? <ArrowUpRight /> : <ArrowDownRight />}
-              <span>
-                {supplierDebts === 0 ? 'لا مستحقات للموردين' : 'مستحق الدفع'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════
-          ZONE 3 — TRENDS
-          Daily bar chart.
-          TODO: Replace with 7-day line chart when
-          /api/dashboard/weekly endpoint is available.
-          Required fields: date, sales, expenses, profit (array of 7 days)
-      ════════════════════════════════════════ */}
-      <div>
-        <ZoneLabel label="الاتجاهات" />
-        <div className="erp-card" style={{ padding: '20px 24px 24px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 20,
-              flexWrap: 'wrap',
-              gap: 12,
-            }}
+            }
+            empty={barData.every((d) => d.amount === 0)}
+            emptyMessage="لا توجد بيانات بعد — ابدأ بإضافة أول عملية"
           >
-            <div>
-              <h3
-                style={{
-                  fontSize: 14.5,
-                  fontWeight: 700,
-                  color: 'var(--text-1)',
-                  margin: 0,
-                }}
-              >
-                النظرة المالية اليوم
-              </h3>
-              <p
-                style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}
-              >
-                مقارنة المبيعات والمصروفات والأرباح
-              </p>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                gap: 16,
-                flexWrap: 'wrap',
-              }}
-            >
-              {barData.map((d) => (
-                <div
-                  key={d.name}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <div
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 3,
-                      background: d.fill,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{d.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {barData.every((d) => d.amount === 0) ? (
-            <div style={{ padding: '32px 0' }}>
-              <EmptyState msg="لا توجد بيانات بعد — ابدأ بإضافة أول عملية" height={180} />
-            </div>
-          ) : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={barData} barSize={52} barCategoryGap="35%">
                 <CartesianGrid
                   strokeDasharray="3 4"
-                  stroke={chartGridStroke}
+                  stroke="var(--edge)"
                   vertical={false}
                 />
                 <XAxis
                   dataKey="name"
-                  stroke={chartAxisStroke}
+                  stroke="var(--text-hint)"
                   tick={{
                     fontSize: 13,
                     fontFamily: 'Tajawal, sans-serif',
-                    fill: chartTickColor,
+                    fill: 'var(--text-2)',
                   }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke={chartAxisStroke}
-                  tick={{ fontSize: 11, fill: chartTickColor }}
+                  stroke="var(--text-hint)"
+                  tick={{ fontSize: 11, fill: 'var(--text-2)' }}
                   axisLine={false}
                   tickLine={false}
                   width={64}
@@ -854,15 +572,14 @@ export default function Dashboard() {
                 <Tooltip
                   cursor={{ fill: 'var(--surface)', radius: 10 }}
                   contentStyle={{
-                    background: tooltipBg,
-                    border: `1px solid ${tooltipBorder}`,
+                    background: 'var(--bg-panel)',
+                    border: '1px solid var(--edge-md)',
                     borderRadius: 14,
                     fontSize: 13,
                     fontFamily: 'Tajawal, sans-serif',
-                    boxShadow: '0 20px 48px rgba(0,0,0,0.5)',
                   }}
                   labelStyle={{
-                    color: tooltipLabelClr,
+                    color: 'var(--text-2)',
                     marginBottom: 6,
                     fontWeight: 700,
                   }}
@@ -876,166 +593,84 @@ export default function Dashboard() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          )}
-        </div>
-      </div>
+          </ChartContainer>
+        }
 
-      {/* ════════════════════════════════════════
-          ZONE 4 — RECENT ACTIVITY
-          Last 7 financial transactions.
-      ════════════════════════════════════════ */}
-      <div>
-        <ZoneLabel label="آخر النشاط" />
-        <div className="erp-card" style={{ padding: '20px 24px 24px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 16,
-            }}
-          >
-            <div>
-              <h3
-                style={{
-                  fontSize: 14.5,
-                  fontWeight: 700,
-                  color: 'var(--text-1)',
-                  margin: 0,
-                }}
-              >
-                آخر العمليات
-              </h3>
-              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>
-                أحدث الحركات المالية
-              </p>
-            </div>
-            <span className="erp-status erp-status-info">
-              {stats.recent_transactions?.length ?? 0} حركة
-            </span>
-          </div>
-
-          {!stats.recent_transactions?.length ? (
-            <EmptyState msg="لا توجد عمليات بعد — ابدأ بإضافة أول عملية" height={120} />
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {stats.recent_transactions
-                .slice(0, 7)
-                .map(
-                  (tx: {
-                    id: number;
-                    type: string;
-                    amount: number;
-                    created_at: string;
-                  }) => {
-                    const isIncome = TX_IS_INCOME.has(tx.type);
-                    const TxIcon = TX_ICONS[tx.type] || DollarSign;
-                    const dt = new Date(tx.created_at);
-                    const time = dt.toLocaleTimeString('ar-EG-u-nu-latn', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    });
-                    return (
-                      <div
-                        key={tx.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '10px 0',
-                          borderBottom: '1px solid var(--edge)',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 10,
-                            background: isIncome
-                              ? 'rgba(52,211,153,0.10)'
-                              : 'rgba(248,113,113,0.10)',
-                            border: `1px solid ${isIncome ? 'rgba(52,211,153,0.18)' : 'rgba(248,113,113,0.18)'}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                          aria-hidden="true"
-                        >
-                          <TxIcon
-                            style={{
-                              width: 15,
-                              height: 15,
-                              color: isIncome
-                                ? 'var(--status-success)'
-                                : 'var(--status-danger)',
-                            }}
-                          />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 600,
-                              color: 'var(--text-1)',
-                              margin: 0,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
+        /* ── 6. Recent transactions ─────────────────────────── */
+        tableSlot={
+          <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>آخر العمليات</CardTitle>
+                <CardDescription>أحدث الحركات المالية</CardDescription>
+              </div>
+              <span className="erp-status erp-status-info">
+                {stats.recent_transactions?.length ?? 0} حركة
+              </span>
+            </CardHeader>
+            <CardContent>
+              {!stats.recent_transactions?.length ? (
+                <EmptyState
+                  title="لا توجد عمليات بعد"
+                  description="ابدأ بإضافة أول عملية مالية"
+                />
+              ) : (
+                <ul role="list" aria-label="آخر العمليات المالية">
+                  {stats.recent_transactions
+                    .slice(0, 7)
+                    .map(
+                      (tx: {
+                        id: number;
+                        type: string;
+                        amount: number;
+                        created_at: string;
+                      }) => {
+                        const isIncome = TX_IS_INCOME.has(tx.type);
+                        const TxIcon = TX_ICONS[tx.type] || DollarSign;
+                        const time = new Date(tx.created_at).toLocaleTimeString(
+                          'ar-EG-u-nu-latn',
+                          { hour: '2-digit', minute: '2-digit' },
+                        );
+                        return (
+                          <li
+                            key={tx.id}
+                            className="flex items-center gap-3 py-2.5"
                           >
-                            {TX_LABELS[tx.type] || tx.type}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: 11,
-                              color: 'var(--text-4)',
-                              margin: '2px 0 0',
-                            }}
-                          >
-                            {time}
-                          </p>
-                        </div>
-                        <div
-                          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                        >
-                          {isIncome ? (
-                            <ArrowUpRight
-                              style={{
-                                width: 14,
-                                height: 14,
-                                color: 'var(--status-success)',
-                              }}
-                            />
-                          ) : (
-                            <ArrowDownRight
-                              style={{
-                                width: 14,
-                                height: 14,
-                                color: 'var(--status-danger)',
-                              }}
-                            />
-                          )}
-                          <span
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: isIncome
-                                ? 'var(--status-success)'
-                                : 'var(--status-danger)',
-                            }}
-                          >
-                            {formatCurrency(tx.amount)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  }
-                )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                            <div
+                              className="erp-kpi-icon shrink-0"
+                              aria-hidden="true"
+                            >
+                              <TxIcon />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="erp-kpi-label truncate">
+                                {TX_LABELS[tx.type] || tx.type}
+                              </p>
+                              <p className="erp-kpi-period">{time}</p>
+                            </div>
+                            <div
+                              className={
+                                isIncome
+                                  ? 'erp-kpi-trend erp-kpi-trend--up shrink-0'
+                                  : 'erp-kpi-trend erp-kpi-trend--down shrink-0'
+                              }
+                            >
+                              {isIncome
+                                ? <ArrowUpRight aria-hidden="true" />
+                                : <ArrowDownRight aria-hidden="true" />
+                              }
+                              <span>{formatCurrency(tx.amount)}</span>
+                            </div>
+                          </li>
+                        );
+                      },
+                    )}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        }
+      />
+    </>
   );
 }
