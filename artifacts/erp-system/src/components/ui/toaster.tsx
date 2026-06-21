@@ -12,34 +12,14 @@ import {
 
 const DURATION = 1800;
 
-const VARIANT_CONFIG = {
-  default: {
-    icon: CheckCircle2,
-    iconColor: 'text-emerald-400',
-    barColor: 'bg-emerald-500',
-    dotColor: 'bg-emerald-400',
-  },
-  destructive: {
-    icon: XCircle,
-    iconColor: 'text-red-400',
-    barColor: 'bg-red-500',
-    dotColor: 'bg-red-400',
-  },
-  warning: {
-    icon: AlertTriangle,
-    iconColor: 'text-amber-400',
-    barColor: 'bg-amber-500',
-    dotColor: 'bg-amber-400',
-  },
-  info: {
-    icon: Info,
-    iconColor: 'text-blue-400',
-    barColor: 'bg-blue-500',
-    dotColor: 'bg-blue-400',
-  },
-} as const;
-
-type ToastVariant = keyof typeof VARIANT_CONFIG;
+const VARIANT_ICON: Record<string, React.ElementType> = {
+  default:     CheckCircle2,
+  success:     CheckCircle2,
+  destructive: XCircle,
+  error:       XCircle,
+  warning:     AlertTriangle,
+  info:        Info,
+};
 
 function ToastItem({
   id,
@@ -54,20 +34,25 @@ function ToastItem({
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactElement;
-  variant?: ToastVariant;
+  variant?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const cfg = VARIANT_CONFIG[variant] ?? VARIANT_CONFIG.default;
-  const Icon = cfg.icon;
+  const Icon = VARIANT_ICON[variant] ?? CheckCircle2;
 
   return (
-    <Toast key={id} variant={variant} open={open} onOpenChange={onOpenChange} duration={DURATION}>
-      {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-surface overflow-hidden rounded-b-xl">
+    <Toast
+      key={id}
+      variant={variant as Parameters<typeof Toast>[0]['variant']}
+      open={open}
+      onOpenChange={onOpenChange}
+      duration={DURATION}
+    >
+      {/* Progress bar — colour comes from CSS var(--toast-bar-color) set by variant class */}
+      <div className="absolute bottom-0 start-0 end-0 h-[2px] overflow-hidden rounded-b-xl" style={{ background: 'var(--edge)' }}>
         {open && (
           <div
-            className={`h-full ${cfg.barColor} origin-right`}
+            className="erp-toast-bar h-full"
             style={{
               animation: `toast-shrink ${DURATION}ms linear forwards`,
             }}
@@ -75,14 +60,14 @@ function ToastItem({
         )}
       </div>
 
-      {/* Icon */}
-      <div className={`shrink-0 mt-0.5 ${cfg.iconColor}`}>
-        <Icon className="w-4 h-4" />
+      {/* Icon — colour comes from CSS var(--toast-icon-color) set by variant class */}
+      <div className="erp-toast-icon shrink-0 mt-0.5">
+        <Icon aria-hidden="true" />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0" dir="rtl">
-        {title && <ToastTitle>{title}</ToastTitle>}
+        {title       && <ToastTitle>{title}</ToastTitle>}
         {description && <ToastDescription>{description}</ToastDescription>}
       </div>
 
@@ -113,7 +98,7 @@ export function Toaster() {
             title={title}
             description={description}
             action={action}
-            variant={(variant ?? 'default') as ToastVariant}
+            variant={variant ?? 'default'}
             open={open}
             onOpenChange={onOpenChange}
           />

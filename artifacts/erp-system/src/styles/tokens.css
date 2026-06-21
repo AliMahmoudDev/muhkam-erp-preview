@@ -716,6 +716,7 @@ html.dark {
   --sidebar-border: var(--color-border-structural);
 
   /* ── Modal / Dialog ──────────────────────────────────────────── */
+  --color-scrim:        rgba(0, 0, 0, 0.55);
   --modal-bg:           var(--color-surface-1);
   --modal-title-size:   var(--text-title-2);
   --modal-title-weight: var(--font-weight-bold);
@@ -981,6 +982,7 @@ html.light {
 
   --topbar-bg:  rgba(255, 255, 255, 0.92);
   --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --color-scrim: rgba(0, 0, 0, 0.35);
   --modal-bg:   var(--color-surface-0);
 
   --nav-item-bg-active:   rgba(29, 100, 216, 0.08);

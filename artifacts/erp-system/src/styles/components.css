@@ -42,3 +42,6 @@
 
 /* ── Phase 03 Data Components ────────────────── */
 @import "./components/data.css";
+
+/* ── Phase 03 Surface Components ─────────────── */
+@import "./components/surface.css";

@@ -14,8 +14,8 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      'fixed bottom-4 left-4 z-[9999] flex flex-col gap-2 w-[340px] max-w-[calc(100vw-2rem)]',
-      className
+      'fixed bottom-4 start-4 z-[9999] flex flex-col gap-2 w-[340px] max-w-[calc(100vw-2rem)]',
+      className,
     )}
     {...props}
   />
@@ -24,44 +24,43 @@ ToastViewport.displayName = ToastPrimitives.Viewport.displayName;
 
 const toastVariants = cva(
   [
-    'group relative flex w-full items-start gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-2xl',
+    'erp-toast',
+    'group relative flex w-full items-start gap-3 overflow-hidden',
     'transition-all duration-300',
     'data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-4 data-[state=open]:fade-in-0',
-    'data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left-4 data-[state=closed]:fade-out-0',
+    'data-[state=closed]:animate-out data-[state=closed]:slide-out-to-start-4 data-[state=closed]:fade-out-0',
     'data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]',
     'data-[swipe=cancel]:translate-x-0',
-    'data-[swipe=end]:animate-out data-[swipe=end]:slide-out-to-left-full',
+    'data-[swipe=end]:animate-out data-[swipe=end]:slide-out-to-start-full',
   ].join(' '),
   {
     variants: {
       variant: {
-        default:
-          'bg-[#0D1424] border-emerald-500/30 backdrop-blur-md [--progress-color:theme(colors.emerald.500)]',
-        destructive:
-          'bg-[#0D1424] border-red-500/30 backdrop-blur-md [--progress-color:theme(colors.red.500)]',
-        warning:
-          'bg-[#0D1424] border-amber-500/30 backdrop-blur-md [--progress-color:theme(colors.amber.500)]',
-        info: 'bg-[#0D1424] border-blue-500/30 backdrop-blur-md [--progress-color:theme(colors.blue.500)]',
+        default:     'erp-toast--success',
+        success:     'erp-toast--success',
+        destructive: 'erp-toast--error',
+        error:       'erp-toast--error',
+        warning:     'erp-toast--warning',
+        info:        'erp-toast--info',
       },
     },
     defaultVariants: {
       variant: 'default',
     },
-  }
+  },
 );
 
 const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> & VariantProps<typeof toastVariants>
->(({ className, variant, ...props }, ref) => {
-  return (
-    <ToastPrimitives.Root
-      ref={ref}
-      className={cn(toastVariants({ variant }), className)}
-      {...props}
-    />
-  );
-});
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
+    VariantProps<typeof toastVariants>
+>(({ className, variant, ...props }, ref) => (
+  <ToastPrimitives.Root
+    ref={ref}
+    className={cn(toastVariants({ variant }), className)}
+    {...props}
+  />
+));
 Toast.displayName = ToastPrimitives.Root.displayName;
 
 const ToastAction = React.forwardRef<
@@ -70,10 +69,7 @@ const ToastAction = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Action
     ref={ref}
-    className={cn(
-      'inline-flex h-7 shrink-0 items-center justify-center rounded-md border border-line bg-surface px-3 text-xs font-medium text-ink/70 transition-colors hover:bg-surface focus:outline-none',
-      className
-    )}
+    className={cn('erp-toast-action', className)}
     {...props}
   />
 ));
@@ -85,14 +81,11 @@ const ToastClose = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Close
     ref={ref}
-    className={cn(
-      'shrink-0 rounded-md p-1 text-white/30 transition-colors hover:text-white/70 focus:outline-none',
-      className
-    )}
+    className={cn('erp-toast-close', className)}
     toast-close=""
     {...props}
   >
-    <X className="h-3.5 w-3.5" />
+    <X className="h-3.5 w-3.5" aria-hidden="true" />
   </ToastPrimitives.Close>
 ));
 ToastClose.displayName = ToastPrimitives.Close.displayName;
@@ -103,7 +96,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn('text-sm font-bold text-white leading-tight', className)}
+    className={cn('erp-toast-title', className)}
     {...props}
   />
 ));
@@ -115,7 +108,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn('text-xs text-white/60 mt-0.5 leading-relaxed', className)}
+    className={cn('erp-toast-description', className)}
     {...props}
   />
 ));
