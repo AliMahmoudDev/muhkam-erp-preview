@@ -1,0 +1,689 @@
+/*
+ * Page Patterns — Phase 04 Step 01
+ * ====================================
+ * §1  AppPage
+ * §2  PageHeader
+ * §3  PageToolbar
+ * §4  ListPagePattern
+ * §5  DetailPagePattern
+ * §6  FormPagePattern
+ * §7  ReportPagePattern
+ * §8  DashboardPattern
+ * §9  SettingsPattern
+ * §10 EmptyPagePattern
+ * §11 LoadingPagePattern
+ * §12 ErrorPagePattern
+ *
+ * Rules:
+ *  – Layer 3 component tokens only
+ *  – No hardcoded hex / rgb / hsl
+ *  – No physical CSS (use logical: padding-inline, inset-inline-start, etc.)
+ *  – RTL-first (dir=rtl on <html>; inset-inline-start = right in RTL)
+ *  – No page-specific class names
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   §1  AppPage
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-app-page {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100%;
+  padding: var(--space-6, 1.5rem);
+  gap: var(--space-5, 1.25rem);
+  background: var(--bg-base);
+  color: var(--text-1);
+}
+
+/* Max-width variants — centered with auto inline margins */
+.erp-app-page--sm  { max-inline-size: 640px;  margin-inline: auto; }
+.erp-app-page--md  { max-inline-size: 768px;  margin-inline: auto; }
+.erp-app-page--lg  { max-inline-size: 1024px; margin-inline: auto; }
+.erp-app-page--xl  { max-inline-size: 1280px; margin-inline: auto; }
+.erp-app-page--2xl { max-inline-size: 1536px; margin-inline: auto; }
+/* 'full' — no max-inline-size applied */
+
+.erp-app-page-title {
+  /* Optional title region above main content */
+}
+
+.erp-app-page-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §2  PageHeader
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* Top row: identity + actions */
+.erp-page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+  flex-wrap: wrap;
+}
+
+/* Eyebrow: breadcrumb or category label */
+.erp-page-header-eyebrow {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-3);
+  margin-block-end: var(--space-1, 0.25rem);
+}
+
+/* Identity: title + status */
+.erp-page-header-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.erp-page-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  flex-wrap: wrap;
+}
+
+.erp-page-header-title {
+  font-size: var(--text-2xl, 1.5rem);
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.erp-page-header-status {
+  flex-shrink: 0;
+}
+
+.erp-page-header-subtitle {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Actions: toolbar */
+.erp-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §3  PageToolbar
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+  flex-wrap: wrap;
+  padding-block: var(--space-2, 0.5rem);
+}
+
+.erp-page-toolbar-start {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-wrap: wrap;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.erp-page-toolbar-search {
+  flex: 1;
+  min-inline-size: 180px;
+  max-inline-size: 360px;
+}
+
+.erp-page-toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.erp-page-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §4  ListPagePattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.erp-list-page-header { /* inherits from PageHeader */ }
+
+.erp-list-page-toolbar { /* inherits from PageToolbar */ }
+
+.erp-list-page-kpi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+}
+
+.erp-list-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+  flex: 1;
+}
+
+/* State slot: empty / loading / error */
+.erp-list-page-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 320px;
+  padding: var(--space-8, 2rem);
+}
+
+.erp-list-page-state-placeholder {
+  inline-size: 100%;
+  block-size: 240px;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+}
+
+.erp-list-page-table {
+  flex: 1;
+}
+
+.erp-list-page-pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding-block-start: var(--space-3, 0.75rem);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §5  DetailPagePattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.erp-detail-page-header {
+  /* Becomes sticky when --sticky modifier applied */
+}
+
+.erp-detail-page-header--sticky {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--z-sticky, 40);
+  background: var(--bg-base);
+  border-block-end: 1px solid var(--edge);
+  padding-block-end: var(--space-3, 0.75rem);
+}
+
+.erp-detail-page-tabs {
+  border-block-end: 1px solid var(--edge);
+}
+
+/* Body — can be single-column or with aside */
+.erp-detail-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+}
+
+.erp-detail-page-body--with-aside {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-6, 1.5rem);
+}
+
+.erp-detail-page-sections {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+}
+
+.erp-detail-page-aside {
+  inline-size: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+@media (max-width: 1024px) {
+  .erp-detail-page-body--with-aside {
+    flex-direction: column;
+  }
+  .erp-detail-page-aside {
+    inline-size: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §6  FormPagePattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-form-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  padding-block-end: var(--space-20, 5rem); /* clearance for sticky action bar */
+}
+
+.erp-form-page-header { /* inherits from PageHeader */ }
+
+.erp-form-page-unsaved {
+  /* Unsaved-changes banner slot */
+}
+
+.erp-form-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+}
+
+/* Sticky action bar */
+.erp-form-page-action-bar {
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  z-index: var(--z-sticky, 40);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
+  background: var(--bg-surface);
+  border-block-start: 1px solid var(--edge);
+  box-shadow: var(--shadow-toast);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §7  ReportPagePattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-report-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.erp-report-page-header { /* inherits from PageHeader */ }
+
+.erp-report-page-params {
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4, 1rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  align-items: flex-end;
+}
+
+.erp-report-page-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+}
+
+.erp-report-page-export {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  justify-content: flex-end;
+}
+
+.erp-report-page-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §8  DashboardPattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 1.5rem);
+}
+
+.erp-dashboard-header {
+  /* Greeting / header slot */
+}
+
+.erp-dashboard-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* KPI row — responsive grid */
+.erp-dashboard-kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3, 0.75rem);
+}
+
+/* Charts grid — 2-column on md+ */
+.erp-dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4, 1rem);
+}
+
+/* Main row: table + optional activity aside */
+.erp-dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.erp-dashboard-main--with-aside {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-5, 1.25rem);
+}
+
+.erp-dashboard-table {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.erp-dashboard-activity {
+  inline-size: 320px;
+  flex-shrink: 0;
+}
+
+.erp-dashboard-secondary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4, 1rem);
+}
+
+@media (max-width: 1024px) {
+  .erp-dashboard-main--with-aside {
+    flex-direction: column;
+  }
+  .erp-dashboard-activity {
+    inline-size: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §9  SettingsPattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+/* With side nav — two-column layout on desktop */
+.erp-settings-page--with-nav {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-6, 1.5rem);
+}
+
+/* Category nav sidebar */
+.erp-settings-nav {
+  inline-size: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  inset-block-start: var(--space-4, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+/* Mobile tabs — shown only on narrow viewports */
+.erp-settings-mobile-tabs {
+  display: none;
+}
+
+/* Content column */
+.erp-settings-content {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+}
+
+.erp-settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+}
+
+/* Danger zone */
+.erp-settings-danger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.erp-settings-danger-divider {
+  block-size: 1px;
+  background: var(--status-error);
+  opacity: 0.3;
+}
+
+@media (max-width: 768px) {
+  .erp-settings-page--with-nav {
+    flex-direction: column;
+  }
+  .erp-settings-nav {
+    display: none;
+    inline-size: 100%;
+    position: static;
+  }
+  .erp-settings-mobile-tabs {
+    display: block;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §10 EmptyPagePattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-empty-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 480px;
+  padding: var(--space-10, 2.5rem);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §11 LoadingPagePattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-loading-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+/* Built-in preset layout */
+.erp-loading-page-preset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.erp-loading-page-header-skel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding-block-end: var(--space-2, 0.5rem);
+}
+
+.erp-loading-page-title-skel {
+  block-size: 2rem;
+  inline-size: 40%;
+  min-inline-size: 200px;
+}
+
+.erp-loading-page-sub-skel {
+  block-size: 1rem;
+  inline-size: 60%;
+  min-inline-size: 180px;
+}
+
+.erp-loading-page-toolbar-skel {
+  display: flex;
+  gap: var(--space-3, 0.75rem);
+}
+
+.erp-loading-page-search-skel {
+  block-size: 2.25rem;
+  inline-size: 280px;
+}
+
+.erp-loading-page-btn-skel {
+  block-size: 2.25rem;
+  inline-size: 100px;
+}
+
+.erp-loading-page-kpi-skel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3, 0.75rem);
+}
+
+.erp-loading-page-kpi-card-skel {
+  block-size: 100px;
+}
+
+.erp-loading-page-tabs-skel {
+  block-size: 2.5rem;
+  inline-size: 100%;
+}
+
+.erp-loading-page-form-skel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5, 1.25rem);
+}
+
+.erp-loading-page-field-skel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+}
+
+.erp-loading-page-label-skel {
+  block-size: 0.875rem;
+  inline-size: 30%;
+}
+
+.erp-loading-page-input-skel {
+  block-size: 2.25rem;
+  inline-size: 100%;
+}
+
+.erp-loading-page-charts-skel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4, 1rem);
+}
+
+.erp-loading-page-chart-skel {
+  block-size: 260px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §12 ErrorPagePattern
+═══════════════════════════════════════════════════════════════════ */
+
+.erp-error-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 480px;
+  padding: var(--space-10, 2.5rem);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive overrides
+═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+  .erp-app-page {
+    padding: var(--space-4, 1rem);
+    gap: var(--space-4, 1rem);
+  }
+
+  .erp-page-header-title {
+    font-size: var(--text-xl, 1.25rem);
+  }
+
+  .erp-page-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .erp-page-toolbar-start {
+    flex-direction: column;
+  }
+
+  .erp-page-toolbar-search {
+    max-inline-size: 100%;
+  }
+
+  .erp-form-page-action-bar {
+    padding-inline: var(--space-4, 1rem);
+  }
+
+  .erp-loading-page-form-skel {
+    grid-template-columns: 1fr;
+  }
+
+  .erp-loading-page-charts-skel {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Reduced motion
+═══════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-detail-page-header--sticky,
+  .erp-form-page-action-bar {
+    transition: none;
+  }
+}

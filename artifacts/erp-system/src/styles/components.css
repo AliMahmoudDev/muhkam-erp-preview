@@ -54,3 +54,6 @@
 
 /* ── Phase 03 Business Components ────────────── */
 @import "./components/business.css";
+
+/* ── Phase 04 Page Patterns ──────────────────── */
+@import "./components/patterns.css";
