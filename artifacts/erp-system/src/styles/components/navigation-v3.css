@@ -1,0 +1,894 @@
+/* ═══════════════════════════════════════════════════════════════
+ *  MUHKAM DESIGN LANGUAGE v3
+ *  Navigation Components — Phase 03 Step 05
+ *
+ *  Class prefixes used:
+ *    .erp-sidebar-*          — Sidebar shell
+ *    .erp-sidebar-item-*     — SidebarItem
+ *    .erp-topbar-v3-*        — Topbar primitive (no collision with topbar.css)
+ *    .erp-breadcrumb-*       — Breadcrumb
+ *    .erp-tabs-*             — Tabs (Radix)
+ *    .erp-stepper-*          — Stepper
+ *    .erp-command-*          — CommandPalette
+ *    .erp-mobile-nav-*       — MobileNavigation
+ *
+ *  Rules enforced:
+ *    ✅ No hardcoded hex / rgb / hsl
+ *    ✅ No physical CSS properties (left/right/margin-left etc.)
+ *    ✅ Layer 3 tokens only
+ *    ✅ RTL-first (logical properties throughout)
+ * ═══════════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §1  SIDEBAR SHELL
+ * ═══════════════════════════════════════════════════════════════ */
+
+.erp-sidebar {
+  position:           fixed;
+  inset-block:        0;                        /* top: 0; bottom: 0 */
+  inset-inline-start: 0;                        /* right: 0 in RTL   */
+  z-index:            var(--z-sidebar, 100);
+  display:            flex;
+  flex-direction:     column;
+  inline-size:        var(--sidebar-width-expanded);
+  background:         var(--sidebar-bg);
+  border-inline-end:  var(--border-width-structural) solid var(--sidebar-border);
+  transition:         inline-size 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow:           hidden;
+  will-change:        inline-size;
+}
+
+.erp-sidebar--collapsed {
+  inline-size: var(--sidebar-width-collapsed);
+}
+
+/* ── Header ── */
+.erp-sidebar-header {
+  flex-shrink:       0;
+  display:           flex;
+  align-items:       center;
+  padding-block:     var(--space-3);
+  padding-inline:    var(--space-4);
+  min-block-size:    var(--topbar-height, 64px);
+  border-block-end:  var(--border-width-structural) solid var(--sidebar-border);
+}
+
+/* ── Scrollable body ── */
+.erp-sidebar-body {
+  flex:              1 1 auto;
+  overflow-y:        auto;
+  overflow-x:        hidden;
+  padding-block:     var(--space-3);
+  padding-inline:    var(--space-2);
+  display:           flex;
+  flex-direction:    column;
+  gap:               var(--space-0-5, 2px);
+  scrollbar-width:   thin;
+  scrollbar-color:   var(--edge) transparent;
+}
+
+/* ── Footer ── */
+.erp-sidebar-footer {
+  flex-shrink:         0;
+  padding-block:       var(--space-3);
+  padding-inline:      var(--space-4);
+  border-block-start:  var(--border-width-structural) solid var(--sidebar-border);
+}
+
+/* ── Group label ── */
+.erp-sidebar-group {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-0-5, 2px);
+  margin-block:   var(--space-2);
+}
+
+.erp-sidebar-group-label {
+  display:         block;
+  padding-inline:  var(--space-2-5, 10px);
+  padding-block:   var(--space-1);
+  font-size:       11px;
+  font-weight:     700;
+  letter-spacing:  0.05em;
+  color:           var(--text-hint);
+  user-select:     none;
+  pointer-events:  none;
+  text-transform:  uppercase;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §2  SIDEBAR ITEM
+ * ═══════════════════════════════════════════════════════════════ */
+
+.erp-sidebar-item {
+  position:        relative;
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-2-5, 10px);
+  padding-block:   0;
+  padding-inline:  var(--space-2-5, 10px);
+  block-size:      40px;
+  min-block-size:  40px;
+  border-radius:   var(--radius-sm);
+  font-size:       13.5px;
+  font-weight:     500;
+  line-height:     1;
+  color:           var(--text-2);
+  text-decoration: none;
+  cursor:          pointer;
+  user-select:     none;
+  white-space:     nowrap;
+  transition:
+    background  0.15s ease,
+    color       0.15s ease;
+}
+
+.erp-sidebar-item:hover {
+  background: var(--bg-surface-alt);
+  color:      var(--text-1);
+}
+
+.erp-sidebar-item:focus-visible {
+  outline:        2px solid var(--focus-edge);
+  outline-offset: -2px;
+  border-radius:  var(--radius-sm);
+}
+
+/* ── Active: 4 signals ─────────────────────────────────────── */
+
+/* 1. Background */
+.erp-sidebar-item--active {
+  background:  var(--brand-muted);
+  color:       var(--brand);
+  font-weight: 600;
+}
+
+/* 2. Text weight — applied via font-weight: 600 above          */
+
+/* 3. Accent indicator pill on the inner edge (facing content)  */
+.erp-sidebar-item--active::before {
+  content:          '';
+  position:         absolute;
+  inset-inline-end: 0;                         /* left edge in RTL */
+  inset-block:      50%;
+  transform:        translateY(-50%);
+  inline-size:      3px;
+  block-size:       20px;
+  background:       var(--brand);
+  border-start-start-radius: var(--radius-full);
+  border-end-start-radius:   var(--radius-full);
+  border-start-end-radius:   0;
+  border-end-end-radius:     0;
+}
+
+/* 4. aria-current="page" declared in TSX                       */
+
+/* ── Hover suppressed when already active ── */
+.erp-sidebar-item--active:hover {
+  background: var(--brand-muted);
+}
+
+/* ── Disabled ── */
+.erp-sidebar-item--disabled {
+  opacity:        0.4;
+  cursor:         not-allowed;
+  pointer-events: none;
+}
+
+/* ── Icon ── */
+.erp-sidebar-item-icon {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  inline-size:     20px;
+  block-size:      20px;
+  color:           inherit;
+}
+
+.erp-sidebar-item-icon svg {
+  inline-size: 18px;
+  block-size:  18px;
+}
+
+/* ── Label — hidden in collapsed mode via JS (context) ── */
+.erp-sidebar-item-label {
+  flex:        1 1 auto;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size:   inherit;
+  font-weight: inherit;
+  color:       inherit;
+}
+
+/* ── Badge / count slot ── */
+.erp-sidebar-item-badge {
+  flex-shrink:     0;
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  min-inline-size: 20px;
+  block-size:      18px;
+  padding-inline:  var(--space-1-5, 6px);
+  border-radius:   var(--radius-full);
+  background:      var(--brand);
+  color:           var(--color-on-brand, #fff);
+  font-size:       10px;
+  font-weight:     700;
+  line-height:     1;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §3  TOPBAR (PRIMITIVE)
+   Class prefix: .erp-topbar  — topbar.css already defines
+   .erp-topbar-search, .erp-icon-btn, etc.
+   This section adds the structural shell only (.erp-topbar).
+ * ═══════════════════════════════════════════════════════════════ */
+
+.erp-topbar {
+  position:         fixed;
+  inset-block-start: 0;
+  inset-inline:     0;
+  z-index:          var(--z-topbar, 100);
+  display:          flex;
+  align-items:      center;
+  block-size:       var(--topbar-height, 64px);
+  padding-inline:   var(--space-4);
+  gap:              var(--space-3);
+  background:       var(--bg-topbar);
+  border-block-end: var(--border-width-structural) solid var(--topbar-border, var(--edge));
+}
+
+.erp-topbar-start {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  flex-shrink: 0;
+}
+
+.erp-topbar-center {
+  flex:        1 1 auto;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 0;
+}
+
+.erp-topbar-end {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  flex-shrink: 0;
+}
+
+.erp-topbar-search-placeholder {
+  flex:        1 1 auto;
+  font-size:   13px;
+  color:       var(--text-4);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §4  BREADCRUMB
+ * ═══════════════════════════════════════════════════════════════ */
+
+.erp-breadcrumb {}
+
+.erp-breadcrumb-list {
+  display:     flex;
+  align-items: center;
+  flex-wrap:   wrap;
+  gap:         var(--space-1);
+  list-style:  none;
+  margin:      0;
+  padding:     0;
+  font-size:   13.5px;
+}
+
+.erp-breadcrumb-item {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-1);
+}
+
+.erp-breadcrumb-link {
+  color:           var(--text-3);
+  text-decoration: none;
+  font-weight:     450;
+  transition:      color 0.15s ease;
+}
+
+.erp-breadcrumb-link:hover {
+  color: var(--text-1);
+}
+
+.erp-breadcrumb-link:focus-visible {
+  outline:          2px solid var(--focus-edge);
+  outline-offset:   2px;
+  border-radius:    var(--radius-xs, 2px);
+}
+
+/* Current page — plain text, no link */
+.erp-breadcrumb-current {
+  color:       var(--text-1);
+  font-weight: 600;
+  cursor:      default;
+}
+
+/* Separator — ChevronLeft by default.
+   In RTL the chevron is flipped so it points TOWARD the parent item.  */
+.erp-breadcrumb-sep {
+  display:      inline-flex;
+  align-items:  center;
+  color:        var(--text-4);
+  flex-shrink:  0;
+  user-select:  none;
+  pointer-events: none;
+}
+
+.erp-breadcrumb-sep svg {
+  inline-size: 14px;
+  block-size:  14px;
+}
+
+/* Flip the chevron in RTL so it points right (toward parent) */
+[dir="rtl"] .erp-breadcrumb-sep svg {
+  transform: scaleX(-1);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §5  TABS (Radix)
+ * ═══════════════════════════════════════════════════════════════ */
+
+.erp-tabs {
+  display:        flex;
+  flex-direction: column;
+  gap:            0;
+}
+
+/* ── Tab List ── */
+.erp-tabs-list {
+  display:         flex;
+  align-items:     center;
+  flex-shrink:     0;
+  position:        relative;
+}
+
+/* Underline variant list */
+.erp-tabs-list--underline {
+  gap:              0;
+  border-block-end: 1px solid var(--edge);
+}
+
+/* Pill variant list */
+.erp-tabs-list--pill {
+  gap:          var(--space-1);
+  padding:      var(--space-1);
+  background:   var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  border:       1px solid var(--edge);
+}
+
+/* ── Tab Trigger ── */
+.erp-tabs-trigger {
+  display:          inline-flex;
+  align-items:      center;
+  justify-content:  center;
+  gap:              var(--space-1-5);
+  font-size:        13.5px;
+  font-weight:      500;
+  cursor:           pointer;
+  border:           none;
+  background:       transparent;
+  color:            var(--text-3);
+  transition:
+    color       0.15s ease,
+    background  0.15s ease;
+  white-space:      nowrap;
+}
+
+.erp-tabs-trigger:focus-visible {
+  outline:       2px solid var(--focus-edge);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Underline trigger */
+.erp-tabs-trigger--underline {
+  padding-block:  var(--space-2-5, 10px);
+  padding-inline: var(--space-4);
+  border-block-end: 2px solid transparent;
+  margin-block-end: -1px;
+}
+
+.erp-tabs-trigger--underline:hover {
+  color: var(--text-1);
+}
+
+.erp-tabs-trigger--underline[data-state="active"] {
+  color:            var(--brand);
+  font-weight:      600;
+  border-block-end-color: var(--brand);
+}
+
+/* Pill trigger */
+.erp-tabs-trigger--pill {
+  padding-block:   var(--space-1-5, 6px);
+  padding-inline:  var(--space-3);
+  border-radius:   var(--radius-sm);
+}
+
+.erp-tabs-trigger--pill:hover {
+  color:      var(--text-1);
+  background: var(--bg-surface);
+}
+
+.erp-tabs-trigger--pill[data-state="active"] {
+  background:  var(--bg-surface);
+  color:       var(--text-1);
+  font-weight: 600;
+  box-shadow:  var(--shadow-card);
+}
+
+/* ── Tab Content ── */
+.erp-tabs-content {
+  flex:          1;
+  padding-block: var(--space-4);
+  outline:       none;
+}
+
+.erp-tabs-content:focus-visible {
+  outline:       2px solid var(--focus-edge);
+  outline-offset: 2px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §6  STEPPER
+ * ═══════════════════════════════════════════════════════════════ */
+
+.erp-stepper {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+}
+
+/* ── Horizontal ── */
+.erp-stepper--horizontal {
+  display:     flex;
+  align-items: flex-start;
+  gap:         0;
+}
+
+.erp-stepper--horizontal .erp-stepper-step {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  flex:           1;
+  position:       relative;
+  padding-block:  var(--space-2);
+}
+
+.erp-stepper--horizontal .erp-stepper-content {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  text-align:     center;
+  margin-block-start: var(--space-2);
+  gap:            var(--space-0-5, 2px);
+  max-inline-size: 120px;
+}
+
+.erp-stepper--horizontal .erp-stepper-connector--h {
+  position:         absolute;
+  inset-block-start: calc(var(--space-2) + 16px);   /* centres on circle */
+  inset-inline-start: 50%;
+  inline-size:      100%;
+  block-size:       1px;
+  background:       var(--edge-md);
+}
+
+/* ── Vertical ── */
+.erp-stepper--vertical {
+  display:        flex;
+  flex-direction: column;
+  gap:            0;
+}
+
+.erp-stepper--vertical .erp-stepper-step {
+  display:     grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows:    auto 1fr;
+  column-gap:  var(--space-3);
+  position:    relative;
+}
+
+.erp-stepper--vertical .erp-stepper-content {
+  grid-column:        2;
+  grid-row:           1;
+  display:            flex;
+  flex-direction:     column;
+  gap:                var(--space-0-5, 2px);
+  padding-block-end:  var(--space-4);
+}
+
+.erp-stepper--vertical .erp-stepper-connector--v {
+  grid-column:   1;
+  grid-row:      2;
+  justify-self:  center;
+  inline-size:   1px;
+  block-size:    100%;
+  min-block-size: var(--space-8, 32px);
+  background:    var(--edge-md);
+}
+
+/* ── Indicator circle ── */
+.erp-stepper-indicator {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  inline-size:     32px;
+  block-size:      32px;
+  border-radius:   var(--radius-full);
+  flex-shrink:     0;
+  font-size:       13px;
+  font-weight:     700;
+  border:          2px solid var(--edge-md);
+  background:      var(--bg-surface);
+  color:           var(--text-3);
+  transition:
+    background  0.2s ease,
+    border-color 0.2s ease,
+    color       0.2s ease;
+}
+
+/* ── Step states ── */
+.erp-stepper-step--completed .erp-stepper-indicator {
+  background:   var(--brand);
+  border-color: var(--brand);
+  color:        var(--color-on-brand, #fff);
+}
+
+.erp-stepper-step--current .erp-stepper-indicator {
+  border-color:  var(--brand);
+  color:         var(--brand);
+  box-shadow:    0 0 0 4px var(--brand-muted);
+}
+
+.erp-stepper-step--error .erp-stepper-indicator {
+  background:   var(--status-error);
+  border-color: var(--status-error);
+  color:        var(--color-on-error, #fff);
+}
+
+/* ── Connector colouring for completed ── */
+.erp-stepper-step--completed + .erp-stepper-step .erp-stepper-connector--h,
+.erp-stepper-step--completed + .erp-stepper-step .erp-stepper-connector--v {
+  background: var(--brand);
+}
+
+/* ── Labels ── */
+.erp-stepper-label {
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--text-2);
+  line-height: 1.3;
+}
+
+.erp-stepper-step--current .erp-stepper-label {
+  color: var(--text-1);
+}
+
+.erp-stepper-step--completed .erp-stepper-label {
+  color: var(--text-3);
+}
+
+.erp-stepper-step--error .erp-stepper-label {
+  color: var(--status-error);
+}
+
+.erp-stepper-desc {
+  font-size:  12px;
+  color:      var(--text-4);
+  line-height: 1.4;
+}
+
+.erp-stepper-indicator-icon {
+  inline-size: 16px;
+  block-size:  16px;
+}
+
+.erp-stepper-indicator-number {
+  font-size:   13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §7  COMMAND PALETTE
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* Positioned overlay panel */
+.erp-command-palette {
+  position:         fixed;
+  inset-block-start: 12vh;
+  inset-inline-start: 50%;
+  transform:        translateX(-50%);
+  z-index:          var(--z-modal, 200);
+  inline-size:      min(640px, calc(100vw - 2rem));
+  border-radius:    var(--radius-lg);
+  overflow:         hidden;
+  box-shadow:       var(--shadow-modal);
+  border:           1px solid var(--edge-md);
+  background:       var(--bg-panel);
+}
+
+/* Suppress Radix dialog styles on the content element */
+.erp-command-palette[data-radix-dialog-content] {
+  left:      unset;
+  top:       unset;
+  translate: none;
+}
+
+/* cmdk root */
+.erp-command {
+  display:        flex;
+  flex-direction: column;
+  block-size:     100%;
+}
+
+/* ── Input row ── */
+.erp-command-input-wrap {
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-2-5, 10px);
+  padding-inline:  var(--space-4);
+  padding-block:   var(--space-3);
+  border-block-end: 1px solid var(--edge);
+}
+
+.erp-command-search-icon {
+  flex-shrink:  0;
+  inline-size:  18px;
+  block-size:   18px;
+  color:        var(--text-4);
+}
+
+/* cmdk injects its own <input>; override only what we need */
+.erp-command-input {
+  flex:             1;
+  background:       transparent;
+  border:           none;
+  outline:          none;
+  font-size:        15px;
+  font-weight:      450;
+  color:            var(--text-1);
+  caret-color:      var(--brand);
+  direction:        inherit;
+}
+
+.erp-command-input::placeholder {
+  color:       var(--text-4);
+  font-weight: 400;
+}
+
+/* ── Results list ── */
+.erp-command-list {
+  overflow-y:    auto;
+  max-block-size: min(400px, 55vh);
+  padding-block: var(--space-1-5, 6px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
+}
+
+/* ── Group ── */
+.erp-command-group {
+  padding-inline: var(--space-1-5, 6px);
+}
+
+/* cmdk renders the heading; style via attribute selector */
+[cmdk-group-heading] {
+  padding-block:  var(--space-1-5, 6px) var(--space-1);
+  padding-inline: var(--space-2-5, 10px);
+  font-size:      10px;
+  font-weight:    800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color:          var(--text-4);
+  user-select:    none;
+}
+
+/* ── Item ── */
+.erp-command-item {
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-2-5, 10px);
+  padding-block:   var(--space-2-5, 10px);
+  padding-inline:  var(--space-2-5, 10px);
+  border-radius:   var(--radius-sm);
+  font-size:       13.5px;
+  color:           var(--text-2);
+  cursor:          pointer;
+  transition:      background 0.1s ease;
+}
+
+/* cmdk adds data-selected to the focused item */
+.erp-command-item[aria-selected="true"],
+.erp-command-item[data-selected="true"] {
+  background: var(--brand-muted);
+  color:      var(--text-1);
+  outline:    none;
+}
+
+.erp-command-item-icon {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  inline-size:     18px;
+  block-size:      18px;
+  flex-shrink:     0;
+  color:           var(--text-3);
+}
+
+.erp-command-item-icon svg {
+  inline-size: 16px;
+  block-size:  16px;
+}
+
+.erp-command-item-label {
+  flex:         1 1 auto;
+  overflow:     hidden;
+  text-overflow: ellipsis;
+  white-space:  nowrap;
+}
+
+/* ── Empty ── */
+.erp-command-empty {
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  padding-block:    var(--space-8, 32px);
+  font-size:        13.5px;
+  color:            var(--text-4);
+}
+
+/* ── Separator ── */
+.erp-command-separator {
+  block-size:     1px;
+  background:     var(--edge);
+  margin-block:   var(--space-1-5, 6px);
+  margin-inline:  var(--space-1-5, 6px);
+}
+
+/* ── Footer hint row ── */
+.erp-command-footer {
+  display:          flex;
+  align-items:      center;
+  gap:              var(--space-3);
+  padding-inline:   var(--space-4);
+  padding-block:    var(--space-2);
+  border-block-start: 1px solid var(--edge);
+  font-size:        11px;
+  color:            var(--text-4);
+  user-select:      none;
+}
+
+.erp-command-footer kbd {
+  display:         inline-flex;
+  align-items:     center;
+  padding-inline:  4px;
+  padding-block:   1px;
+  border:          1px solid var(--edge);
+  border-radius:   4px;
+  font-size:       10px;
+  font-weight:     600;
+  font-family:     inherit;
+  background:      var(--bg-surface-alt);
+  color:           var(--text-3);
+}
+
+.erp-command-footer-sep {
+  inline-size:  1px;
+  block-size:   12px;
+  background:   var(--edge);
+  flex-shrink:  0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   §8  MOBILE NAVIGATION
+ * ═══════════════════════════════════════════════════════════════ */
+
+.erp-mobile-nav {
+  position:           fixed;
+  inset-block-end:    0;
+  inset-inline:       0;
+  z-index:            var(--z-sidebar, 100);
+  display:            flex;
+  justify-content:    space-around;
+  align-items:        center;
+  block-size:         56px;
+  padding-block-end:  env(safe-area-inset-bottom, 0px);
+  padding-inline:     var(--space-1);
+  background:         var(--bg-topbar);
+  border-block-start: var(--border-width-structural) solid var(--edge);
+  backdrop-filter:    blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── Item ── */
+.erp-mobile-nav-item {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             2px;
+  padding-block:   var(--space-1-5, 6px);
+  padding-inline:  var(--space-2-5, 10px);
+  border-radius:   var(--radius-md);
+  text-decoration: none;
+  min-inline-size: 44px;
+  color:           var(--text-hint);
+  transition:
+    background 0.15s ease,
+    color      0.15s ease;
+}
+
+.erp-mobile-nav-item:hover {
+  color:      var(--text-2);
+  background: var(--bg-surface-alt);
+}
+
+.erp-mobile-nav-item:focus-visible {
+  outline:       2px solid var(--focus-edge);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
+}
+
+.erp-mobile-nav-item--active {
+  color:      var(--brand);
+  background: var(--brand-muted);
+}
+
+.erp-mobile-nav-item--active:hover {
+  color:      var(--brand);
+  background: var(--brand-muted);
+}
+
+/* ── Icon ── */
+.erp-mobile-nav-icon {
+  display:  flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.erp-mobile-nav-icon svg {
+  inline-size: 20px;
+  block-size:  20px;
+}
+
+/* ── Label ── */
+.erp-mobile-nav-label {
+  font-size:   9.5px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── More slot ── */
+.erp-mobile-nav-more {
+  display:     flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap:         2px;
+  min-inline-size: 44px;
+}

@@ -712,8 +712,10 @@ html.dark {
   --topbar-border: var(--color-border-structural);
 
   /* ── Sidebar ─────────────────────────────────────────────────── */
-  --sidebar-bg:     rgba(20, 20, 31, 0.95);
-  --sidebar-border: var(--color-border-structural);
+  --sidebar-bg:              rgba(20, 20, 31, 0.95);
+  --sidebar-border:          var(--color-border-structural);
+  --sidebar-width-expanded:  240px;
+  --sidebar-width-collapsed: 64px;
 
   /* ── Modal / Dialog ──────────────────────────────────────────── */
   --color-scrim:        rgba(0, 0, 0, 0.55);

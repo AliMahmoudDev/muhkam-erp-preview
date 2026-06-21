@@ -45,3 +45,6 @@
 
 /* ── Phase 03 Surface Components ─────────────── */
 @import "./components/surface.css";
+
+/* ── Phase 03 Navigation Components ──────────── */
+@import "./components/navigation-v3.css";
