@@ -370,39 +370,68 @@
 
 /* ═══════════════════════════════════════════════════════════════════
    §8  DashboardPattern
+   Hierarchy: header → status → alerts → KPI → primary chart →
+              secondary charts → main row → secondary content
 ═══════════════════════════════════════════════════════════════════ */
 
+/* Root shell — vertical rhythm */
 .erp-dashboard {
   display: flex;
   flex-direction: column;
   gap: var(--space-6, 1.5rem);
+  padding-block-end: var(--space-10, 2.5rem);
 }
 
+/* 1. Page header — greeting, date, user */
 .erp-dashboard-header {
-  /* Greeting / header slot */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-4, 1rem);
+  border-block-end: 1px solid var(--edge, rgba(255 255 255 / 0.08));
 }
 
+/* 2. Status strip — "Is everything under control?" health signal */
+.erp-dashboard-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  padding-block: var(--space-3, 0.75rem);
+  padding-inline: var(--space-4, 1rem);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--bg-surface, hsl(220 20% 12%));
+  border: 1px solid var(--edge, rgba(255 255 255 / 0.08));
+}
+
+/* 3. Alert strip — actionable issues, stacked */
 .erp-dashboard-alerts {
   display: flex;
   flex-direction: column;
   gap: var(--space-2, 0.5rem);
 }
 
-/* KPI row — responsive grid */
+/* 4. KPI row — responsive metric card grid */
 .erp-dashboard-kpi {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-3, 0.75rem);
-}
-
-/* Charts grid — 2-column on md+ */
-.erp-dashboard-charts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-4, 1rem);
 }
 
-/* Main row: table + optional activity aside */
+/* 5. Primary chart — hero trend, full-width */
+.erp-dashboard-primary-chart {
+  inline-size: 100%;
+}
+
+/* 6. Secondary charts — breakdown grid, 2-column on md+ */
+.erp-dashboard-secondary-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4, 1rem);
+}
+
+/* 7. Main row — table + optional activity aside */
 .erp-dashboard-main {
   display: flex;
   flex-direction: column;
@@ -425,18 +454,57 @@
   flex-shrink: 0;
 }
 
+/* 8. Secondary content — widget grid */
 .erp-dashboard-secondary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-4, 1rem);
 }
 
+/* ── Responsive breakpoints ───────────────────────────────────────── */
+
+/* lg → md: activity aside collapses to full-width */
 @media (max-width: 1024px) {
   .erp-dashboard-main--with-aside {
     flex-direction: column;
   }
   .erp-dashboard-activity {
     inline-size: 100%;
+  }
+  /* Secondary charts: single column at this width if cards are wide */
+  .erp-dashboard-secondary-charts {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+/* md → sm: KPI cards 2-column minimum */
+@media (max-width: 768px) {
+  .erp-dashboard-kpi {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .erp-dashboard-secondary-charts {
+    grid-template-columns: 1fr;
+  }
+  .erp-dashboard-secondary {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+/* xs: KPI cards single column; status strip stacks */
+@media (max-width: 480px) {
+  .erp-dashboard {
+    gap: var(--space-4, 1rem);
+  }
+  .erp-dashboard-kpi {
+    grid-template-columns: 1fr 1fr;
+  }
+  .erp-dashboard-status {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .erp-dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

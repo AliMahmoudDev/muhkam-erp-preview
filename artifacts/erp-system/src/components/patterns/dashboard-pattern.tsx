@@ -1,51 +1,87 @@
 /**
  * DashboardPattern — home/dashboard page layout.
  *
- * Composes: greeting/header, KPI row, alerts, charts, table/activity,
- * secondary content.
- * No data fetching. All content arrives via slots.
+ * Answers the question "Is everything under control?" through a deliberate
+ * visual hierarchy:
+ *   1. Header         — who/when
+ *   2. Status strip   — green/amber/red health signal (statusSlot)
+ *   3. Alert strip    — actionable issues (alertsSlot)
+ *   4. KPI row        — the key numbers (kpiSlot)
+ *   5. Primary chart  — the main trend / story (primaryChartSlot)
+ *   6. Secondary grid — breakdown charts (secondaryChartsSlot)
+ *   7. Main row       — recent table + activity aside (tableSlot + activitySlot)
+ *   8. Secondary      — additional widgets / quick actions (secondarySlot)
+ *
+ * No data fetching. No business logic. All content arrives via slots.
  */
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 export interface DashboardPatternProps {
   /**
-   * Greeting / header slot — welcome message, date, user name.
-   * Rendered at the top of the dashboard.
+   * Header slot — page heading, greeting, date, user name.
+   * Rendered at the very top of the dashboard.
    */
   headerSlot?: React.ReactNode;
+
+  /**
+   * Status strip slot — compact health-signal row
+   * (e.g. "كل شيء على ما يرام" / warning / critical banner).
+   * Answers "Is everything under control?" immediately below the header.
+   */
+  statusSlot?: React.ReactNode;
+
+  /**
+   * Alerts slot — smart alert banners (low stock, overdue debts, etc.).
+   * Rendered as a stacked column; each child is one alert.
+   */
+  alertsSlot?: React.ReactNode;
+
   /**
    * KPI row slot — 3–6 metric cards in a responsive grid.
    */
   kpiSlot?: React.ReactNode;
+
   /**
-   * Alerts slot — smart alert banners (low stock, overdue, etc.).
+   * Primary chart slot — the hero/main trend chart.
+   * Renders full-width to command visual focus.
    */
-  alertsSlot?: React.ReactNode;
+  primaryChartSlot?: React.ReactNode;
+
   /**
-   * Charts slot — chart cards in a responsive grid.
+   * Secondary charts slot — supplementary breakdown charts
+   * rendered in a responsive 2-column grid.
    */
-  chartsSlot?: React.ReactNode;
+  secondaryChartsSlot?: React.ReactNode;
+
   /**
-   * Table slot — a data table (recent sales, repairs, etc.).
+   * Table slot — a data table (recent sales, repairs, invoices, etc.).
+   * Placed in the main row alongside the optional activity aside.
    */
   tableSlot?: React.ReactNode;
+
   /**
    * Activity slot — ActivityFeed or Timeline widget.
+   * When provided, renders as a fixed-width aside next to the table.
    */
   activitySlot?: React.ReactNode;
+
   /**
-   * Secondary content slot — additional widgets, quick actions, etc.
+   * Secondary content slot — additional widgets, quick-action cards,
+   * or any lower-priority content.
    */
   secondarySlot?: React.ReactNode;
+
   className?: string;
 }
 
 export function DashboardPattern({
   headerSlot,
-  kpiSlot,
+  statusSlot,
   alertsSlot,
-  chartsSlot,
+  kpiSlot,
+  primaryChartSlot,
+  secondaryChartsSlot,
   tableSlot,
   activitySlot,
   secondarySlot,
@@ -55,12 +91,27 @@ export function DashboardPattern({
 
   return (
     <div className={cn('erp-dashboard', className)}>
-      {/* Greeting / header */}
+
+      {/* 1. Page header */}
       {headerSlot && (
-        <div className="erp-dashboard-header">{headerSlot}</div>
+        <div className="erp-dashboard-header" role="banner">
+          {headerSlot}
+        </div>
       )}
 
-      {/* Alerts row */}
+      {/* 2. Status strip — health signal */}
+      {statusSlot && (
+        <div
+          className="erp-dashboard-status"
+          role="status"
+          aria-live="polite"
+          aria-label="حالة النظام"
+        >
+          {statusSlot}
+        </div>
+      )}
+
+      {/* 3. Alert strip — actionable issues */}
       {alertsSlot && (
         <div
           className="erp-dashboard-alerts"
@@ -71,7 +122,7 @@ export function DashboardPattern({
         </div>
       )}
 
-      {/* KPI row */}
+      {/* 4. KPI row */}
       {kpiSlot && (
         <div
           className="erp-dashboard-kpi"
@@ -82,18 +133,29 @@ export function DashboardPattern({
         </div>
       )}
 
-      {/* Charts grid */}
-      {chartsSlot && (
+      {/* 5. Primary chart — hero trend */}
+      {primaryChartSlot && (
         <div
-          className="erp-dashboard-charts"
+          className="erp-dashboard-primary-chart"
           role="region"
-          aria-label="التحليلات"
+          aria-label="الرسم البياني الرئيسي"
         >
-          {chartsSlot}
+          {primaryChartSlot}
         </div>
       )}
 
-      {/* Main row: table + activity */}
+      {/* 6. Secondary charts grid */}
+      {secondaryChartsSlot && (
+        <div
+          className="erp-dashboard-secondary-charts"
+          role="region"
+          aria-label="الرسوم البيانية التفصيلية"
+        >
+          {secondaryChartsSlot}
+        </div>
+      )}
+
+      {/* 7. Main row — table + activity aside */}
       {hasMainRow && (
         <div
           className={cn(
@@ -115,10 +177,17 @@ export function DashboardPattern({
         </div>
       )}
 
-      {/* Secondary content */}
+      {/* 8. Secondary content */}
       {secondarySlot && (
-        <div className="erp-dashboard-secondary">{secondarySlot}</div>
+        <div
+          className="erp-dashboard-secondary"
+          role="region"
+          aria-label="المحتوى الإضافي"
+        >
+          {secondarySlot}
+        </div>
       )}
+
     </div>
   );
 }
