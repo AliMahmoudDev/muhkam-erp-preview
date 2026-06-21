@@ -659,6 +659,32 @@ html.dark {
   --kpi-trend-positive-color: var(--color-positive-text);
   --kpi-trend-negative-color: var(--color-negative-text);
 
+  /* ── Stat Card ────────────────────────────────────────────────── */
+  --stat-card-value-size:      var(--text-title-2);
+  --stat-card-value-weight:    var(--font-weight-bold);
+  --stat-card-label-size:      var(--text-caption-1);
+  --stat-card-label-color:     var(--color-text-tertiary);
+  --stat-card-icon-color:      var(--color-text-secondary);
+
+  /* ── Metric ───────────────────────────────────────────────────── */
+  --metric-value-size:         var(--text-body-large);
+  --metric-value-weight:       var(--font-weight-bold);
+  --metric-label-size:         var(--text-caption-1);
+  --metric-label-color:        var(--color-text-tertiary);
+
+  /* ── Chart Container ──────────────────────────────────────────── */
+  --chart-title-size:          var(--text-body);
+  --chart-title-weight:        var(--font-weight-semibold);
+  --chart-title-color:         var(--color-text-primary);
+  --chart-legend-size:         var(--text-caption-1);
+  --chart-empty-color:         var(--color-text-tertiary);
+
+  /* ── Table Toolbar ────────────────────────────────────────────── */
+  --table-toolbar-gap:         var(--primitive-space-3);
+
+  /* ── Filter Bar ───────────────────────────────────────────────── */
+  --filter-bar-gap:            var(--primitive-space-2);
+
   /* ── Navigation — Sidebar ────────────────────────────────────── */
   --nav-item-height:                   44px;
   --nav-item-x:                        var(--primitive-space-4);

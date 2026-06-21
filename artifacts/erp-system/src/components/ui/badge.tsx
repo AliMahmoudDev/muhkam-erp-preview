@@ -7,6 +7,7 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        /* ── Legacy Tailwind variants (backward compat) ── */
         default:
           "border-transparent bg-primary text-primary-foreground shadow-xs rounded-md px-2.5 py-0.5 text-xs border",
         secondary:
@@ -17,32 +18,31 @@ const badgeVariants = cva(
           "text-foreground border [border-color:var(--badge-outline)] rounded-md px-2.5 py-0.5 text-xs",
 
         /* ── Status pills — 24px height, 999px radius ── */
-        paid:
-          "erp-status erp-status-paid",
-        unpaid:
-          "erp-status erp-status-unpaid",
-        pending:
-          "erp-status erp-status-pending",
-        partial:
-          "erp-status erp-status-partial",
-        cancelled:
-          "erp-status erp-status-cancelled",
-        overdue:
-          "erp-status erp-status-overdue",
-        draft:
-          "erp-status erp-status-draft",
-        posted:
-          "erp-status erp-status-posted",
-        active:
-          "erp-status erp-status-active",
-        inactive:
-          "erp-status erp-status-inactive",
-        info:
-          "erp-status erp-status-info",
+        paid:       "erp-status erp-status-paid",
+        unpaid:     "erp-status erp-status-unpaid",
+        pending:    "erp-status erp-status-pending",
+        partial:    "erp-status erp-status-partial",
+        cancelled:  "erp-status erp-status-cancelled",
+        overdue:    "erp-status erp-status-overdue",
+        draft:      "erp-status erp-status-draft",
+        posted:     "erp-status erp-status-posted",
+        active:     "erp-status erp-status-active",
+        inactive:   "erp-status erp-status-inactive",
+        info:       "erp-status erp-status-info",
+
+        /* ── Design System Phase 03 variants (token-based) ── */
+        neutral:    "erp-badge erp-badge--neutral",
+        count:      "erp-badge erp-badge--count",
+        type:       "erp-badge erp-badge--type",
+      },
+      size: {
+        sm: "erp-badge--sm",
+        md: "",
       },
     },
     defaultVariants: {
       variant: "default",
+      size: "md",
     },
   }
 )
@@ -51,9 +51,12 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, size, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div
+      className={cn(badgeVariants({ variant, size }), className)}
+      {...props}
+    />
   )
 }
 

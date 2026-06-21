@@ -39,3 +39,6 @@
 
 /* ── Phase 03 Foundation Components ─────────── */
 @import "./components/foundation.css";
+
+/* ── Phase 03 Data Components ────────────────── */
+@import "./components/data.css";
