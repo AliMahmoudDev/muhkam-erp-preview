@@ -11,7 +11,7 @@ export { ListPagePattern }      from './list-page-pattern';
 export type { ListPagePatternProps, ListPageState } from './list-page-pattern';
 
 export { DetailPagePattern }    from './detail-page-pattern';
-export type { DetailPagePatternProps } from './detail-page-pattern';
+export type { DetailPagePatternProps, DetailPageState } from './detail-page-pattern';
 
 export { FormPagePattern }      from './form-page-pattern';
 export type { FormPagePatternProps } from './form-page-pattern';

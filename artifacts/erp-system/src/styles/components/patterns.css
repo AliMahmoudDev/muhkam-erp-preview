@@ -170,24 +170,35 @@
 
 /* ═══════════════════════════════════════════════════════════════════
    §4  ListPagePattern
+   Hierarchy: header → toolbar → KPI → body (idle|loading|empty|error)
 ═══════════════════════════════════════════════════════════════════ */
 
+/* Root shell */
 .erp-list-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
+  padding-block-end: var(--space-8, 2rem);
 }
 
-.erp-list-page-header { /* inherits from PageHeader */ }
+/* 1. Header zone — separates from toolbar */
+.erp-list-page-header {
+  padding-block-end: var(--space-2, 0.5rem);
+}
 
-.erp-list-page-toolbar { /* inherits from PageToolbar */ }
+/* 2. Toolbar zone */
+.erp-list-page-toolbar {
+  padding-block-end: var(--space-1, 0.25rem);
+}
 
+/* 3. KPI summary row — responsive grid */
 .erp-list-page-kpi {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--space-3, 0.75rem);
 }
 
+/* 4. Content body */
 .erp-list-page-body {
   display: flex;
   flex-direction: column;
@@ -195,60 +206,100 @@
   flex: 1;
 }
 
-/* State slot: empty / loading / error */
+/* Reduced opacity visual cue while loading */
+.erp-list-page-body--loading {
+  opacity: 0.7;
+}
+
+/* State container: loading / empty / error */
 .erp-list-page-state {
   display: flex;
   align-items: center;
   justify-content: center;
   min-block-size: 320px;
-  padding: var(--space-8, 2rem);
+  padding-block: var(--space-8, 2rem);
+  padding-inline: var(--space-4, 1rem);
 }
 
-.erp-list-page-state-placeholder {
+/* Built-in loading placeholder (when no loadingSlot provided) */
+.erp-list-page-loading-placeholder {
   inline-size: 100%;
   block-size: 240px;
   background: var(--bg-surface-alt);
   border-radius: var(--radius-md);
+  animation: erp-pulse 1.6s ease-in-out infinite;
 }
 
+/* Table area */
 .erp-list-page-table {
   flex: 1;
+  min-inline-size: 0;
 }
 
+/* Pagination — RTL-first: flex-start = right side in RTL */
 .erp-list-page-pagination {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding-block-start: var(--space-3, 0.75rem);
+  border-block-start: 1px solid var(--edge);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .erp-list-page-kpi {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
    §5  DetailPagePattern
+   Hierarchy: header → meta → tabs → body (idle|loading|empty|error)
 ═══════════════════════════════════════════════════════════════════ */
 
+/* Root shell */
 .erp-detail-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
+  padding-block-end: var(--space-8, 2rem);
 }
 
+/* 1. Entity header */
 .erp-detail-page-header {
-  /* Becomes sticky when --sticky modifier applied */
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-3, 0.75rem);
+  border-block-end: 1px solid var(--edge);
 }
 
+/* Sticky variant */
 .erp-detail-page-header--sticky {
   position: sticky;
   inset-block-start: 0;
   z-index: var(--z-sticky, 40);
   background: var(--bg-base);
-  border-block-end: 1px solid var(--edge);
-  padding-block-end: var(--space-3, 0.75rem);
+  padding-block: var(--space-3, 0.75rem);
 }
 
+/* 2. Meta / status strip */
+.erp-detail-page-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  padding-block: var(--space-2, 0.5rem);
+}
+
+/* 3. Tabs bar */
 .erp-detail-page-tabs {
   border-block-end: 1px solid var(--edge);
+  padding-block-end: 0;
 }
 
-/* Body — can be single-column or with aside */
+/* 4. Body — single-column or with aside */
 .erp-detail-page-body {
   display: flex;
   flex-direction: column;
@@ -261,6 +312,26 @@
   gap: var(--space-6, 1.5rem);
 }
 
+/* State container: loading / empty / error */
+.erp-detail-page-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 320px;
+  padding-block: var(--space-8, 2rem);
+  padding-inline: var(--space-4, 1rem);
+}
+
+/* Built-in loading placeholder */
+.erp-detail-page-loading-placeholder {
+  inline-size: 100%;
+  block-size: 300px;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  animation: erp-pulse 1.6s ease-in-out infinite;
+}
+
+/* Main sections column */
 .erp-detail-page-sections {
   flex: 1;
   min-inline-size: 0;
@@ -269,6 +340,7 @@
   gap: var(--space-5, 1.25rem);
 }
 
+/* Timeline / activity aside */
 .erp-detail-page-aside {
   inline-size: 320px;
   flex-shrink: 0;
@@ -277,12 +349,20 @@
   gap: var(--space-4, 1rem);
 }
 
+/* Responsive */
 @media (max-width: 1024px) {
   .erp-detail-page-body--with-aside {
     flex-direction: column;
   }
   .erp-detail-page-aside {
     inline-size: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .erp-detail-page-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

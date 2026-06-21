@@ -1,9 +1,17 @@
 /**
- * ListPagePattern — standard list/table page layout.
+ * ListPagePattern — standard list / table page layout.
  *
- * Composes: PageHeader, PageToolbar, optional KPI row, table, pagination.
- * Switches between content/empty/loading/error states via `state` prop.
- * No data fetching, no permissions.
+ * Layout hierarchy:
+ *   1. Header  — PageHeader (title, actions)
+ *   2. Toolbar — PageToolbar (search, filters, bulk actions)
+ *   3. KPI     — optional summary metric row
+ *   4. Body    — switches by state:
+ *        idle    → table + pagination
+ *        loading → loadingSlot (or built-in aria-busy placeholder)
+ *        empty   → emptySlot
+ *        error   → errorSlot
+ *
+ * No data fetching. No business logic. No permissions.
  */
 import * as React from 'react';
 import { cn } from '@/lib/utils';
@@ -11,30 +19,66 @@ import { cn } from '@/lib/utils';
 export type ListPageState = 'idle' | 'loading' | 'empty' | 'error';
 
 export interface ListPagePatternProps {
-  /** PageHeader slot. */
+  /**
+   * PageHeader slot — title, subtitle, primary action button.
+   * Required: every list page must have a heading.
+   */
   headerSlot: React.ReactNode;
-  /** PageToolbar slot. Optional. */
+
+  /**
+   * PageToolbar slot — search input, filter chips, bulk-action bar.
+   * Optional: omit for simple lists with no filtering.
+   */
   toolbarSlot?: React.ReactNode;
-  /** Summary KPI / metric row slot. Optional. */
+
+  /**
+   * Summary KPI / metric row slot — 2–4 small stat chips above the table.
+   * Optional: use for high-value lists (sales, repairs, invoices).
+   */
   kpiSlot?: React.ReactNode;
-  /** Table or grid slot — shown when state === 'idle'. */
-  tableSlot: React.ReactNode;
-  /** Pagination slot — shown when state === 'idle'. */
+
+  /**
+   * Table or grid slot — the main data surface.
+   * Rendered only when state === 'idle'.
+   * Optional so the pattern can be used without passing a table
+   * while in loading / empty / error states.
+   */
+  tableSlot?: React.ReactNode;
+
+  /**
+   * Pagination slot — page controls rendered below the table.
+   * Rendered only when state === 'idle'.
+   */
   paginationSlot?: React.ReactNode;
-  /** EmptyState slot — shown when state === 'empty'. */
-  emptySlot?: React.ReactNode;
-  /** Skeleton / loading slot — shown when state === 'loading'. */
+
+  /**
+   * Loading slot — shown when state === 'loading'.
+   * Pass a <SkeletonTable> or <LoadingPagePattern> preset.
+   * When omitted, an accessible aria-busy region is shown.
+   */
   loadingSlot?: React.ReactNode;
-  /** ErrorState slot — shown when state === 'error'. */
+
+  /**
+   * Empty state slot — shown when state === 'empty'.
+   * Pass an <EmptyState> component.
+   */
+  emptySlot?: React.ReactNode;
+
+  /**
+   * Error slot — shown when state === 'error'.
+   * Pass an <ErrorState> or <ErrorPagePattern> variant.
+   */
   errorSlot?: React.ReactNode;
+
   /**
    * Current page state.
-   * 'idle'    — show table + pagination
-   * 'loading' — show loadingSlot
-   * 'empty'   — show emptySlot
-   * 'error'   — show errorSlot
+   * 'idle'    → table + pagination
+   * 'loading' → loadingSlot (aria-busy)
+   * 'empty'   → emptySlot
+   * 'error'   → errorSlot
    */
   state?: ListPageState;
+
   className?: string;
 }
 
@@ -44,58 +88,94 @@ export function ListPagePattern({
   kpiSlot,
   tableSlot,
   paginationSlot,
-  emptySlot,
   loadingSlot,
+  emptySlot,
   errorSlot,
   state = 'idle',
   className,
 }: ListPagePatternProps) {
+  const isLoading = state === 'loading';
+
   return (
     <div className={cn('erp-list-page', className)}>
-      {/* Header */}
-      <div className="erp-list-page-header">{headerSlot}</div>
 
-      {/* Toolbar */}
+      {/* 1. Header */}
+      <div className="erp-list-page-header">
+        {headerSlot}
+      </div>
+
+      {/* 2. Toolbar */}
       {toolbarSlot && (
-        <div className="erp-list-page-toolbar">{toolbarSlot}</div>
+        <div className="erp-list-page-toolbar" role="toolbar" aria-label="أدوات القائمة">
+          {toolbarSlot}
+        </div>
       )}
 
-      {/* KPI row */}
+      {/* 3. KPI summary row */}
       {kpiSlot && (
-        <div className="erp-list-page-kpi">{kpiSlot}</div>
+        <div
+          className="erp-list-page-kpi"
+          role="region"
+          aria-label="ملخص الأرقام"
+        >
+          {kpiSlot}
+        </div>
       )}
 
-      {/* Content area — switches by state */}
-      <div className="erp-list-page-body">
-        {state === 'loading' && (
-          <div className="erp-list-page-state">
+      {/* 4. Content body — state-driven */}
+      <div
+        className={cn(
+          'erp-list-page-body',
+          isLoading && 'erp-list-page-body--loading',
+        )}
+        aria-live="polite"
+        aria-busy={isLoading}
+      >
+        {/* Loading */}
+        {isLoading && (
+          <div
+            className="erp-list-page-state"
+            role="status"
+            aria-label="جارٍ تحميل البيانات"
+          >
             {loadingSlot ?? (
-              <div className="erp-list-page-state-placeholder" aria-busy="true" aria-label="جارٍ التحميل" />
+              <div
+                className="erp-list-page-loading-placeholder"
+                aria-hidden="true"
+              />
             )}
           </div>
         )}
 
+        {/* Error */}
         {state === 'error' && (
-          <div className="erp-list-page-state">
+          <div className="erp-list-page-state" role="alert">
             {errorSlot}
           </div>
         )}
 
+        {/* Empty */}
         {state === 'empty' && (
           <div className="erp-list-page-state">
             {emptySlot}
           </div>
         )}
 
+        {/* Idle — table + pagination */}
         {state === 'idle' && (
           <>
-            <div className="erp-list-page-table">{tableSlot}</div>
+            <div className="erp-list-page-table">
+              {tableSlot}
+            </div>
             {paginationSlot && (
-              <div className="erp-list-page-pagination">{paginationSlot}</div>
+              <div className="erp-list-page-pagination">
+                {paginationSlot}
+              </div>
             )}
           </>
         )}
       </div>
+
     </div>
   );
 }
