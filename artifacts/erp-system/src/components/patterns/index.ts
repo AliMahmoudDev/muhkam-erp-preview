@@ -14,10 +14,10 @@ export { DetailPagePattern }    from './detail-page-pattern';
 export type { DetailPagePatternProps, DetailPageState } from './detail-page-pattern';
 
 export { FormPagePattern }      from './form-page-pattern';
-export type { FormPagePatternProps } from './form-page-pattern';
+export type { FormPagePatternProps, FormPageState } from './form-page-pattern';
 
 export { ReportPagePattern }    from './report-page-pattern';
-export type { ReportPagePatternProps } from './report-page-pattern';
+export type { ReportPagePatternProps, ReportPageState } from './report-page-pattern';
 
 export { DashboardPattern }     from './dashboard-pattern';
 export type { DashboardPatternProps } from './dashboard-pattern';

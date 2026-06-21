@@ -368,28 +368,73 @@
 
 /* ═══════════════════════════════════════════════════════════════════
    §6  FormPagePattern
+   Hierarchy: header → unsaved banner → body (idle|loading|empty|error)
+              → sticky action bar
 ═══════════════════════════════════════════════════════════════════ */
 
+/* Root shell — clearance only when action bar is present */
 .erp-form-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
-  padding-block-end: var(--space-20, 5rem); /* clearance for sticky action bar */
+  padding-block-end: var(--space-8, 2rem);
 }
 
-.erp-form-page-header { /* inherits from PageHeader */ }
+/* Adds bottom clearance to avoid content hidden under sticky action bar */
+.erp-form-page--with-action-bar {
+  padding-block-end: var(--space-20, 5rem);
+}
 
+/* 1. Header zone */
+.erp-form-page-header {
+  padding-block-end: var(--space-2, 0.5rem);
+  border-block-end: 1px solid var(--edge);
+}
+
+/* 2. Unsaved-changes banner */
 .erp-form-page-unsaved {
-  /* Unsaved-changes banner slot */
+  padding-block: var(--space-2, 0.5rem);
+  padding-inline: var(--space-4, 1rem);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
 }
 
+/* 3. Body — state-aware container */
 .erp-form-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 1.25rem);
+  flex: 1;
+}
+
+/* State containers: loading / empty / error */
+.erp-form-page-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 320px;
+  padding-block: var(--space-8, 2rem);
+  padding-inline: var(--space-4, 1rem);
+}
+
+/* Built-in loading placeholder */
+.erp-form-page-loading-placeholder {
+  inline-size: 100%;
+  block-size: 300px;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  animation: erp-pulse 1.6s ease-in-out infinite;
+}
+
+/* Form sections wrapper */
+.erp-form-page-sections {
   display: flex;
   flex-direction: column;
   gap: var(--space-5, 1.25rem);
 }
 
-/* Sticky action bar */
+/* 4. Sticky action bar — RTL-first: flex-start = right side in RTL */
 .erp-form-page-action-bar {
   position: fixed;
   inset-block-end: 0;
@@ -398,9 +443,10 @@
   z-index: var(--z-sticky, 40);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--space-3, 0.75rem);
-  padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
+  padding-block: var(--space-3, 0.75rem);
+  padding-inline: var(--space-6, 1.5rem);
   background: var(--bg-surface);
   border-block-start: 1px solid var(--edge);
   box-shadow: var(--shadow-toast);
@@ -408,44 +454,100 @@
 
 /* ═══════════════════════════════════════════════════════════════════
    §7  ReportPagePattern
+   Hierarchy: header → params → summary → export bar →
+              body (idle: chart + table | loading | empty | error)
 ═══════════════════════════════════════════════════════════════════ */
 
+/* Root shell */
 .erp-report-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
+  padding-block-end: var(--space-8, 2rem);
 }
 
-.erp-report-page-header { /* inherits from PageHeader */ }
+/* 1. Header zone */
+.erp-report-page-header {
+  padding-block-end: var(--space-2, 0.5rem);
+  border-block-end: 1px solid var(--edge);
+}
 
+/* 2. Parameters filter panel */
 .erp-report-page-params {
   background: var(--bg-surface);
   border: 1px solid var(--edge);
   border-radius: var(--radius-lg);
-  padding: var(--space-4, 1rem);
+  padding-block: var(--space-4, 1rem);
+  padding-inline: var(--space-4, 1rem);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3, 0.75rem);
   align-items: flex-end;
 }
 
+/* 3. Summary KPI grid */
 .erp-report-page-summary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--space-3, 0.75rem);
 }
 
+/* 4. Export toolbar — RTL-first: flex-start = right side in RTL */
 .erp-report-page-export {
   display: flex;
   align-items: center;
   gap: var(--space-2, 0.5rem);
-  justify-content: flex-end;
+  justify-content: flex-start;
+  padding-block: var(--space-2, 0.5rem);
+  border-block-end: 1px solid var(--edge);
 }
 
-.erp-report-page-content {
+/* 5. Body — state-driven container */
+.erp-report-page-body {
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
+}
+
+/* State containers */
+.erp-report-page-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 320px;
+  padding-block: var(--space-8, 2rem);
+  padding-inline: var(--space-4, 1rem);
+}
+
+/* Built-in loading placeholder */
+.erp-report-page-loading-placeholder {
+  inline-size: 100%;
+  block-size: 280px;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  animation: erp-pulse 1.6s ease-in-out infinite;
+}
+
+/* Primary chart area — full-width */
+.erp-report-page-chart {
+  inline-size: 100%;
+}
+
+/* Data table — horizontal scroll on narrow screens */
+.erp-report-page-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile: params stack, summary single-column */
+@media (max-width: 640px) {
+  .erp-report-page-params {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .erp-report-page-summary {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -590,22 +692,38 @@
 
 /* ═══════════════════════════════════════════════════════════════════
    §9  SettingsPattern
+   Structure: page (header?) + shell (nav sidebar | content column)
+              content = main + save bar? + danger zone?
 ═══════════════════════════════════════════════════════════════════ */
 
+/* Outer page wrapper — stacks header above the shell */
 .erp-settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  padding-block-end: var(--space-8, 2rem);
+}
+
+/* Optional page header */
+.erp-settings-header {
+  padding-block-end: var(--space-3, 0.75rem);
+  border-block-end: 1px solid var(--edge);
+}
+
+/* Shell — two-column row on desktop */
+.erp-settings-shell {
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
 }
 
-/* With side nav — two-column layout on desktop */
-.erp-settings-page--with-nav {
+.erp-settings-shell--with-nav {
   flex-direction: row;
   align-items: flex-start;
   gap: var(--space-6, 1.5rem);
 }
 
-/* Category nav sidebar */
+/* Category nav sidebar — sticky on desktop */
 .erp-settings-nav {
   inline-size: 220px;
   flex-shrink: 0;
@@ -616,7 +734,7 @@
   gap: var(--space-1, 0.25rem);
 }
 
-/* Mobile tabs — shown only on narrow viewports */
+/* Mobile tab strip — hidden on desktop */
 .erp-settings-mobile-tabs {
   display: none;
 }
@@ -630,27 +748,39 @@
   gap: var(--space-5, 1.25rem);
 }
 
+/* Main settings panels */
 .erp-settings-main {
   display: flex;
   flex-direction: column;
   gap: var(--space-5, 1.25rem);
 }
 
-/* Danger zone */
+/* Independent save bar — per-section save surface */
+.erp-settings-save-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  padding-block: var(--space-3, 0.75rem);
+  padding-inline: var(--space-4, 1rem);
+  background: var(--bg-surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  /* RTL-first: flex-start = right in RTL */
+  justify-content: flex-start;
+}
+
+/* Danger zone — CSS border separator replaces empty-div divider */
 .erp-settings-danger {
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
+  padding-block-start: var(--space-5, 1.25rem);
+  border-block-start: 2px solid var(--status-error);
 }
 
-.erp-settings-danger-divider {
-  block-size: 1px;
-  background: var(--status-error);
-  opacity: 0.3;
-}
-
+/* Responsive — nav collapses, mobile tabs appear */
 @media (max-width: 768px) {
-  .erp-settings-page--with-nav {
+  .erp-settings-shell--with-nav {
     flex-direction: column;
   }
   .erp-settings-nav {
@@ -660,6 +790,9 @@
   }
   .erp-settings-mobile-tabs {
     display: block;
+  }
+  .erp-settings-save-bar {
+    flex-wrap: wrap;
   }
 }
 
