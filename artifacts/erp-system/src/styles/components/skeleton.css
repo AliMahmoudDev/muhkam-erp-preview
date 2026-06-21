@@ -39,6 +39,7 @@ html.light .skeleton-layer-dim {
   animation: erp-shimmer-wave 1.6s ease infinite !important;
 }
 
+/* ══════════════════════════════════════════════════
    CARD SKELETON — loading state
    ══════════════════════════════════════════════════ */
 .erp-card-skeleton {
