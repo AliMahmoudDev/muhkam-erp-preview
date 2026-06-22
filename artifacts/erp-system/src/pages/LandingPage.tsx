@@ -1,404 +1,849 @@
-/* eslint-disable erp/no-hardcoded-colors -- LandingPage v5: warm white editorial system. Standalone marketing page. */
-/**
- * MUHKAM Landing Page — v5 (Blank slate)
- * Design: Warm white · Editorial typography · Product-first · Zero decoration
- * Inspired by: Apple, Linear, Stripe, Qyam — but unmistakably MUHKAM.
- */
-import { useCallback, useEffect, useRef, useState } from 'react';
+/* eslint-disable erp/no-hardcoded-colors -- LandingPage v6: Qyam-structured clean Arabic SaaS landing */
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { DashboardShot, SalesShot, AccountingShot, RepairShot } from './landing/AppScreenshots';
+import { DashboardShot, AccountingShot } from './landing/AppScreenshots';
 
-/* ── CSS ── */
+/* ══════════════════════════════════════════════
+   CSS
+══════════════════════════════════════════════ */
 const LP_CSS_ID = 'muhkam-lp-css';
 const LP_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;}
 
-*, *::before, *::after { box-sizing: border-box; }
+@keyframes lp-up   { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
+@keyframes lp-fade { from{opacity:0} to{opacity:1} }
+@keyframes lp-spin { to{transform:rotate(360deg)} }
 
-@keyframes mh-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes mh-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
+.lp-reveal{opacity:0;transform:translateY(20px);transition:opacity .65s cubic-bezier(.16,1,.3,1),transform .65s cubic-bezier(.16,1,.3,1);}
+.lp-reveal.lp-in{opacity:1;transform:none;}
+.lp-d1{transition-delay:.08s}.lp-d2{transition-delay:.16s}.lp-d3{transition-delay:.24s}.lp-d4{transition-delay:.32s}
+.lp-d5{transition-delay:.08s}.lp-d6{transition-delay:.14s}.lp-d7{transition-delay:.20s}.lp-d8{transition-delay:.26s}
 
-.mh-reveal {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
-}
-.mh-reveal.mh-in { opacity: 1; transform: none; }
-.mh-d1 { transition-delay: .12s; }
-.mh-d2 { transition-delay: .22s; }
-.mh-d3 { transition-delay: .32s; }
+.lp-nav-link{font-family:'Tajawal',sans-serif;font-size:14px;font-weight:500;color:#475569;text-decoration:none;transition:color .15s;white-space:nowrap;}
+.lp-nav-link:hover{color:#0F172A;}
 
-.mh-nav-link {
-  font-family: 'Tajawal', sans-serif;
-  font-size: 14px; font-weight: 500; color: #7A756E;
-  text-decoration: none; transition: color .15s ease;
-  white-space: nowrap;
-}
-.mh-nav-link:hover { color: #151515; }
+.lp-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 28px;background:#2563EB;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;transition:background .15s,transform .1s;}
+.lp-btn-primary:hover{background:#1D4ED8;}
+.lp-btn-primary:active{transform:scale(.98);}
+.lp-btn-primary-lg{height:52px;padding:0 36px;font-size:16px;border-radius:10px;}
 
-.mh-btn-primary {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 46px; padding: 0 28px;
-  background: #151515; color: #FAF8F5;
-  border: none; border-radius: 7px; cursor: pointer;
-  font-family: 'Tajawal', sans-serif; font-size: 15px; font-weight: 600;
-  letter-spacing: -0.01em; white-space: nowrap;
-  transition: background .15s ease;
-}
-.mh-btn-primary:hover { background: #2A2A2A; }
+.lp-btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 22px;background:transparent;color:#0F172A;border:1.5px solid #CBD5E1;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:500;white-space:nowrap;transition:border-color .15s,background .15s;}
+.lp-btn-outline:hover{border-color:#94A3B8;background:#F8FAFC;}
 
-.mh-btn-ghost {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 46px; padding: 0 22px;
-  background: transparent; color: #151515;
-  border: 1px solid #DDD9D3; border-radius: 7px; cursor: pointer;
-  font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: 500;
-  white-space: nowrap; transition: border-color .15s ease;
-}
-.mh-btn-ghost:hover { border-color: #A8A29E; }
+.lp-btn-white{display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 26px;background:#fff;color:#0F172A;border:none;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:600;transition:background .15s;}
+.lp-btn-white:hover{background:#F1F5F9;}
 
-@media (max-width: 900px) {
-  .mh-hero-shot  { display: none !important; }
-  .mh-cap-shot   { display: none !important; }
-  .mh-hero-text  { padding: 120px 32px 80px !important; }
-  .mh-nav-desktop { display: none !important; }
-  .mh-hamburger  { display: flex !important; }
+.lp-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:24px;transition:box-shadow .2s,transform .2s;}
+.lp-card:hover{box-shadow:0 8px 28px rgba(15,23,42,.09);transform:translateY(-2px);}
+
+.lp-feature-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;flex-shrink:0;}
+
+.lp-step-num{width:40px;height:40px;border-radius:50%;background:#EFF6FF;color:#2563EB;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+.lp-pricing-card{background:#fff;border:1.5px solid #E2E8F0;border-radius:16px;padding:32px;position:relative;}
+.lp-pricing-card-popular{border-color:#2563EB;box-shadow:0 8px 32px rgba(37,99,235,.14);}
+.lp-popular-badge{position:absolute;top:-12px;right:50%;transform:translateX(50%);background:#2563EB;color:#fff;padding:4px 16px;border-radius:100px;font-size:12px;font-weight:700;white-space:nowrap;}
+
+.lp-check{color:#059669;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;}
+.lp-check::before{content:"✓";color:#059669;font-weight:700;flex-shrink:0;}
+
+.lp-testimonial{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:28px;}
+
+.lp-faq-btn{width:100%;background:none;border:none;padding:20px 0;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:16px;font-weight:600;color:#0F172A;display:flex;align-items:center;justify-content:space-between;gap:12;text-align:right;}
+.lp-faq-btn:hover{color:#2563EB;}
+
+.lp-input{width:100%;height:48px;padding:0 14px;border:1.5px solid #E2E8F0;border-radius:9px;background:#fff;color:#0F172A;font-family:'Tajawal',sans-serif;font-size:15px;outline:none;direction:rtl;text-align:right;transition:border-color .15s,box-shadow .15s;}
+.lp-input::placeholder{color:#94A3B8;}
+.lp-input:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.lp-input:hover:not(:focus){border-color:#CBD5E1;}
+.lp-input-error{border-color:#EF4444!important;}
+.lp-input:-webkit-autofill,.lp-input:-webkit-autofill:hover,.lp-input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px #fff inset;-webkit-text-fill-color:#0F172A;}
+
+.lp-submit{width:100%;height:50px;background:#2563EB;color:#fff;border:none;border-radius:9px;font-family:'Tajawal',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:background .15s;}
+.lp-submit:hover:not(:disabled){background:#1D4ED8;}
+.lp-submit:disabled{opacity:.45;cursor:not-allowed;}
+
+.lp-link{background:none;border:none;padding:0;cursor:pointer;font-family:'Tajawal',sans-serif;color:#2563EB;font-size:13px;font-weight:600;transition:opacity .15s;}
+.lp-link:hover{opacity:.7;}
+
+@media(max-width:1024px){
+  .lp-hero-product{display:none!important;}
+  .lp-hero-text{max-width:600px!important;text-align:center;align-items:center!important;}
+  .lp-features-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .lp-how-grid{grid-template-columns:1fr!important;max-width:500px;margin:0 auto!important;}
+  .lp-pricing-grid{grid-template-columns:1fr!important;max-width:400px;margin:0 auto!important;}
+  .lp-testimonials-grid{grid-template-columns:1fr!important;max-width:560px;margin:0 auto!important;}
+  .lp-nav-links{display:none!important;}
+  .lp-footer-grid{grid-template-columns:repeat(2,1fr)!important;}
 }
-@media (min-width: 901px) {
-  .mh-hamburger { display: none !important; }
+@media(max-width:640px){
+  .lp-features-grid{grid-template-columns:1fr!important;}
+  .lp-footer-grid{grid-template-columns:1fr!important;}
+  .lp-hero-stats{flex-direction:column;align-items:center!important;}
+  .lp-hero-checks{flex-direction:column;align-items:center!important;}
+  .lp-trust-logos{gap:20px!important;}
 }
 `;
 
-/* ── Palette ── */
+/* ══════════════════════════════════════════════
+   Palette & Data
+══════════════════════════════════════════════ */
 const C = {
-  bg:     '#FAF8F5',
-  text:   '#151515',
-  muted:  '#7A756E',
-  faint:  '#A8A29E',
-  border: '#E7E3DC',
-  accent: '#1A56DB',
+  bg:       '#FFFFFF',
+  surface:  '#F8FAFC',
+  border:   '#E2E8F0',
+  primary:  '#2563EB',
+  primaryBg:'#EFF6FF',
+  text:     '#0F172A',
+  sub:      '#475569',
+  muted:    '#94A3B8',
+  dark:     '#0F172A',
+  green:    '#059669',
 } as const;
 
-const rule = { border: 'none', borderTop: `1px solid ${C.border}`, margin: 0 } as React.CSSProperties;
-const eyebrow: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: C.accent, letterSpacing: '0.18em', textTransform: 'uppercase' as const };
+const FEATURES = [
+  { icon: '🏪', bg: '#EFF6FF', title: 'نقطة البيع',         desc: 'إصدار فواتير فوري وإدارة شاملة لعمليات البيع' },
+  { icon: '📦', bg: '#F0FDF4', title: 'إدارة المخزون',      desc: 'تتبع دقيق للكميات والتكاليف مع تحذيرات نفاد المخزون' },
+  { icon: '💰', bg: '#FFFBEB', title: 'المحاسبة والتقارير', desc: 'قيد مزدوج تلقائي وتقارير مالية شاملة في لحظات' },
+  { icon: '👥', bg: '#FDF4FF', title: 'الموارد البشرية',    desc: 'إدارة الموظفين والرواتب والحضور والإجازات' },
+  { icon: '🔧', bg: '#FFF1F2', title: 'إدارة الصيانة',      desc: 'تتبع طلبات الصيانة وقطع الغيار وإشعار العملاء' },
+  { icon: '🤝', bg: '#F0FDF4', title: 'العملاء والموردون',  desc: 'بطاقات تفصيلية ومتابعة الديون والمستحقات' },
+  { icon: '📊', bg: '#EFF6FF', title: 'التقارير والتحليلات','desc': 'رؤية شاملة لأداء عملك مع رسوم بيانية تفاعلية' },
+  { icon: '🔔', bg: '#FFFBEB', title: 'التنبيهات الذكية',   desc: 'إشعارات فورية للمخزون المنخفض والديون والأحداث الهامة' },
+] as const;
 
-/* ════════════════════════════════════════════
-   Component
-════════════════════════════════════════════ */
-export default function LandingPage() {
-  const [, navigate]  = useLocation();
+const HOW_STEPS = [
+  { n: '١', title: 'سجّل حسابك',         desc: 'أنشئ حسابك المجاني في أقل من دقيقتين، بلا بطاقة ائتمان.' },
+  { n: '٢', title: 'أعدّ شركتك',          desc: 'أدخل بيانات شركتك والمخازن والموظفين بكل سهولة.' },
+  { n: '٣', title: 'ابدأ الإدارة الفعلية','desc': 'استخدم جميع الأدوات من نفس اليوم — لا انتظار.' },
+] as const;
+
+const PLANS_MONTHLY = [
+  {
+    name: 'الأساسية', price: '٩٩', unit: 'ر.س/شهر', popular: false,
+    desc: 'للشركات الصغيرة والناشئة',
+    features: ['حتى ٥ مستخدمين', 'مخزن واحد', 'نقطة بيع وفواتير', 'تقارير أساسية', 'دعم عبر البريد'],
+  },
+  {
+    name: 'الاحترافية', price: '٢٤٩', unit: 'ر.س/شهر', popular: true,
+    desc: 'للشركات المتنامية',
+    features: ['حتى ٢٥ مستخدماً', 'حتى ٥ مخازن', 'جميع الوحدات', 'تقارير متقدمة', 'دعم أولوية ٢٤/٧', 'نسخ احتياطي يومي'],
+  },
+  {
+    name: 'المتقدمة', price: '٤٩٩', unit: 'ر.س/شهر', popular: false,
+    desc: 'للمؤسسات الكبيرة',
+    features: ['مستخدمون غير محدودين', 'مخازن غير محدودة', 'جميع الوحدات', 'تقارير مخصصة', 'مدير حساب مخصص', 'SLA مضمون'],
+  },
+] as const;
+
+const PLANS_ANNUAL = [
+  { ...PLANS_MONTHLY[0], price: '٧٩' },
+  { ...PLANS_MONTHLY[1], price: '١٩٩' },
+  { ...PLANS_MONTHLY[2], price: '٣٩٩' },
+] as const;
+
+const TESTIMONIALS = [
+  { quote: 'مُحكم غيّر طريقة إدارتنا للمبيعات تماماً. ما كان يأخذ يوماً كاملاً أصبح يتم في أقل من ساعة.', name: 'عبدالله الحامد', role: 'مدير عام', company: 'شركة الأجهزة الحديثة' },
+  { quote: 'أفضل نظام ERP عربي جربناه. الواجهة سهلة والدعم الفني سريع ومحترف جداً.', name: 'فاطمة الشمري', role: 'مديرة مالية', company: 'مجموعة الخير للتجارة' },
+  { quote: 'ساعدنا في ضبط المخزون وتقليل الهدر. النتائج كانت واضحة من الأسبوع الأول.', name: 'خالد العسيري', role: 'مدير العمليات', company: 'شركة التقنية المتقدمة' },
+] as const;
+
+const FAQ_ITEMS = [
+  { q: 'هل يدعم مُحكم إدارة متعددة الفروع؟', a: 'نعم، يمكنك إدارة فروع ومخازن متعددة من لوحة تحكم مركزية واحدة مع تقارير منفصلة لكل فرع.' },
+  { q: 'هل بياناتي آمنة؟', a: 'نعم، نستخدم تشفير TLS لجميع الاتصالات، وكل شركة معزولة تماماً عن الأخرى، مع نسخ احتياطية يومية.' },
+  { q: 'هل يمكنني استيراد البيانات من Excel؟', a: 'نعم، ندعم استيراد المنتجات والعملاء والموردين من ملفات Excel وCSV بشكل مباشر.' },
+  { q: 'ما الفرق بين خطط الاشتراك؟', a: 'تختلف الخطط في عدد المستخدمين المسموح بهم، وعدد المخازن، وإمكانية الوصول للوحدات المتقدمة كالتقارير المخصصة.' },
+  { q: 'هل هناك دعم فني متاح؟', a: 'نعم، نقدم دعماً فنياً عبر الواتساب والبريد الإلكتروني. خطة الاحترافية والمتقدمة تشمل دعم أولوية على مدار الساعة.' },
+  { q: 'هل يعمل التطبيق على الجوال؟', a: 'نعم، تطبيق مُحكم متاح على iOS وAndroid، ومُحسّن بالكامل للاستخدام اليومي من الجوال.' },
+  { q: 'هل يمكنني الإلغاء في أي وقت؟', a: 'نعم، يمكنك الإلغاء في أي وقت دون أي رسوم إلغاء. بياناتك متاحة للتصدير قبل الإلغاء.' },
+  { q: 'هل مُحكم متوافق مع هيئة الزكاة والضريبة والجمارك؟', a: 'نعم، النظام متوافق مع متطلبات الفوترة الإلكترونية (ZATCA) ويدعم احتساب ضريبة القيمة المضافة تلقائياً.' },
+] as const;
+
+const BRANDS = ['شركة الأجهزة الحديثة', 'مجموعة الخير', 'النجم للتقنية', 'مؤسسة الرشيد', 'بيت التقنية', 'التحول الرقمي'];
+
+const COMPLIANCE = [
+  { icon: '🔐', label: 'تشفير TLS' },
+  { icon: '🧾', label: 'متوافق مع ZATCA' },
+  { icon: '📋', label: 'سجلات مراجعة كاملة' },
+  { icon: '🏢', label: 'عزل بيانات كل شركة' },
+  { icon: '☁️', label: 'نسخ احتياطي يومي' },
+  { icon: '✅', label: 'ضريبة القيمة المضافة' },
+];
+
+/* ══════════════════════════════════════════════
+   Shared helpers
+══════════════════════════════════════════════ */
+function SectionHeader({ eyebrow, title, sub, center = false }: { eyebrow?: string; title: string; sub?: string; center?: boolean }) {
+  return (
+    <div style={{ textAlign: center ? 'center' : 'right', marginBottom: 52 }}>
+      {eyebrow && (
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 10 }}>
+          {eyebrow}
+        </div>
+      )}
+      <h2 style={{ fontSize: 'clamp(26px,3.2vw,40px)', fontWeight: 700, color: C.text, letterSpacing: '-0.025em', margin: '0 0 14px', lineHeight: 1.2 }}>
+        {title}
+      </h2>
+      {sub && (
+        <p style={{ fontSize: 17, color: C.sub, lineHeight: 1.75, margin: center ? '0 auto' : '0', maxWidth: 560 }}>
+          {sub}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BrowserFrame({ children, height = 480 }: { children: React.ReactNode; height?: number }) {
+  return (
+    <div style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 24px 64px rgba(15,23,42,.16), 0 4px 16px rgba(15,23,42,.08)', border: `1px solid ${C.border}` }}>
+      <div style={{ height: 36, background: '#F1F5F9', display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FC5C65' }} />
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FED330' }} />
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#26DE81' }} />
+        <div style={{ flex: 1, height: 22, background: '#E2E8F0', borderRadius: 100, maxWidth: 240, marginRight: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 10, color: C.muted, fontFamily: 'Inter, monospace' }}>app.muhkam.com</span>
+        </div>
+      </div>
+      <div style={{ height }}>{children}</div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Navbar
+══════════════════════════════════════════════ */
+function Navbar({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const obsRef = useRef<IntersectionObserver | null>(null);
+  const [open, setOpen] = useState(false);
 
-  /* CSS injection */
   useEffect(() => {
-    let el = document.getElementById(LP_CSS_ID) as HTMLStyleElement | null;
-    if (!el) {
-      el = document.createElement('style');
-      el.id = LP_CSS_ID;
-      document.head.appendChild(el);
-    }
-    el.textContent = LP_CSS;
-    return () => { document.getElementById(LP_CSS_ID)?.remove(); };
-  }, []);
-
-  /* Navbar scroll */
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 16);
+    const fn = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
-  /* Scroll reveal */
-  useEffect(() => {
-    obsRef.current = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('mh-in'); obsRef.current?.unobserve(e.target); } }),
-      { threshold: 0.08 }
-    );
-    document.querySelectorAll('.mh-reveal').forEach((el) => obsRef.current?.observe(el));
-    return () => { obsRef.current?.disconnect(); };
-  }, []);
+  const scrollTo = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setOpen(false);
+  };
 
-  const goRegister = () => navigate('/login?tab=register');
-  const goLogin    = () => navigate('/login');
+  const links: [string, string][] = [['features', 'التطبيقات'], ['how', 'كيف يعمل؟'], ['pricing', 'الأسعار'], ['faq', 'الأسئلة الشائعة']];
 
-  const scrollTo = useCallback((id: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
-  }, []);
-
-  const navLinks: [string, string][] = [
-    ['features', 'الميزات'],
-    ['pricing',  'الأسعار'],
-  ];
-
-  /* ─── RENDER ─── */
   return (
-    <div
-      dir="rtl"
-      style={{ background: C.bg, color: C.text, fontFamily: "'Tajawal', system-ui, sans-serif", minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}
-    >
-      {/* ═══════════ NAVBAR ═══════════ */}
-      <nav
-        style={{
-          position: 'fixed', top: 0, insetInline: 0, zIndex: 100,
-          height: 64,
-          background: scrolled ? 'rgba(250,248,245,.95)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(12px)' : 'none',
-          borderBottom: scrolled ? `1px solid ${C.border}` : '1px solid transparent',
-          transition: 'background .2s, border-color .2s',
-        }}
-      >
-        <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', gap: 40 }}>
-          {/* Brand */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexShrink: 0 }}>
-            <span style={{ fontSize: 19, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>مُحكم</span>
-            <span style={{ fontSize: 9, fontWeight: 700, color: C.accent, letterSpacing: '0.17em' }}>ERP</span>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '14px 24px' }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto' }}>
+        <div
+          style={{
+            background: scrolled ? 'rgba(255,255,255,.96)' : '#fff',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: open ? 18 : 100,
+            border: `1px solid ${C.border}`,
+            boxShadow: scrolled ? '0 4px 20px rgba(15,23,42,.08)' : '0 2px 10px rgba(15,23,42,.06)',
+            transition: 'box-shadow .2s, border-radius .2s',
+          }}
+        >
+          <div style={{ height: 56, display: 'flex', alignItems: 'center', padding: '0 8px 0 20px', gap: 20 }}>
+            {/* Brand — first = RIGHT in RTL */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, flexShrink: 0 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>مُحكم</span>
+              <span style={{ fontSize: 8, fontWeight: 700, color: C.primary, letterSpacing: '.15em' }}>ERP</span>
+            </div>
+
+            {/* Nav links */}
+            <div className="lp-nav-links" style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
+              {links.map(([id, lbl]) => (
+                <a key={id} href={`#${id}`} onClick={scrollTo(id)} className="lp-nav-link" style={{ padding: '6px 14px', borderRadius: 100 }}>{lbl}</a>
+              ))}
+            </div>
+
+            <div style={{ flex: 1 }} />
+
+            {/* CTA — last = LEFT in RTL */}
+            <div className="lp-nav-links" style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button onClick={onLogin}    className="lp-btn-outline" style={{ height: 40, padding: '0 16px', fontSize: 13 }}>تسجيل الدخول</button>
+              <button onClick={onRegister} className="lp-btn-primary" style={{ height: 40, padding: '0 18px', fontSize: 13 }}>سجّل الآن</button>
+            </div>
+
+            {/* Mobile menu */}
+            <button
+              onClick={() => setOpen((v) => !v)}
+              style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, flexDirection: 'column', gap: 4 }}
+              className="lp-mobile-menu-btn"
+              aria-label="القائمة"
+            >
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ width: 20, height: 1.5, background: C.text, borderRadius: 2 }} />
+              ))}
+            </button>
           </div>
 
-          {/* Nav links */}
-          <div className="mh-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-            {navLinks.map(([id, lbl]) => (
-              <a key={id} href={`#${id}`} onClick={scrollTo(id)} className="mh-nav-link">{lbl}</a>
-            ))}
-          </div>
-
-          <div style={{ flex: 1 }} />
-
-          {/* Auth buttons */}
-          <div className="mh-nav-desktop" style={{ display: 'flex', gap: 8 }}>
-            <button onClick={goLogin}    className="mh-btn-ghost"   style={{ height: 38, padding: '0 18px', fontSize: 13 }}>تسجيل الدخول</button>
-            <button onClick={goRegister} className="mh-btn-primary" style={{ height: 38, padding: '0 18px', fontSize: 13 }}>ابدأ مجاناً</button>
-          </div>
-
-          {/* Hamburger */}
-          <button
-            className="mh-hamburger"
-            onClick={() => setMenuOpen((v) => !v)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'none', flexDirection: 'column', gap: 5 }}
-            aria-label="القائمة"
-          >
-            {[
-              { transform: menuOpen ? 'rotate(45deg) translate(5px,5px)'  : 'none' },
-              { opacity: menuOpen ? '0' : '1' },
-              { transform: menuOpen ? 'rotate(-45deg) translate(5px,-5px)' : 'none' },
-            ].map((st, i) => (
-              <div key={i} style={{ width: 20, height: 1.5, background: C.text, borderRadius: 2, transition: 'all .2s', ...st as React.CSSProperties }} />
-            ))}
-          </button>
+          {open && (
+            <div style={{ padding: '16px 20px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {links.map(([id, lbl]) => (
+                <a key={id} href={`#${id}`} onClick={scrollTo(id)} className="lp-nav-link" style={{ padding: '10px 4px', fontSize: 15, borderBottom: `1px solid ${C.border}` }}>{lbl}</a>
+              ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
+                <button onClick={onLogin}    className="lp-btn-outline" style={{ width: '100%' }}>تسجيل الدخول</button>
+                <button onClick={onRegister} className="lp-btn-primary" style={{ width: '100%' }}>سجّل الآن</button>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {menuOpen && (
-          <div style={{ background: C.bg, borderTop: `1px solid ${C.border}`, padding: '20px 40px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {navLinks.map(([id, lbl]) => (
-              <a key={id} href={`#${id}`} onClick={scrollTo(id)} className="mh-nav-link" style={{ fontSize: 17 }}>{lbl}</a>
-            ))}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
-              <button onClick={goLogin}    className="mh-btn-ghost"   style={{ width: '100%' }}>تسجيل الدخول</button>
-              <button onClick={goRegister} className="mh-btn-primary" style={{ width: '100%' }}>ابدأ مجاناً</button>
+/* ══════════════════════════════════════════════
+   Hero
+══════════════════════════════════════════════ */
+function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin: () => void }) {
+  return (
+    <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 100, paddingBottom: 80, background: C.bg }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 56 }}>
+
+          {/* Text — first = RIGHT in RTL */}
+          <div className="lp-hero-text" style={{ flex: '0 0 48%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            {/* Eyebrow badge */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: C.primaryBg, border: `1px solid #BFDBFE`, borderRadius: 100, padding: '5px 14px', fontSize: 13, fontWeight: 600, color: C.primary, marginBottom: 28, animation: 'lp-up .5s ease both' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.primary, flexShrink: 0 }} />
+              نظام واحد لإدارة عملك بالكامل
+            </div>
+
+            <h1 style={{ fontSize: 'clamp(38px,5vw,64px)', fontWeight: 800, color: C.text, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 22, textAlign: 'right', animation: 'lp-up .5s .06s ease both' }}>
+              نظّم أعمالك.<br />
+              <span style={{ color: C.primary }}>من البيع إلى الميزانية.</span>
+            </h1>
+
+            <p style={{ fontSize: 17, color: C.sub, lineHeight: 1.85, marginBottom: 36, maxWidth: 460, textAlign: 'right', animation: 'lp-up .5s .10s ease both' }}>
+              مُحكم ERP منصة عربية متكاملة لإدارة المبيعات والمخزون والمحاسبة والموارد البشرية — تعمل من اليوم الأول.
+            </p>
+
+            {/* CTA buttons */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 28, animation: 'lp-up .5s .14s ease both', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button onClick={onRegister} className="lp-btn-primary lp-btn-primary-lg">ابدأ مجاناً — ٧ أيام</button>
+              <button onClick={onLogin}    className="lp-btn-outline" style={{ height: 52, padding: '0 26px', fontSize: 15, borderRadius: 10 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                شاهد العرض
+              </button>
+            </div>
+
+            {/* Checks */}
+            <div className="lp-hero-checks" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'flex-end', animation: 'lp-up .5s .18s ease both' }}>
+              {['لا تحتاج بطاقة ائتمان', 'إعداد في ٥ دقائق', 'دعم على مدار الساعة'].map((c) => (
+                <span key={c} className="lp-check" style={{ fontSize: 13 }}>{c}</span>
+              ))}
+            </div>
+
+            {/* Stats */}
+            <div className="lp-hero-stats" style={{ display: 'flex', gap: 0, marginTop: 40, borderTop: `1px solid ${C.border}`, paddingTop: 28, width: '100%', animation: 'lp-up .5s .22s ease both' }}>
+              {[
+                { v: '٩٩.٩٪', l: 'وقت التشغيل' },
+                { v: '٢٥+', l: 'تكاملات جاهزة' },
+                { v: '١٢٠٠٠+', l: 'شركة نشطة' },
+              ].map((s, i) => (
+                <div key={i} style={{ flex: 1, textAlign: 'center', borderRight: i < 2 ? `1px solid ${C.border}` : 'none', padding: '0 20px' }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: C.text, letterSpacing: '-0.02em' }}>{s.v}</div>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{s.l}</div>
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </nav>
 
-      {/* ═══════════ HERO ═══════════ */}
-      <section style={{ height: '100vh', display: 'flex', overflow: 'hidden' }}>
-
-        {/* Text — first in DOM = RIGHT in RTL */}
-        <div
-          className="mh-hero-text"
-          style={{ flex: '0 0 44%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 64px 0 48px', paddingTop: 64 }}
-        >
-          <div style={{ ...eyebrow, marginBottom: 24, animation: 'mh-up .5s ease both' }}>
-            منصة إدارة الموارد المؤسسية
-          </div>
-
-          <h1
-            style={{
-              fontSize: 'clamp(48px,7vw,88px)',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.08,
-              marginBottom: 28,
-              animation: 'mh-up .55s .05s ease both',
-            }}
-          >
-            إدارة شركتك.<br />
-            <span style={{ color: '#3A3A3A' }}>بالكامل.</span>
-          </h1>
-
-          <p
-            style={{
-              fontSize: 'clamp(15px,1.4vw,18px)',
-              color: C.muted,
-              lineHeight: 1.9,
-              marginBottom: 44,
-              maxWidth: 380,
-              animation: 'mh-up .55s .10s ease both',
-            }}
-          >
-            محاسبة، مبيعات، مخزون، موارد بشرية، وصيانة — في منظومة واحدة متكاملة. يعمل من اليوم الأول.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'mh-up .55s .15s ease both', alignItems: 'flex-start' }}>
-            <button onClick={goRegister} className="mh-btn-primary" style={{ height: 52, padding: '0 40px', fontSize: 15 }}>
-              ابدأ تجربتك المجانية — ٧ أيام
-            </button>
-            <span style={{ fontSize: 12, color: C.faint }}>بلا بطاقة ائتمان · إلغاء في أي وقت</span>
+          {/* Product — second = LEFT in RTL */}
+          <div className="lp-hero-product" style={{ flex: 1, animation: 'lp-fade .7s .1s ease both' }}>
+            <BrowserFrame height={480}>
+              <DashboardShot />
+            </BrowserFrame>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
 
-        {/* Screenshot — second in DOM = LEFT in RTL */}
-        <div
-          className="mh-hero-shot"
-          style={{ flex: 1, overflow: 'hidden', paddingTop: 64, borderRight: `1px solid ${C.border}` }}
-        >
-          <DashboardShot />
-        </div>
-      </section>
-
-      <hr style={rule} />
-
-      {/* ═══════════ CAPABILITY 01: المبيعات ═══════════ */}
-      <section id="features" style={{ display: 'flex', height: '80vh', overflow: 'hidden' }}>
-
-        {/* Word — RIGHT */}
-        <div style={{ flex: '0 0 38%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 64px 0 40px' }}>
-          <div className="mh-reveal" style={{ ...eyebrow, marginBottom: 20 }}>01</div>
-          <div
-            className="mh-reveal mh-d1"
-            style={{ fontSize: 'clamp(80px,10vw,136px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.92, color: C.text }}
-          >
-            المبيعات
-          </div>
-          <p className="mh-reveal mh-d2" style={{ fontSize: 15, color: C.muted, lineHeight: 1.85, marginTop: 24, maxWidth: 280 }}>
-            نقطة بيع متكاملة. فاتورة في ٣٠ ثانية. تقارير يومية تلقائية.
-          </p>
-        </div>
-
-        {/* Screenshot — LEFT */}
-        <div
-          className="mh-reveal mh-d2 mh-cap-shot"
-          style={{ flex: 1, padding: '32px 0 32px 40px', borderRight: `1px solid ${C.border}`, overflow: 'hidden' }}
-        >
-          <div style={{ height: '100%', borderRadius: '10px 0 0 10px', overflow: 'hidden', border: `1px solid ${C.border}`, borderRight: 'none' }}>
-            <SalesShot />
-          </div>
-        </div>
-      </section>
-
-      <hr style={rule} />
-
-      {/* ═══════════ CAPABILITY 02: المحاسبة ═══════════ */}
-      <section style={{ display: 'flex', height: '80vh', overflow: 'hidden' }}>
-
-        {/* Screenshot — RIGHT (first DOM = right in RTL) */}
-        <div
-          className="mh-reveal mh-cap-shot"
-          style={{ flex: 1, padding: '32px 40px 32px 0', borderLeft: `1px solid ${C.border}`, overflow: 'hidden' }}
-        >
-          <div style={{ height: '100%', borderRadius: '0 10px 10px 0', overflow: 'hidden', border: `1px solid ${C.border}`, borderLeft: 'none' }}>
-            <AccountingShot />
-          </div>
-        </div>
-
-        {/* Word — LEFT (second DOM = left in RTL) */}
-        <div style={{ flex: '0 0 38%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 40px 0 64px' }}>
-          <div className="mh-reveal" style={{ ...eyebrow, marginBottom: 20 }}>02</div>
-          <div
-            className="mh-reveal mh-d1"
-            style={{ fontSize: 'clamp(72px,9.5vw,128px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.92, color: C.text }}
-          >
-            المحاسبة
-          </div>
-          <p className="mh-reveal mh-d2" style={{ fontSize: 15, color: C.muted, lineHeight: 1.85, marginTop: 24, maxWidth: 280 }}>
-            قيد مزدوج تلقائي. ميزان مراجعة. تقارير مالية كاملة.
-          </p>
-        </div>
-      </section>
-
-      <hr style={rule} />
-
-      {/* ═══════════ CAPABILITY 03: الصيانة ═══════════ */}
-      <section style={{ display: 'flex', height: '80vh', overflow: 'hidden' }}>
-
-        {/* Word — RIGHT */}
-        <div style={{ flex: '0 0 38%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 64px 0 40px' }}>
-          <div className="mh-reveal" style={{ ...eyebrow, marginBottom: 20 }}>03</div>
-          <div
-            className="mh-reveal mh-d1"
-            style={{ fontSize: 'clamp(80px,10vw,136px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.92, color: C.text }}
-          >
-            الصيانة
-          </div>
-          <p className="mh-reveal mh-d2" style={{ fontSize: 15, color: C.muted, lineHeight: 1.85, marginTop: 24, maxWidth: 280 }}>
-            بطاقة لكل جهاز. تتبع IMEI. إشعار العميل تلقائياً.
-          </p>
-        </div>
-
-        {/* Screenshot — LEFT */}
-        <div
-          className="mh-reveal mh-d2 mh-cap-shot"
-          style={{ flex: 1, padding: '32px 0 32px 40px', borderRight: `1px solid ${C.border}`, overflow: 'hidden' }}
-        >
-          <div style={{ height: '100%', borderRadius: '10px 0 0 10px', overflow: 'hidden', border: `1px solid ${C.border}`, borderRight: 'none' }}>
-            <RepairShot />
-          </div>
-        </div>
-      </section>
-
-      <hr style={rule} />
-
-      {/* ═══════════ CTA ═══════════ */}
-      <section
-        id="pricing"
-        style={{ minHeight: '56vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 40px', textAlign: 'center' }}
-      >
-        <div className="mh-reveal" style={{ ...eyebrow, marginBottom: 32 }}>ابدأ اليوم</div>
-        <h2
-          className="mh-reveal mh-d1"
-          style={{ fontSize: 'clamp(52px,7vw,88px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: 28 }}
-        >
-          جاهز للبدء؟
-        </h2>
-        <p
-          className="mh-reveal mh-d2"
-          style={{ fontSize: 17, color: C.muted, lineHeight: 1.85, marginBottom: 48, maxWidth: 480 }}
-        >
-          ٧ أيام مجاناً بدون قيود. بلا بطاقة ائتمان. إلغاء في أي وقت.
-        </p>
-        <div className="mh-reveal mh-d3">
-          <button onClick={goRegister} className="mh-btn-primary" style={{ height: 54, padding: '0 52px', fontSize: 16, borderRadius: 8 }}>
-            ابدأ تجربتك المجانية
-          </button>
-        </div>
-      </section>
-
-      <hr style={rule} />
-
-      {/* ═══════════ FOOTER ═══════════ */}
-      <footer style={{ padding: '24px 0' }}>
-        <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: C.text, letterSpacing: '-0.025em' }}>مُحكم</span>
-            <span style={{ fontSize: 8, fontWeight: 700, color: C.accent, letterSpacing: '0.17em' }}>ERP</span>
-          </div>
-          <span style={{ fontSize: 12, color: C.faint }}>© 2026 مُحكم ERP · جميع الحقوق محفوظة</span>
-          <div style={{ display: 'flex', gap: 24 }}>
-            {navLinks.map(([id, lbl]) => (
-              <a key={id} href={`#${id}`} onClick={scrollTo(id)} className="mh-nav-link" style={{ fontSize: 12 }}>{lbl}</a>
+/* ══════════════════════════════════════════════
+   Trust logos
+══════════════════════════════════════════════ */
+function TrustStrip() {
+  return (
+    <div style={{ background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, padding: '28px 24px' }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span style={{ fontSize: 13, color: C.muted, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>جهات تثق بنا</span>
+          <div style={{ width: 1, height: 24, background: C.border }} />
+          <div className="lp-trust-logos" style={{ display: 'flex', alignItems: 'center', gap: 36, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {BRANDS.map((b) => (
+              <span key={b} style={{ fontSize: 14, fontWeight: 600, color: '#94A3B8', whiteSpace: 'nowrap' }}>{b}</span>
             ))}
           </div>
         </div>
-      </footer>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Features grid
+══════════════════════════════════════════════ */
+function FeaturesSection() {
+  return (
+    <section id="features" style={{ padding: '96px 0', background: C.surface }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
+        <div className="lp-reveal" style={{ textAlign: 'center', marginBottom: 52 }}>
+          <SectionHeader center eyebrow="التطبيقات" title="كل ما تحتاجه في منصة واحدة" sub="مُحكم يغطي جميع احتياجات إدارة شركتك من البيع إلى المحاسبة وما بينهما." />
+        </div>
+        <div className="lp-features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18 }}>
+          {FEATURES.map((f, i) => (
+            <div key={i} className={`lp-card lp-reveal lp-d${((i % 4) + 1) as 1|2|3|4}`}>
+              <div className="lp-feature-icon" style={{ background: f.bg }}>{f.icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 8 }}>{f.title}</div>
+              <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.7 }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   How it works
+══════════════════════════════════════════════ */
+function HowSection() {
+  return (
+    <section id="how" style={{ padding: '96px 0', background: C.bg }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
+        <div className="lp-reveal" style={{ textAlign: 'center' }}>
+          <SectionHeader center eyebrow="كيف يعمل؟" title="ابدأ في ثلاث خطوات فقط" sub="لا تعقيد، لا تدريب طويل. مُحكم مُصمّم ليكون جاهزاً من الدقيقة الأولى." />
+        </div>
+        <div className="lp-how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 32, marginTop: 8 }}>
+          {HOW_STEPS.map((s, i) => (
+            <div key={i} className={`lp-reveal lp-d${(i + 1) as 1|2|3}`} style={{ textAlign: 'center', padding: '32px 24px' }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.primaryBg, border: `2px solid #BFDBFE`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 22, fontWeight: 800, color: C.primary }}>
+                {s.n}
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: C.text, marginBottom: 10 }}>{s.title}</div>
+              <div style={{ fontSize: 14, color: C.sub, lineHeight: 1.75 }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Product showcase (full-width)
+══════════════════════════════════════════════ */
+function ShowcaseSection() {
+  return (
+    <section style={{ padding: '80px 0', background: '#0F172A', overflow: 'hidden' }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#60A5FA', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 12 }}>لوحة التحكم</div>
+          <h2 style={{ fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.025em', margin: '0 0 14px' }}>
+            رؤية كاملة لأعمالك في مكان واحد
+          </h2>
+          <p style={{ fontSize: 16, color: '#94A3B8', lineHeight: 1.75 }}>
+            إيرادات، مصروفات، مبيعات، مخزون — كل شيء أمامك في لحظة.
+          </p>
+        </div>
+        <div className="lp-reveal" style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,.5)', border: '1px solid rgba(255,255,255,.08)' }}>
+          <div style={{ height: 40, background: 'rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+            {[0,1,2].map((i) => <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,.15)' }} />)}
+            <div style={{ flex: 1, height: 22, background: 'rgba(255,255,255,.07)', borderRadius: 100, maxWidth: 260, marginRight: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 10, color: '#475569', fontFamily: 'Inter, monospace' }}>app.muhkam.com/dashboard</span>
+            </div>
+          </div>
+          <div style={{ height: 520 }}><DashboardShot /></div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Compliance
+══════════════════════════════════════════════ */
+function ComplianceSection() {
+  return (
+    <section style={{ padding: '80px 0', background: C.surface }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', gap: 64, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="lp-reveal" style={{ flex: '0 0 42%', minWidth: 280 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 12 }}>الامتثال والأمان</div>
+            <h2 style={{ fontSize: 'clamp(24px,3vw,36px)', fontWeight: 700, color: C.text, letterSpacing: '-0.025em', marginBottom: 14 }}>
+              متوافق مع متطلبات الجهات الرسمية
+            </h2>
+            <p style={{ fontSize: 16, color: C.sub, lineHeight: 1.8, marginBottom: 28 }}>
+              مُحكم مُصمَّم ليلتزم بمتطلبات هيئة الزكاة والضريبة والجمارك ومعايير حماية البيانات.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {COMPLIANCE.map((c) => (
+                <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: C.bg, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>{c.icon}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{c.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="lp-reveal lp-d2" style={{ flex: 1, minWidth: 280 }}>
+            <BrowserFrame height={340}>
+              <AccountingShot />
+            </BrowserFrame>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Mobile app section
+══════════════════════════════════════════════ */
+function MobileSection() {
+  return (
+    <section style={{ padding: '80px 0', background: C.bg }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', gap: 64, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Text — first = RIGHT in RTL */}
+          <div className="lp-reveal" style={{ flex: '0 0 44%', minWidth: 280 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 12 }}>تطبيق الجوال</div>
+            <h2 style={{ fontSize: 'clamp(24px,3vw,36px)', fontWeight: 700, color: C.text, letterSpacing: '-0.025em', marginBottom: 14 }}>
+              مُحكم في جيبك — أينما كنت
+            </h2>
+            <p style={{ fontSize: 16, color: C.sub, lineHeight: 1.8, marginBottom: 32 }}>
+              تطبيق مُحكم للجوال يتيح لك إدارة مبيعاتك وعرض التقارير ومتابعة الفريق من أي مكان.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 36 }}>
+              {['عرض لوحة التحكم ومؤشرات الأداء', 'إصدار الفواتير من الجوال مباشرة', 'استعراض المخزون وإنشاء طلبات الشراء', 'متابعة حالة طلبات الصيانة'].map((f) => (
+                <span key={f} className="lp-check" style={{ fontSize: 14 }}>{f}</span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {[
+                { icon: '🍎', label: 'App Store',    sub: 'تنزيل على iOS'     },
+                { icon: '🤖', label: 'Google Play',  sub: 'تنزيل على Android' },
+              ].map((s) => (
+                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', background: C.text, borderRadius: 10, cursor: 'pointer', transition: 'background .15s' }}>
+                  <span style={{ fontSize: 22 }}>{s.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 10, color: '#94A3B8' }}>{s.sub}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{s.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Mockup — second = LEFT in RTL */}
+          <div className="lp-reveal lp-d2" style={{ flex: 1, display: 'flex', justifyContent: 'center', minWidth: 240 }}>
+            <div style={{ width: 220, borderRadius: 32, overflow: 'hidden', boxShadow: '0 32px 64px rgba(15,23,42,.2)', border: '8px solid #1E293B', background: '#0F1117', position: 'relative' }}>
+              {/* Status bar */}
+              <div style={{ height: 28, background: '#0F1117', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 9, color: '#6B7280', fontFamily: 'Inter, monospace' }}>
+                <span>٩:٤١</span>
+                <span>● ● ▌</span>
+              </div>
+              {/* App content */}
+              <div style={{ padding: 14, background: '#0F1117', minHeight: 360 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#F4F4F5', marginBottom: 16, textAlign: 'right' }}>لوحة التحكم</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+                  {[
+                    { l: 'الإيرادات', v: '١٢٤ ألف', c: '#22C55E' },
+                    { l: 'الطلبات',   v: '٢٤١',     c: '#6366F1' },
+                    { l: 'الأرباح',   v: '٧٦ ألف',  c: '#F59E0B' },
+                    { l: 'العملاء',   v: '٨٤',       c: '#EC4899' },
+                  ].map((k) => (
+                    <div key={k.l} style={{ background: '#141418', borderRadius: 10, padding: '10px 12px', border: '1px solid #252530' }}>
+                      <div style={{ fontSize: 8, color: '#71717A', marginBottom: 4 }}>{k.l}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: k.c }}>{k.v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: '#141418', borderRadius: 10, padding: 12, border: '1px solid #252530', marginBottom: 10 }}>
+                  <div style={{ fontSize: 9, color: '#71717A', marginBottom: 8 }}>آخر الفواتير</div>
+                  {[
+                    { n: 'iPhone 15 Pro', v: '٢٥٫٥٠٠', c: '#22C55E' },
+                    { n: 'Samsung S24',   v: '١٨٫٩٠٠', c: '#22C55E' },
+                    { n: 'MacBook Air',   v: '٣٢٫٠٠٠', c: '#F59E0B' },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 2 ? '1px solid #252530' : 'none', fontSize: 9 }}>
+                      <span style={{ color: '#A1A1AA' }}>{r.n}</span>
+                      <span style={{ color: r.c, fontWeight: 600 }}>{r.v}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Bottom nav */}
+                <div style={{ display: 'flex', justifyContent: 'space-around', background: '#141418', borderRadius: 12, padding: '8px 0', border: '1px solid #252530', marginTop: 8 }}>
+                  {['🏠','📦','💰','👤'].map((ic) => (
+                    <div key={ic} style={{ fontSize: 16, textAlign: 'center', padding: '4px 8px' }}>{ic}</div>
+                  ))}
+                </div>
+              </div>
+              {/* Home bar */}
+              <div style={{ height: 20, background: '#0F1117', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 60, height: 4, background: '#374151', borderRadius: 2 }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Pricing
+══════════════════════════════════════════════ */
+function PricingSection({ onRegister }: { onRegister: () => void }) {
+  const [annual, setAnnual] = useState(false);
+  const plans = annual ? PLANS_ANNUAL : PLANS_MONTHLY;
+
+  return (
+    <section id="pricing" style={{ padding: '96px 0', background: C.surface }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
+        <div className="lp-reveal" style={{ textAlign: 'center' }}>
+          <SectionHeader center eyebrow="الأسعار" title="خطط واضحة بلا رسوم خفية" sub="ابدأ مجاناً لمدة ٧ أيام. لا تحتاج بطاقة ائتمان." />
+          {/* Toggle */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 100, padding: '4px 6px', marginBottom: 48 }}>
+            {[
+              { v: false, l: 'شهري' },
+              { v: true,  l: 'سنوي (وفّر ٢٠٪)' },
+            ].map(({ v, l }) => (
+              <button key={l} onClick={() => setAnnual(v)} style={{ height: 34, padding: '0 18px', borderRadius: 100, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', background: annual === v ? C.text : 'transparent', color: annual === v ? '#fff' : C.sub, transition: 'all .2s' }}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="lp-pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 24 }}>
+          {plans.map((p, i) => (
+            <div key={i} className={`lp-pricing-card lp-reveal lp-d${(i + 1) as 1|2|3}${p.popular ? ' lp-pricing-card-popular' : ''}`}>
+              {p.popular && <div className="lp-popular-badge">الأكثر شعبية</div>}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: C.muted }}>{p.desc}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 28 }}>
+                <span style={{ fontSize: 40, fontWeight: 800, color: p.popular ? C.primary : C.text, letterSpacing: '-0.03em' }}>{p.price}</span>
+                <span style={{ fontSize: 14, color: C.sub }}>{p.unit}</span>
+              </div>
+              <button onClick={onRegister} className={p.popular ? 'lp-btn-primary' : 'lp-btn-outline'} style={{ width: '100%', height: 46, marginBottom: 24 }}>
+                ابدأ مجاناً
+              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {p.features.map((f) => (
+                  <span key={f} className="lp-check" style={{ fontSize: 13 }}>{f}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Testimonials
+══════════════════════════════════════════════ */
+function TestimonialsSection() {
+  return (
+    <section style={{ padding: '96px 0', background: C.bg }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
+        <div className="lp-reveal">
+          <SectionHeader center eyebrow="آراء العملاء" title="يثق به آلاف أصحاب الأعمال" sub="انضم إلى آلاف الشركات التي تستخدم مُحكم لإدارة أعمالها." />
+        </div>
+        <div className="lp-testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 22 }}>
+          {TESTIMONIALS.map((t, i) => (
+            <div key={i} className={`lp-testimonial lp-reveal lp-d${(i + 1) as 1|2|3}`}>
+              <div style={{ display: 'flex', gap: 3, marginBottom: 16 }}>
+                {Array(5).fill(0).map((_, j) => <span key={j} style={{ color: '#F59E0B', fontSize: 14 }}>★</span>)}
+              </div>
+              <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.8, marginBottom: 20, fontStyle: 'italic' }}>"{t.quote}"</p>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: C.primaryBg, border: `2px solid #BFDBFE`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: C.primary, flexShrink: 0 }}>
+                  {t.name.charAt(0)}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{t.name}</div>
+                  <div style={{ fontSize: 12, color: C.muted }}>{t.role} · {t.company}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   FAQ
+══════════════════════════════════════════════ */
+function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <section id="faq" style={{ padding: '96px 0', background: C.surface }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
+        <div className="lp-reveal">
+          <SectionHeader center eyebrow="الأسئلة الشائعة" title="أجوبة على أكثر الأسئلة شيوعاً" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {FAQ_ITEMS.map((item, i) => (
+            <div key={i} className="lp-reveal" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <button className="lp-faq-btn" onClick={() => setOpen(open === i ? null : i)}>
+                <span>{item.q}</span>
+                <span style={{ color: C.muted, fontSize: 18, flexShrink: 0, transition: 'transform .2s', transform: open === i ? 'rotate(45deg)' : 'none', display: 'inline-block' }}>+</span>
+              </button>
+              {open === i && (
+                <div style={{ fontSize: 14, color: C.sub, lineHeight: 1.85, paddingBottom: 18, paddingRight: 4 }}>
+                  {item.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   CTA Banner
+══════════════════════════════════════════════ */
+function CTABanner({ onRegister }: { onRegister: () => void }) {
+  return (
+    <section style={{ padding: '80px 24px', background: C.primary, textAlign: 'center' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <h2 style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: 16 }}>
+          جاهز لتحويل طريقة إدارة أعمالك؟
+        </h2>
+        <p style={{ fontSize: 17, color: '#BFDBFE', lineHeight: 1.75, marginBottom: 36 }}>
+          انضم إلى أكثر من ١٢٠٠٠ شركة تستخدم مُحكم لإدارة أعمالها بثقة وكفاءة.
+        </p>
+        <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
+          <button onClick={onRegister} className="lp-btn-white" style={{ height: 52, padding: '0 36px', fontSize: 15 }}>
+            ابدأ تجربتك المجانية — ٧ أيام
+          </button>
+        </div>
+        <p style={{ fontSize: 13, color: '#93C5FD' }}>لا تحتاج بطاقة ائتمان · إلغاء في أي وقت</p>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Footer
+══════════════════════════════════════════════ */
+function FooterComp({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+  const cols = [
+    { title: 'مُحكم ERP', links: [{ l: 'عن مُحكم', fn: undefined }, { l: 'المدونة', fn: undefined }] },
+    { title: 'المنتج', links: [{ l: 'التطبيقات', fn: undefined }, { l: 'الأسعار', fn: undefined }, { l: 'الأسئلة الشائعة', fn: undefined }] },
+    { title: 'الحساب', links: [{ l: 'تسجيل الدخول', fn: onLogin }, { l: 'إنشاء حساب', fn: onRegister }] },
+    { title: 'تواصل معنا', links: [{ l: 'support@muhkam.com', fn: undefined }, { l: 'واتساب', fn: undefined }] },
+  ];
+
+  return (
+    <footer style={{ background: '#0F172A', color: '#94A3B8', padding: '64px 24px 32px' }}>
+      <div style={{ maxWidth: 1160, margin: '0 auto' }}>
+        <div className="lp-footer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 40, marginBottom: 48 }}>
+          {cols.map((col, i) => (
+            <div key={i}>
+              {i === 0 ? (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 14 }}>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.025em' }}>مُحكم</span>
+                    <span style={{ fontSize: 8, fontWeight: 700, color: '#60A5FA', letterSpacing: '.15em' }}>ERP</span>
+                  </div>
+                  <p style={{ fontSize: 13, lineHeight: 1.75, marginBottom: 20, maxWidth: 220 }}>
+                    منصة ERP عربية متكاملة لإدارة الأعمال من البيع إلى المحاسبة.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    {['𝕏', 'in', 'f'].map((s) => (
+                      <div key={s} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, cursor: 'pointer', color: '#94A3B8' }}>{s}</div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9', marginBottom: 14 }}>{col.title}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {col.links.map(({ l, fn }) => (
+                      <span key={l} onClick={fn} style={{ fontSize: 13, color: '#94A3B8', cursor: fn ? 'pointer' : 'default', transition: 'color .15s', ...(fn ? { ':hover': { color: '#F1F5F9' } } : {}) }}
+                        onMouseEnter={(e) => { if (fn) (e.currentTarget as HTMLElement).style.color = '#F1F5F9'; }}
+                        onMouseLeave={(e) => { if (fn) (e.currentTarget as HTMLElement).style.color = '#94A3B8'; }}
+                      >{l}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <span style={{ fontSize: 12 }}>© 2026 مُحكم ERP · جميع الحقوق محفوظة</span>
+          <div style={{ display: 'flex', gap: 20 }}>
+            {['سياسة الخصوصية', 'شروط الاستخدام'].map((l) => (
+              <span key={l} style={{ fontSize: 12, cursor: 'pointer' }}>{l}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Main export
+══════════════════════════════════════════════ */
+export default function LandingPage() {
+  const [, navigate] = useLocation();
+  const obsRef = useRef<IntersectionObserver | null>(null);
+
+  /* CSS */
+  useEffect(() => {
+    let el = document.getElementById(LP_CSS_ID) as HTMLStyleElement | null;
+    if (!el) { el = document.createElement('style'); el.id = LP_CSS_ID; document.head.appendChild(el); }
+    el.textContent = LP_CSS;
+    return () => { document.getElementById(LP_CSS_ID)?.remove(); };
+  }, []);
+
+  /* Scroll reveal */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      obsRef.current = new IntersectionObserver(
+        (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('lp-in'); obsRef.current?.unobserve(e.target); } }),
+        { threshold: 0.07 }
+      );
+      document.querySelectorAll('.lp-reveal').forEach((el) => obsRef.current?.observe(el));
+    }, 100);
+    return () => { clearTimeout(timer); obsRef.current?.disconnect(); };
+  }, []);
+
+  const goRegister = useCallback(() => navigate('/login?tab=register'), [navigate]);
+  const goLogin    = useCallback(() => navigate('/login'), [navigate]);
+
+  return (
+    <div dir="rtl" style={{ background: C.bg, color: C.text, fontFamily: "'Tajawal', system-ui, sans-serif", minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}>
+      <Navbar onLogin={goLogin} onRegister={goRegister} />
+      <HeroSection onRegister={goRegister} onLogin={goLogin} />
+      <TrustStrip />
+      <FeaturesSection />
+      <HowSection />
+      <ShowcaseSection />
+      <ComplianceSection />
+      <MobileSection />
+      <PricingSection onRegister={goRegister} />
+      <TestimonialsSection />
+      <FAQSection />
+      <CTABanner onRegister={goRegister} />
+      <FooterComp onLogin={goLogin} onRegister={goRegister} />
     </div>
   );
 }
