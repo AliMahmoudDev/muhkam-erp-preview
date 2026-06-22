@@ -410,19 +410,6 @@ function MobileSection() {
                 <span key={f} className="lp-check" style={{ fontSize: 14 }}>{f}</span>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {[
-                { icon: '🤖', label: 'Google Play',  sub: 'تنزيل على Android' },
-              ].map((s) => (
-                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', background: C.text, borderRadius: 10, cursor: 'pointer', transition: 'background .15s' }}>
-                  <span style={{ fontSize: 22 }}>{s.icon}</span>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#94A3B8' }}>{s.sub}</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{s.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Mockup — second = LEFT in RTL */}
