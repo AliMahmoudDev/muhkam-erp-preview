@@ -507,40 +507,6 @@ export function AppLayout({ children }: LayoutProps) {
   const logoSrc =
     resolveUploadedFileUrl(settings.customLogo) || `${import.meta.env.BASE_URL}logo.png`;
 
-  const pageTitle =
-    NAV_ITEMS.find((i) => i.href === location)?.name ||
-    (location === '/inventory'
-      ? 'المخزون'
-      : location === '/expenses'
-        ? 'المصروفات'
-        : location === '/income'
-          ? 'الإيرادات'
-          : location === '/receipt-vouchers'
-            ? 'سندات القبض'
-            : location === '/deposit-vouchers'
-              ? 'سندات التوريد'
-              : location === '/payment-vouchers'
-                ? 'سندات الصرف'
-                : location === '/safe-transfers'
-                  ? 'تحويل الخزائن'
-                  : location === '/accounts'
-                    ? 'شجرة الحسابات'
-                    : location === '/journal-entries'
-                      ? 'القيود اليومية'
-                      : location === '/fixed-assets'
-                        ? 'الأصول الثابتة'
-                        : location === '/accruals'
-                          ? 'الاستحقاقات والمدفوعات المقدمة'
-                          : location === '/bank-reconciliation'
-                            ? 'المطابقة البنكية'
-                            : location === '/budgets'
-                              ? 'الميزانية التقديرية'
-                              : location === '/cost-centers'
-                                ? 'مراكز التكلفة'
-                                : location === '/transfers'
-                                  ? 'تحويل المخزون بين الفروع'
-                                  : 'مرحباً بك');
-
   /* ── Colors — use CSS tokens so they auto-switch with html.light/dark ── */
   const sidebarBg = 'var(--erp-bg-sidebar)';
   const sidebarBdr = '1px solid var(--erp-border-sidebar)';
@@ -882,26 +848,8 @@ export function AppLayout({ children }: LayoutProps) {
             zIndex: 30,
           }}
         >
-          {/* Left: Page info */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div
-              style={{
-                width: 3,
-                height: 18,
-                borderRadius: 99,
-                flexShrink: 0,
-                background: 'var(--brand)',
-              }}
-            />
-            <div style={{ minWidth: 0 }}>
-              <h2
-                style={{ fontSize: 14.5, fontWeight: 800, color: textPrimary, lineHeight: 1.2 }}
-                className="truncate"
-              >
-                {pageTitle}
-              </h2>
-            </div>
-          </div>
+          {/* Left: spacer so search stays centred */}
+          <div className="flex-1 min-w-0" />
 
           {/* Center: Search */}
           <div className="hidden md:flex justify-center" style={{ flexShrink: 0 }}>
