@@ -328,19 +328,6 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
               ))}
             </div>
 
-            {/* Stats */}
-            <div className="lp-hero-stats" style={{ display: 'flex', gap: 0, marginTop: 40, borderTop: `1px solid ${C.border}`, paddingTop: 28, width: '100%', animation: 'lp-up .5s .22s ease both' }}>
-              {[
-                { v: '٩٩.٩٪', l: 'وقت التشغيل' },
-                { v: '٢٥+', l: 'تكاملات جاهزة' },
-                { v: '١٢٠٠٠+', l: 'شركة نشطة' },
-              ].map((s, i) => (
-                <div key={i} style={{ flex: 1, textAlign: 'center', borderRight: i < 2 ? `1px solid ${C.border}` : 'none', padding: '0 20px' }}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: C.text, letterSpacing: '-0.02em' }}>{s.v}</div>
-                  <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Product — second = LEFT in RTL */}
