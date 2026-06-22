@@ -8,3 +8,4 @@ export {
   MiniAccounting, MiniSales, MiniInventory, MiniHR,
   MiniRepair, MiniReports, MiniBank, MiniMobile,
 } from './LandingMockups';
+export { LiveDashboard } from './LiveDashboard';

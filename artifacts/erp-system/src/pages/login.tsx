@@ -1,17 +1,18 @@
-/* eslint-disable erp/no-hardcoded-colors -- Login v4: full dark control-center aesthetic */
+/* eslint-disable erp/no-hardcoded-colors -- Login v4.1: dark control-center, form RIGHT (Arabic primary), product preview LEFT */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useLocation } from 'wouter';
 import { RegisterForm } from './login/RegisterForm';
 import { api } from '@/lib/api';
+import { LiveDashboard } from './landing';
 
 /* ══════════════════════════════════════════════
-   Login v4 — dark control-center aesthetic
-   Both panels dark. Entrance to a workspace.
+   Login v4.1
+   RTL-correct: form on RIGHT (first DOM child = right in RTL flex)
+                product preview on LEFT (second DOM child)
    All auth logic preserved 1:1.
 ══════════════════════════════════════════════ */
 
-/* ── Palette (same as LandingPage v4) ── */
 const C = {
   bg:      '#09090B',
   surface: '#0D0D12',
@@ -37,43 +38,43 @@ const LOGIN_CSS = `
 }
 
 @keyframes v4-up {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: none; }
 }
 @keyframes v4-spin { to { transform: rotate(360deg); } }
 @keyframes v4-shake {
   0%,100% { transform: translateX(0); }
-  25%     { transform: translateX(-4px); }
-  75%     { transform: translateX(4px); }
+  25%     { transform: translateX(-5px); }
+  75%     { transform: translateX(5px); }
 }
 
-/* ── Dark inputs ── */
+/* ── Premium dark inputs (58px) ── */
 .v4-input {
   width: 100%;
-  height: 46px;
-  padding: 0 14px;
-  border-radius: 8px;
+  height: 58px;
+  padding: 0 18px;
+  border-radius: 10px;
   background: ${C.surface2};
   border: 1px solid ${C.border2};
   color: ${C.text1};
-  font-size: 14px;
+  font-size: 15px;
   font-family: inherit;
   outline: none;
   transition: border-color .15s ease, box-shadow .15s ease;
   direction: rtl;
   text-align: right;
 }
-.v4-input::placeholder { color: ${C.text5}; }
+.v4-input::placeholder { color: ${C.text5}; font-size: 14px; }
 .v4-input:hover:not(:disabled):not(:focus) { border-color: ${C.text5}; }
 .v4-input:focus {
   border-color: ${C.accent};
-  box-shadow: 0 0 0 3px rgba(99,102,241,.14);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
 }
 .v4-input:disabled { opacity: .4; cursor: not-allowed; }
 .v4-input-error { border-color: #EF4444 !important; box-shadow: 0 0 0 3px rgba(239,68,68,.10) !important; }
-.v4-input-pw { padding-right: 44px; padding-left: 14px; font-family: 'Inter', monospace; letter-spacing: .06em; }
+.v4-input-pw { padding-right: 52px; padding-left: 18px; font-family: 'Inter', monospace; letter-spacing: .06em; }
 
-/* Autofill dark override */
+/* Autofill dark */
 .v4-input:-webkit-autofill,
 .v4-input:-webkit-autofill:hover,
 .v4-input:-webkit-autofill:focus {
@@ -85,8 +86,8 @@ const LOGIN_CSS = `
 
 /* ── Password toggle ── */
 .v4-pw-toggle {
-  position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
-  width: 32px; height: 32px;
+  position: absolute; top: 50%; right: 18px; transform: translateY(-50%);
+  width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; cursor: pointer;
   color: ${C.text4}; border-radius: 6px;
@@ -103,26 +104,27 @@ const LOGIN_CSS = `
   text-decoration: none;
   transition: opacity .15s ease;
 }
-.v4-link:hover { opacity: .75; }
+.v4-link:hover { opacity: .72; }
 
-/* ── Buttons (scoped to login panel) ── */
+/* ── Buttons (login form scope) ── */
 .v4-login .v4-btn-primary {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; height: 48px;
-  border-radius: 8px; border: none; cursor: pointer;
+  width: 100%; height: 58px;
+  border-radius: 10px; border: none; cursor: pointer;
   background: ${C.accent}; color: #fff;
-  font-size: 14.5px; font-weight: 600; font-family: inherit;
+  font-size: 16px; font-weight: 700; font-family: inherit;
   transition: background .15s ease;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
 }
 .v4-login .v4-btn-primary:hover { background: #4F46E5; }
-.v4-login .v4-btn-primary:active { transform: scale(0.99); }
+.v4-login .v4-btn-primary:active { transform: scale(0.995); }
 .v4-login .v4-btn-primary:disabled { opacity: .45; cursor: not-allowed; }
 
 .v4-login .v4-btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; height: 46px;
-  border-radius: 8px; cursor: pointer;
+  width: 100%; height: 52px;
+  border-radius: 10px; cursor: pointer;
   background: transparent; color: ${C.text2};
   border: 1px solid ${C.border2};
   font-size: 14px; font-weight: 500; font-family: inherit;
@@ -130,20 +132,24 @@ const LOGIN_CSS = `
 }
 .v4-login .v4-btn-ghost:hover { color: ${C.text1}; border-color: ${C.text5}; }
 
-/* ── Responsive ── */
-@media (max-width: 860px) {
-  .v4-brand-panel { display: none !important; }
-  .v4-form-panel  { flex: 1 !important; }
+/* ── Responsive: hide product panel on mobile ── */
+@media (max-width: 900px) {
+  .v4-product-panel { display: none !important; }
+  .v4-form-panel    { flex: 1 !important; }
+  .v4-mobile-logo   { display: flex !important; }
+}
+@media (min-width: 901px) {
+  .v4-mobile-logo { display: none !important; }
 }
 `;
 
 /* ── Icons ── */
 const EyeIcon = ({ open }: { open: boolean }) => open ? (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
   </svg>
 ) : (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
     <line x1="1" y1="1" x2="23" y2="23"/>
   </svg>
@@ -183,7 +189,6 @@ export default function Login() {
   const pinRef      = useRef<HTMLInputElement>(null);
   const errorRef    = useRef<HTMLDivElement>(null);
 
-  /* Inject CSS once */
   useEffect(() => {
     if (document.getElementById('muhkam-login-css')) return;
     const el = document.createElement('style');
@@ -237,14 +242,9 @@ export default function Login() {
       const trimmed = username.trim();
       if (!trimmed) { setError('أدخل رقم الهاتف أو اسم المستخدم'); usernameRef.current?.focus(); return; }
       if (!pin)      { setError('أدخل الرقم السري'); pinRef.current?.focus(); return; }
-
       setLoading(true);
       try {
-        const body = {
-          username: trimmed.toLowerCase(),
-          pin,
-          ...(explicitCompanyId ? { company_id: explicitCompanyId } : {}),
-        };
+        const body = { username: trimmed.toLowerCase(), pin, ...(explicitCompanyId ? { company_id: explicitCompanyId } : {}) };
         const res = await fetch(api('/api/auth/login'), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body), credentials: 'include',
@@ -297,151 +297,53 @@ export default function Login() {
     [totpCode, tempToken, login, setLocation]
   );
 
-  /* ── Shared error banner ── */
-  const ErrorBanner = () => error ? (
-    <div
-      id="login-error"
-      ref={errorRef}
-      role="alert"
-      aria-live="polite"
-      style={{
-        marginBottom: 20,
-        padding: '11px 14px',
-        background: 'rgba(239,68,68,.08)',
-        border: '1px solid rgba(239,68,68,.25)',
-        borderRadius: 8,
-        fontSize: 13,
-        color: '#F87171',
-        fontWeight: 500,
-      }}
-    >
-      {error}
-    </div>
-  ) : null;
-
-  /* ── Brand panel (right in RTL) ── */
-  const BrandPanel = () => (
-    <div
-      className="v4-brand-panel"
-      style={{
-        flex: '0 0 52%',
-        minHeight: '100vh',
-        background: C.bg,
-        borderLeft: `1px solid ${C.border}`,
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '80px 72px',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Dot grid */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: `radial-gradient(circle, ${C.border} 1px, transparent 1px)`,
-          backgroundSize: '28px 28px',
-          opacity: .5,
-        }}
-      />
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `radial-gradient(ellipse 65% 65% at 50% 50%, ${C.bg} 20%, transparent 100%)`,
-        }}
-      />
-
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1, animation: 'v4-up .55s ease both' }} dir="rtl">
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 32 }}>
-          <span style={{ fontSize: 72, fontWeight: 800, color: C.text1, letterSpacing: '-0.04em', lineHeight: 1 }}>مُحكم</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C.accent, letterSpacing: '0.18em', alignSelf: 'flex-end', marginBottom: 8 }}>ERP</span>
-        </div>
-
-        {/* Divider */}
-        <div style={{ width: 48, height: 1, background: C.border2, marginBottom: 28 }} />
-
-        {/* Tagline */}
-        <p style={{ fontSize: 18, color: C.text3, fontWeight: 400, lineHeight: 1.75, maxWidth: 380 }}>
-          نظام إدارة موارد المؤسسات.<br />
-          مُصمم للسوق العربي.
-        </p>
-
-        {/* Module tags */}
-        <div style={{ marginTop: 52, display: 'flex', flexWrap: 'wrap', gap: '10px 24px' }}>
-          {['المحاسبة','المبيعات','الموارد البشرية','المخزون','الصيانة','التقارير'].map((m) => (
-            <span key={m} style={{ fontSize: 12, color: C.text5, fontWeight: 500 }}>{m}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Copyright */}
-      <div
-        style={{
-          position: 'absolute', bottom: 40,
-          right: 72, left: 72,
-          fontSize: 12, color: C.text5, fontWeight: 400,
-        }}
-        dir="rtl"
-      >
-        © 2026 مُحكم ERP · جميع الحقوق محفوظة
-      </div>
-    </div>
-  );
-
-  /* ─── RENDER ─── */
+  /* ─── Render ─── */
   return (
     <div
       className="v4-login"
       dir="rtl"
       style={{ minHeight: '100vh', display: 'flex', flexDirection: 'row', background: C.bg, color: C.text1 }}
     >
-      {/* Brand panel — right in RTL (first in DOM = right visually) */}
-      <BrandPanel />
-
-      {/* Form panel — left in RTL */}
+      {/* ════ FORM PANEL — first in DOM = RIGHT in RTL ════ */}
       <div
         className="v4-form-panel"
         style={{
-          flex: 1,
+          flex: '0 0 45%',
           minHeight: '100vh',
           background: C.surface,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '48px 32px',
+          padding: '56px 48px',
+          position: 'relative',
+          zIndex: 1,
+          boxShadow: '-1px 0 0 0 rgba(0,0,0,.4)',
         }}
       >
-        <div style={{ width: '100%', maxWidth: 380, animation: 'v4-up .45s .05s ease both' }}>
+        <div style={{ width: '100%', maxWidth: 360, animation: 'v4-up .5s .05s ease both' }}>
 
           {/* Mobile-only logo */}
-          <div
-            style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 40, justifyContent: 'center' }}
-            className="v4-mobile-logo"
-          >
+          <div className="v4-mobile-logo" style={{ alignItems: 'baseline', gap: 8, marginBottom: 40, justifyContent: 'center', display: 'none' }}>
             <span style={{ fontSize: 28, fontWeight: 800, color: C.text1, letterSpacing: '-0.025em' }}>مُحكم</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '0.15em' }}>ERP</span>
           </div>
 
-          {/* ─── 2FA STEP ─── */}
+          {/* ─── 2FA ─── */}
           {requires2FA ? (
             <form onSubmit={handleTotpSubmit} noValidate aria-label="نموذج التحقق الثنائي">
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text1, marginBottom: 8, letterSpacing: '-0.015em' }}>
-                التحقق الثنائي
-              </h2>
-              <p style={{ fontSize: 14, color: C.text3, lineHeight: 1.7, marginBottom: 28 }}>
-                افتح{' '}
-                <span style={{ color: C.text1, fontWeight: 600 }}>Google Authenticator</span>{' '}
+              <h2 style={{ fontSize: 26, fontWeight: 700, color: C.text1, marginBottom: 8, letterSpacing: '-0.02em' }}>التحقق الثنائي</h2>
+              <p style={{ fontSize: 14, color: C.text3, lineHeight: 1.75, marginBottom: 32 }}>
+                افتح{' '}<span style={{ color: C.text1, fontWeight: 600 }}>Google Authenticator</span>{' '}
                 أو <span style={{ color: C.text1, fontWeight: 600 }}>Authy</span>{' '}
                 وأدخل الرمز المكوّن من 6 أرقام.
               </p>
 
-              <ErrorBanner />
+              {error && (
+                <div ref={errorRef} role="alert" aria-live="polite" style={{ marginBottom: 24, padding: '12px 16px', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 10, fontSize: 13, color: '#F87171', fontWeight: 500 }}>
+                  {error}
+                </div>
+              )}
 
               <input
                 value={totpCode}
@@ -452,40 +354,25 @@ export default function Login() {
                 autoFocus
                 aria-label="رمز التحقق الثنائي"
                 className="v4-input"
-                style={{ height: 58, fontSize: 26, fontFamily: 'Inter, monospace', letterSpacing: '0.55em', textAlign: 'center', marginBottom: 16, paddingRight: 0, paddingLeft: 0 }}
+                style={{ fontSize: 28, fontFamily: 'Inter, monospace', letterSpacing: '0.55em', textAlign: 'center', marginBottom: 20, paddingRight: 0, paddingLeft: 0 }}
                 maxLength={6}
               />
 
               <button type="submit" disabled={totpLoading || totpCode.length !== 6} className="v4-btn-primary">
                 {totpLoading ? (
-                  <>
-                    <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.25)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'v4-spin .7s linear infinite' }} />
-                    <span>جاري التحقق…</span>
-                  </>
+                  <><span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,.25)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'v4-spin .7s linear infinite' }} /><span>جاري التحقق…</span></>
                 ) : <span>تحقق</span>}
               </button>
-
-              <button
-                type="button"
-                className="v4-btn-ghost"
-                onClick={() => { setRequires2FA(false); setTempToken(''); setTotpCode(''); setError(''); setPin(''); }}
-              >
+              <button type="button" className="v4-btn-ghost" onClick={() => { setRequires2FA(false); setTempToken(''); setTotpCode(''); setError(''); setPin(''); }}>
                 رجوع
               </button>
             </form>
 
           ) : showRegister ? (
             <>
-              <h1 style={{ fontSize: 24, fontWeight: 700, color: C.text1, marginBottom: 6, letterSpacing: '-0.015em' }}>
-                إنشاء حساب جديد
-              </h1>
-              <p style={{ fontSize: 14, color: C.text3, marginBottom: 28 }}>
-                تجربة مجانية لمدة ٧ أيام — بدون بطاقة ائتمان
-              </p>
-              <RegisterForm
-                onSuccess={handleRegisterSuccess}
-                onSwitch={() => { setShowRegister(false); setError(''); }}
-              />
+              <h1 style={{ fontSize: 26, fontWeight: 700, color: C.text1, marginBottom: 6, letterSpacing: '-0.02em' }}>إنشاء حساب جديد</h1>
+              <p style={{ fontSize: 14, color: C.text3, marginBottom: 28, lineHeight: 1.7 }}>تجربة مجانية لمدة ٧ أيام — بدون بطاقة ائتمان</p>
+              <RegisterForm onSuccess={handleRegisterSuccess} onSwitch={() => { setShowRegister(false); setError(''); }} />
             </>
 
           ) : (
@@ -502,21 +389,72 @@ export default function Login() {
           )}
 
           {/* Security footer */}
-          <div
-            style={{
-              marginTop: 28,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              fontSize: 12,
-              color: C.text5,
-              fontWeight: 400,
-            }}
-          >
+          <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, color: C.text5 }}>
             <LockIcon />
-            <span>بحماية تشفير TLS · بيانات كل شركة معزولة تماماً</span>
+            <span>بحماية TLS · بيانات كل شركة معزولة تماماً</span>
           </div>
+        </div>
+      </div>
+
+      {/* ════ PRODUCT PANEL — second in DOM = LEFT in RTL ════ */}
+      <div
+        className="v4-product-panel"
+        style={{
+          flex: 1,
+          minHeight: '100vh',
+          background: C.bg,
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* Dashboard fills the panel */}
+        <LiveDashboard />
+
+        {/* Right-edge fade: blends into the form panel */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: '15%',
+            background: `linear-gradient(to right, transparent, ${C.surface})`,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+
+        {/* Bottom fade */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '12%',
+            background: `linear-gradient(to bottom, transparent, ${C.bg})`,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+
+        {/* Brand watermark at bottom-left */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 32,
+            left: 32,
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 7,
+            zIndex: 3,
+          }}
+          dir="rtl"
+        >
+          <span style={{ fontSize: 13, fontWeight: 800, color: C.text5, letterSpacing: '-0.025em', fontFamily: "'Tajawal', system-ui, sans-serif" }}>مُحكم</span>
+          <span style={{ fontSize: 8, fontWeight: 700, color: C.text5, letterSpacing: '0.18em', fontFamily: "'Tajawal', system-ui, sans-serif" }}>ERP</span>
         </div>
       </div>
     </div>
@@ -527,9 +465,9 @@ export default function Login() {
    Login form fields sub-component
 ═══════════════════════════════════════════════ */
 function LoginFormFields({
-  username, setUsername, pin, setPin,
-  showPin, setShowPin, error, setError,
-  loading, usernameRef, pinRef, errorRef,
+  username, setUsername, pin, setPin, showPin, setShowPin,
+  error, setError, loading,
+  usernameRef, pinRef, errorRef,
   handleSubmit, onShowRegister,
 }: {
   username: string; setUsername: (v: string) => void;
@@ -543,128 +481,76 @@ function LoginFormFields({
   handleSubmit: (e: React.FormEvent) => Promise<void>;
   onShowRegister: () => void;
 }) {
-  const C2 = {
-    text1: '#F8F8FA', text2: '#A1A1AA', text3: '#71717A', text5: '#3F3F46',
-    accent: '#6366F1',
-  };
-
   const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: 13,
-    fontWeight: 600,
-    color: C2.text2,
-    marginBottom: 8,
+    display: 'block', fontSize: 13, fontWeight: 600,
+    color: '#A1A1AA', marginBottom: 10,
   };
 
   return (
     <form onSubmit={handleSubmit} noValidate aria-label="نموذج تسجيل الدخول">
       {/* Heading */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: C2.text1, marginBottom: 6, letterSpacing: '-0.015em' }}>
-          أهلاً بعودتك
-        </h1>
-        <p style={{ fontSize: 14, color: C2.text3 }}>
-          سجّل الدخول للوصول إلى لوحة التحكم
-        </p>
+      <div style={{ marginBottom: 36 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#F8F8FA', marginBottom: 8, letterSpacing: '-0.02em' }}>أهلاً بعودتك</h1>
+        <p style={{ fontSize: 14, color: '#71717A', lineHeight: 1.6 }}>سجّل الدخول للوصول إلى لوحة التحكم</p>
       </div>
 
-      {/* Error banner */}
+      {/* Error */}
       {error && (
-        <div
-          id="login-error"
-          role="alert"
-          aria-live="polite"
-          ref={errorRef}
-          style={{
-            marginBottom: 20,
-            padding: '11px 14px',
-            background: 'rgba(239,68,68,.08)',
-            border: '1px solid rgba(239,68,68,.25)',
-            borderRadius: 8,
-            fontSize: 13,
-            color: '#F87171',
-            fontWeight: 500,
-          }}
-        >
+        <div id="login-error" role="alert" aria-live="polite" ref={errorRef}
+          style={{ marginBottom: 22, padding: '12px 16px', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 10, fontSize: 13, color: '#F87171', fontWeight: 500 }}>
           {error}
         </div>
       )}
 
       {/* Username */}
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 16 }}>
         <label htmlFor="username" style={labelStyle}>رقم الهاتف أو اسم المستخدم</label>
         <input
-          ref={usernameRef}
-          id="username"
-          type="text"
-          autoComplete="username"
-          value={username}
-          placeholder="admin"
-          disabled={loading}
+          ref={usernameRef} id="username" type="text" autoComplete="username"
+          value={username} placeholder="admin" disabled={loading}
           className={`v4-input${error && !username.trim() ? ' v4-input-error' : ''}`}
           onChange={(e) => { setUsername(e.target.value); setError(''); }}
-          aria-label="رقم الهاتف أو اسم المستخدم"
-          aria-describedby="login-error"
+          aria-label="رقم الهاتف أو اسم المستخدم" aria-describedby="login-error"
         />
       </div>
 
       {/* Password */}
       <div style={{ marginBottom: 8 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
           <label htmlFor="pin" style={{ ...labelStyle, marginBottom: 0 }}>الرقم السري</label>
-          <button
-            type="button"
-            className="v4-link"
-            style={{ fontSize: 12 }}
-            onClick={() => window.alert('للحصول على كلمة سر جديدة، يرجى التواصل مع مدير النظام في شركتك.')}
-          >
-            هل نسيت كلمة السر؟
+          <button type="button" className="v4-link" style={{ fontSize: 12 }}
+            onClick={() => window.alert('للحصول على كلمة سر جديدة، يرجى التواصل مع مدير النظام في شركتك.')}>
+            نسيت كلمة السر؟
           </button>
         </div>
         <div style={{ position: 'relative' }}>
           <input
-            ref={pinRef}
-            id="pin"
-            type={showPin ? 'text' : 'password'}
-            autoComplete="current-password"
-            value={pin}
-            placeholder="••••••"
-            disabled={loading}
+            ref={pinRef} id="pin" type={showPin ? 'text' : 'password'} autoComplete="current-password"
+            value={pin} placeholder="••••••" disabled={loading}
             className={`v4-input v4-input-pw${error && !pin && username.trim() ? ' v4-input-error' : ''}`}
             onChange={(e) => { setPin(e.target.value); setError(''); }}
-            aria-label="الرقم السري"
-            aria-describedby="login-error"
+            aria-label="الرقم السري" aria-describedby="login-error"
           />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowPin(!showPin)}
-            className="v4-pw-toggle"
-            aria-label={showPin ? 'إخفاء الرقم السري' : 'إظهار الرقم السري'}
-          >
+          <button type="button" tabIndex={-1} onClick={() => setShowPin(!showPin)} className="v4-pw-toggle"
+            aria-label={showPin ? 'إخفاء الرقم السري' : 'إظهار الرقم السري'}>
             <EyeIcon open={showPin} />
           </button>
         </div>
       </div>
 
-      <div style={{ marginBottom: 24 }} />
+      <div style={{ marginBottom: 28 }} />
 
       {/* Submit */}
       <button type="submit" disabled={loading} className="v4-btn-primary">
         {loading ? (
-          <>
-            <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.25)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'v4-spin .7s linear infinite' }} />
-            <span>جاري التحقق…</span>
-          </>
+          <><span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,.25)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'v4-spin .7s linear infinite' }} /><span>جاري التحقق…</span></>
         ) : <span>تسجيل الدخول</span>}
       </button>
 
       {/* Register link */}
-      <div style={{ textAlign: 'center', fontSize: 13, color: C2.text3 }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: '#71717A' }}>
         ليس لديك حساب؟{' '}
-        <button type="button" className="v4-link" onClick={onShowRegister}>
-          إنشاء حساب جديد
-        </button>
+        <button type="button" className="v4-link" onClick={onShowRegister}>إنشاء حساب جديد</button>
       </div>
     </form>
   );
