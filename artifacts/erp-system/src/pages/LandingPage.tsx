@@ -569,65 +569,6 @@ function FAQSection() {
 }
 
 
-/* ══════════════════════════════════════════════
-   Footer
-══════════════════════════════════════════════ */
-function FooterComp(_: { onLogin: () => void; onRegister: () => void }) {
-  const cols = [
-    { title: 'مُحكم ERP', links: [{ l: 'عن مُحكم', fn: undefined }, { l: 'المدونة', fn: undefined }] },
-    { title: 'المنتج', links: [{ l: 'التطبيقات', fn: undefined }, { l: 'الأسعار', fn: undefined }, { l: 'الأسئلة الشائعة', fn: undefined }] },
-    { title: 'تواصل معنا', links: [{ l: 'support@muhkam.com', fn: undefined }, { l: 'واتساب', fn: undefined }] },
-  ];
-
-  return (
-    <footer style={{ background: '#0F172A', color: '#94A3B8', padding: '64px 24px 32px' }}>
-      <div style={{ maxWidth: 1160, margin: '0 auto' }}>
-        <div className="lp-footer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 40, marginBottom: 48 }}>
-          {cols.map((col, i) => (
-            <div key={i}>
-              {i === 0 ? (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 14 }}>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.025em' }}>مُحكم</span>
-                    <span style={{ fontSize: 8, fontWeight: 700, color: '#60A5FA', letterSpacing: '.15em' }}>ERP</span>
-                  </div>
-                  <p style={{ fontSize: 13, lineHeight: 1.75, marginBottom: 20, maxWidth: 220 }}>
-                    منصة ERP عربية متكاملة لإدارة الأعمال من البيع إلى المحاسبة.
-                  </p>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    {['𝕏', 'in', 'f'].map((s) => (
-                      <div key={s} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, cursor: 'pointer', color: '#94A3B8' }}>{s}</div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9', marginBottom: 14 }}>{col.title}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {col.links.map(({ l, fn }) => (
-                      <span key={l} onClick={fn} style={{ fontSize: 13, color: '#94A3B8', cursor: fn ? 'pointer' : 'default', transition: 'color .15s', ...(fn ? { ':hover': { color: '#F1F5F9' } } : {}) }}
-                        onMouseEnter={(e) => { if (fn) (e.currentTarget as HTMLElement).style.color = '#F1F5F9'; }}
-                        onMouseLeave={(e) => { if (fn) (e.currentTarget as HTMLElement).style.color = '#94A3B8'; }}
-                      >{l}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <span style={{ fontSize: 12 }}>© 2026 مُحكم ERP · جميع الحقوق محفوظة</span>
-          <div style={{ display: 'flex', gap: 20 }}>
-            {['سياسة الخصوصية', 'شروط الاستخدام'].map((l) => (
-              <span key={l} style={{ fontSize: 12, cursor: 'pointer' }}>{l}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 /* ══════════════════════════════════════════════
    Main export
@@ -662,13 +603,13 @@ export default function LandingPage() {
   return (
     <div dir="rtl" style={{ background: C.bg, color: C.text, fontFamily: "'Tajawal', system-ui, sans-serif", minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}>
       <Navbar onLogin={goLogin} onRegister={goRegister} />
+
       <HeroSection onRegister={goRegister} onLogin={goLogin} />
       <FeaturesSection />
       <ShowcaseSection />
       <MobileSection />
       <PricingSection onRegister={goRegister} />
       <FAQSection />
-      <FooterComp onLogin={goLogin} onRegister={goRegister} />
     </div>
   );
 }
