@@ -248,7 +248,6 @@ function Navbar({ onLogin, onRegister }: { onLogin: () => void; onRegister: () =
             {/* Brand — first = RIGHT in RTL */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, flexShrink: 0 }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>مُحكم</span>
-              <span style={{ fontSize: 8, fontWeight: 700, color: C.primary, letterSpacing: '.15em' }}>ERP</span>
             </div>
 
             {/* Nav links */}
