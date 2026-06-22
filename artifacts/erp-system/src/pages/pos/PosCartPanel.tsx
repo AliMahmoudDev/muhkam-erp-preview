@@ -56,14 +56,8 @@ export function PosCartPanel({
 }: PosCartPanelProps) {
   return (
     <div
-      className="flex flex-col shrink-0 erp-card-soft"
-      style={{
-        width: cm ? '420px' : '360px',
-        background: 'var(--erp-bg-soft)',
-        borderRight: 'none',
-        borderTop: 'none',
-        borderBottom: 'none',
-      }}
+      className="flex flex-col shrink-0 bg-[var(--surface)] border-s border-[var(--line)]"
+      style={{ width: cm ? '420px' : '360px' }}
     >
       <PosCart
         cart={cart}

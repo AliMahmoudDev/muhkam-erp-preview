@@ -14,11 +14,8 @@ interface Props {
 
 export function PosCustomerPicker({ items, value, onChange }: Props) {
   return (
-    <div
-      className="erp-card flex items-center gap-2 px-3 py-1.5"
-      style={{ borderRadius: '0.75rem' }}
-    >
-      <span className="erp-label shrink-0 text-xs">العميل</span>
+    <div className="bg-[var(--surface)] border border-[var(--line)] rounded-xl flex items-center gap-2 px-3 py-1.5">
+      <span className="text-xs opacity-50 shrink-0">العميل</span>
       <SearchableSelect
         items={items}
         value={value}

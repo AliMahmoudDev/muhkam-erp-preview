@@ -11,9 +11,13 @@ import { usePosState } from './hooks/usePosState';
 import { usePosActions } from './hooks/usePosActions';
 import { PosProductGrid } from './PosProductGrid';
 import { PosReturnPanel } from './PosReturnPanel';
-import { PosCartPanel } from './PosCartPanel';
+import { PosCart } from './PosCart';
+import { PosPayment } from './PosPayment';
 import { PosHeader } from './PosHeader';
 import AdminPOSSetup from './AdminPOSSetup';
+import { POSPattern } from '@/components/patterns';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 /* ─────────────────────────────────────────────────────────────
    MAIN POS PAGE
@@ -39,17 +43,14 @@ export default function POSPage() {
   if (!warehouseId || !safeId) {
     if (!isAdmin) {
       return (
-        <div
-          className="erp-page fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 p-8"
-          dir="rtl"
-        >
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 p-8 bg-[var(--bg)]" dir="rtl">
           <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
             <AlertTriangle className="w-10 h-10 text-red-400" />
           </div>
           <div className="text-center space-y-2 max-w-sm">
-            <h2 className="erp-title text-2xl">وصول مرفوض</h2>
+            <h2 className="text-2xl font-bold">وصول مرفوض</h2>
             <p className="text-red-400 font-bold text-lg">يجب ربط حسابك بمخزن وخزينة أولاً</p>
-            <p className="erp-text-muted">
+            <p className="opacity-60">
               تواصل مع المدير لإتمام إعداد حسابك قبل استخدام نقطة البيع
             </p>
           </div>
@@ -107,46 +108,45 @@ function POSBody({
     qty <= 0 ? 'erp-badge-danger' : qty <= 5 ? 'erp-badge-warning' : 'erp-badge-neutral';
 
   return (
-    <div className="erp-page fixed inset-0 flex flex-col overflow-hidden" dir="rtl">
-      {/* ════════════════════ EXIT CONFIRM MODAL ════════════════ */}
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[var(--bg)]" dir="rtl">
+      {/* ════ EXIT CONFIRM MODAL ════ */}
       {state.showExitConfirm && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
-        >
-          <div className="erp-card-soft rounded-2xl p-6 w-full max-w-xs text-center space-y-4 border border-line shadow-2xl">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <Card className="p-6 w-full max-w-xs text-center space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto">
               <span className="text-2xl">⚠️</span>
             </div>
             <div>
-              <p className="erp-text font-bold text-base">فاتورة غير مكتملة</p>
-              <p className="erp-label text-sm mt-1">
+              <p className="font-bold text-base">فاتورة غير مكتملة</p>
+              <p className="opacity-60 text-sm mt-1">
                 السلة تحتوي على {state.cart.length} صنف. هل تريد الخروج بدون إتمام البيع؟
               </p>
             </div>
             <div className="flex gap-3 pt-1">
-              <button
+              <Button
+                variant="ghost"
+                className="flex-1"
                 onClick={() => state.setShowExitConfirm(false)}
-                className="flex-1 erp-btn-secondary rounded-xl py-2 text-sm font-bold"
               >
                 إلغاء
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 text-red-400 border-red-500/30 hover:bg-red-500/20"
                 onClick={() => {
                   state.setCart([]);
                   state.setShowExitConfirm(false);
                   navigate('/sales');
                 }}
-                className="flex-1 rounded-xl py-2 text-sm font-bold bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 hover:border-red-500/50 transition-colors"
               >
                 خروج بدون حفظ
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
-      {/* ════════════════════ HEADER ════════════════════ */}
+      {/* ════ HEADER ════ */}
       <PosHeader
         warehouseName={data.warehouseName}
         safeName={data.safeName}
@@ -160,73 +160,79 @@ function POSBody({
         onResetSetup={onResetSetup}
       />
 
-      {/* ════════════════════ BODY ════════════════════ */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Products panel */}
-        <PosProductGrid
-          search={state.search}
-          setSearch={state.setSearch}
-          searchRef={state.searchRef}
-          filtered={state.filtered}
-          cart={state.cart}
-          recentlyAdded={state.recentlyAdded}
-          cashierMode={cm}
-          addToCart={actions.addToCart}
-          stockClass={stockClass}
-        />
-
-        {/* Return panel */}
-        {state.returnMode && (
-          <PosReturnPanel
-            cm={cm}
-            returnInvoiceNo={state.returnInvoiceNo}
-            setReturnInvoiceNo={state.setReturnInvoiceNo}
-            returnSearchFetching={state.returnSearchFetching}
-            returnFetching={state.returnFetching}
-            returnSale={state.returnSale}
-            setReturnSale={state.setReturnSale}
-            returnItems={state.returnItems}
-            setReturnItems={state.setReturnItems}
-            returnSearchResults={state.returnSearchResults}
-            setReturnSearchResults={state.setReturnSearchResults}
-            returnReason={state.returnReason}
-            setReturnReason={state.setReturnReason}
-            returnRefundType={state.returnRefundType}
-            setReturnRefundType={state.setReturnRefundType}
-            handleReturn={actions.handleReturn}
-            selectReturnInvoice={actions.selectReturnInvoice}
-            isPending={actions.returnMutation.isPending}
-          />
-        )}
-
-        {/* Cart + Payment panel */}
-        {!state.returnMode && (
-          <PosCartPanel
-            cm={cm}
+      {/* ════ BODY via POSPattern ════ */}
+      <POSPattern
+        className="flex-1"
+        catalogSlot={
+          <PosProductGrid
+            search={state.search}
+            setSearch={state.setSearch}
+            searchRef={state.searchRef}
+            filtered={state.filtered}
             cart={state.cart}
-            canEditPrice={canEditPrice}
-            editingPriceId={state.editingPriceId}
-            editingPriceVal={state.editingPriceVal}
-            setEditingPriceId={state.setEditingPriceId}
-            setEditingPriceVal={state.setEditingPriceVal}
-            commitPrice={actions.commitPrice}
-            updateQty={actions.updateQty}
-            removeItem={actions.removeItem}
-            clearCart={() => state.setCart([])}
-            cartSubtotal={state.cartSubtotal}
-            cartTotal={state.cartTotal}
-            discountPct={state.discountPct}
-            setDiscountPct={state.setDiscountPct}
-            discountAmt={state.discountAmt}
-            customerItems={state.customerItems}
-            customerId={state.customerId}
-            setCustomerId={state.setCustomerId}
-            checkoutError={state.checkoutError}
-            isPending={actions.checkoutMutation.isPending}
-            onCheckout={actions.handleCheckout}
+            recentlyAdded={state.recentlyAdded}
+            cashierMode={cm}
+            addToCart={actions.addToCart}
+            stockClass={stockClass}
           />
-        )}
-      </div>
+        }
+        cartSlot={
+          state.returnMode ? (
+            <PosReturnPanel
+              cm={cm}
+              returnInvoiceNo={state.returnInvoiceNo}
+              setReturnInvoiceNo={state.setReturnInvoiceNo}
+              returnSearchFetching={state.returnSearchFetching}
+              returnFetching={state.returnFetching}
+              returnSale={state.returnSale}
+              setReturnSale={state.setReturnSale}
+              returnItems={state.returnItems}
+              setReturnItems={state.setReturnItems}
+              returnSearchResults={state.returnSearchResults}
+              setReturnSearchResults={state.setReturnSearchResults}
+              returnReason={state.returnReason}
+              setReturnReason={state.setReturnReason}
+              returnRefundType={state.returnRefundType}
+              setReturnRefundType={state.setReturnRefundType}
+              handleReturn={actions.handleReturn}
+              selectReturnInvoice={actions.selectReturnInvoice}
+              isPending={actions.returnMutation.isPending}
+            />
+          ) : (
+            <PosCart
+              cart={state.cart}
+              canEditPrice={canEditPrice}
+              editingPriceId={state.editingPriceId}
+              editingPriceVal={state.editingPriceVal}
+              setEditingPriceId={state.setEditingPriceId}
+              setEditingPriceVal={state.setEditingPriceVal}
+              commitPrice={actions.commitPrice}
+              updateQty={actions.updateQty}
+              removeItem={actions.removeItem}
+              clearCart={() => state.setCart([])}
+            />
+          )
+        }
+        paymentSlot={
+          !state.returnMode ? (
+            <PosPayment
+              cm={cm}
+              cartLength={state.cart.length}
+              cartSubtotal={state.cartSubtotal}
+              cartTotal={state.cartTotal}
+              discountPct={state.discountPct}
+              setDiscountPct={state.setDiscountPct}
+              discountAmt={state.discountAmt}
+              customerItems={state.customerItems}
+              customerId={state.customerId}
+              setCustomerId={state.setCustomerId}
+              checkoutError={state.checkoutError}
+              isPending={actions.checkoutMutation.isPending}
+              onCheckout={actions.handleCheckout}
+            />
+          ) : undefined
+        }
+      />
 
       {/* ════ SPLIT PAYMENT MODAL ════ */}
       {state.showSplitPayment && (
