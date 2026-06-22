@@ -144,11 +144,6 @@ const PLANS_ANNUAL = [
   { ...PLANS_MONTHLY[2], price: '٣٩٩' },
 ] as const;
 
-const TESTIMONIALS = [
-  { quote: 'مُحكم غيّر طريقة إدارتنا للمبيعات تماماً. ما كان يأخذ يوماً كاملاً أصبح يتم في أقل من ساعة.', name: 'عبدالله الحامد', role: 'مدير عام', company: 'شركة الأجهزة الحديثة' },
-  { quote: 'أفضل نظام ERP عربي جربناه. الواجهة سهلة والدعم الفني سريع ومحترف جداً.', name: 'فاطمة الشمري', role: 'مديرة مالية', company: 'مجموعة الخير للتجارة' },
-  { quote: 'ساعدنا في ضبط المخزون وتقليل الهدر. النتائج كانت واضحة من الأسبوع الأول.', name: 'خالد العسيري', role: 'مدير العمليات', company: 'شركة التقنية المتقدمة' },
-] as const;
 
 const FAQ_ITEMS = [
   { q: 'هل يدعم مُحكم إدارة متعددة الفروع؟', a: 'نعم، يمكنك إدارة فروع ومخازن متعددة من لوحة تحكم مركزية واحدة مع تقارير منفصلة لكل فرع.' },
@@ -570,39 +565,6 @@ function PricingSection({ onRegister }: { onRegister: () => void }) {
   );
 }
 
-/* ══════════════════════════════════════════════
-   Testimonials
-══════════════════════════════════════════════ */
-function TestimonialsSection() {
-  return (
-    <section style={{ padding: '96px 0', background: C.bg }}>
-      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
-        <div className="lp-reveal">
-          <SectionHeader center eyebrow="آراء العملاء" title="يثق به آلاف أصحاب الأعمال" sub="انضم إلى آلاف الشركات التي تستخدم مُحكم لإدارة أعمالها." />
-        </div>
-        <div className="lp-testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 22 }}>
-          {TESTIMONIALS.map((t, i) => (
-            <div key={i} className={`lp-testimonial lp-reveal lp-d${(i + 1) as 1|2|3}`}>
-              <div style={{ display: 'flex', gap: 3, marginBottom: 16 }}>
-                {Array(5).fill(0).map((_, j) => <span key={j} style={{ color: '#F59E0B', fontSize: 14 }}>★</span>)}
-              </div>
-              <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.8, marginBottom: 20, fontStyle: 'italic' }}>"{t.quote}"</p>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: C.primaryBg, border: `2px solid #BFDBFE`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: C.primary, flexShrink: 0 }}>
-                  {t.name.charAt(0)}
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{t.name}</div>
-                  <div style={{ fontSize: 12, color: C.muted }}>{t.role} · {t.company}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /* ══════════════════════════════════════════════
    FAQ
@@ -636,29 +598,6 @@ function FAQSection() {
   );
 }
 
-/* ══════════════════════════════════════════════
-   CTA Banner
-══════════════════════════════════════════════ */
-function CTABanner({ onRegister }: { onRegister: () => void }) {
-  return (
-    <section style={{ padding: '80px 24px', background: C.primary, textAlign: 'center' }}>
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        <h2 style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: 16 }}>
-          جاهز لتحويل طريقة إدارة أعمالك؟
-        </h2>
-        <p style={{ fontSize: 17, color: '#BFDBFE', lineHeight: 1.75, marginBottom: 36 }}>
-          انضم إلى أكثر من ١٢٠٠٠ شركة تستخدم مُحكم لإدارة أعمالها بثقة وكفاءة.
-        </p>
-        <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
-          <button onClick={onRegister} className="lp-btn-white" style={{ height: 52, padding: '0 36px', fontSize: 15 }}>
-            ابدأ تجربتك المجانية — ٧ أيام
-          </button>
-        </div>
-        <p style={{ fontSize: 13, color: '#93C5FD' }}>لا تحتاج بطاقة ائتمان · إلغاء في أي وقت</p>
-      </div>
-    </section>
-  );
-}
 
 /* ══════════════════════════════════════════════
    Footer
@@ -760,9 +699,7 @@ export default function LandingPage() {
       <ShowcaseSection />
       <MobileSection />
       <PricingSection onRegister={goRegister} />
-      <TestimonialsSection />
       <FAQSection />
-      <CTABanner onRegister={goRegister} />
       <FooterComp onLogin={goLogin} onRegister={goRegister} />
     </div>
   );
