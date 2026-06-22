@@ -30,8 +30,9 @@
   display: flex;
   flex-direction: column;
   min-block-size: 100%;
-  padding: var(--space-6, 1.5rem);
-  gap: var(--space-5, 1.25rem);
+  padding-block: var(--space-4, 1rem);
+  padding-inline: var(--space-6, 1.5rem);
+  gap: var(--space-3, 0.75rem);
   background: var(--bg-base);
   color: var(--text-1);
 }
@@ -98,7 +99,7 @@
 }
 
 .erp-page-header-title {
-  font-size: var(--text-2xl, 1.5rem);
+  font-size: var(--text-xl, 1.25rem);
   font-weight: 700;
   color: var(--text-1);
   line-height: 1.25;
@@ -135,7 +136,7 @@
   justify-content: space-between;
   gap: var(--space-3, 0.75rem);
   flex-wrap: wrap;
-  padding-block: var(--space-2, 0.5rem);
+  padding-block: 0;
 }
 
 .erp-page-toolbar-start {
@@ -177,18 +178,18 @@
 .erp-list-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4, 1rem);
-  padding-block-end: var(--space-8, 2rem);
+  gap: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-6, 1.5rem);
 }
 
 /* 1. Header zone — separates from toolbar */
 .erp-list-page-header {
-  padding-block-end: var(--space-2, 0.5rem);
+  padding-block-end: var(--space-1, 0.25rem);
 }
 
 /* 2. Toolbar zone */
 .erp-list-page-toolbar {
-  padding-block-end: var(--space-1, 0.25rem);
+  padding-block-end: 0;
 }
 
 /* 3. KPI summary row — responsive grid */
@@ -216,8 +217,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 320px;
-  padding-block: var(--space-8, 2rem);
+  min-block-size: 200px;
+  padding-block: var(--space-5, 1.25rem);
   padding-inline: var(--space-4, 1rem);
 }
 
@@ -260,8 +261,8 @@
 .erp-detail-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4, 1rem);
-  padding-block-end: var(--space-8, 2rem);
+  gap: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-6, 1.5rem);
 }
 
 /* 1. Entity header */
@@ -271,7 +272,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-3, 0.75rem);
-  padding-block-end: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-2, 0.5rem);
   border-block-end: 1px solid var(--edge);
 }
 
@@ -303,7 +304,7 @@
 .erp-detail-page-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5, 1.25rem);
+  gap: var(--space-4, 1rem);
 }
 
 .erp-detail-page-body--with-aside {
@@ -317,8 +318,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 320px;
-  padding-block: var(--space-8, 2rem);
+  min-block-size: 200px;
+  padding-block: var(--space-5, 1.25rem);
   padding-inline: var(--space-4, 1rem);
 }
 
@@ -376,8 +377,8 @@
 .erp-form-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4, 1rem);
-  padding-block-end: var(--space-8, 2rem);
+  gap: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-6, 1.5rem);
 }
 
 /* Adds bottom clearance to avoid content hidden under sticky action bar */
@@ -404,7 +405,7 @@
 .erp-form-page-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5, 1.25rem);
+  gap: var(--space-4, 1rem);
   flex: 1;
 }
 
@@ -413,8 +414,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 320px;
-  padding-block: var(--space-8, 2rem);
+  min-block-size: 200px;
+  padding-block: var(--space-5, 1.25rem);
   padding-inline: var(--space-4, 1rem);
 }
 
@@ -462,8 +463,8 @@
 .erp-report-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4, 1rem);
-  padding-block-end: var(--space-8, 2rem);
+  gap: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-6, 1.5rem);
 }
 
 /* 1. Header zone */
@@ -514,8 +515,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 320px;
-  padding-block: var(--space-8, 2rem);
+  min-block-size: 200px;
+  padding-block: var(--space-5, 1.25rem);
   padding-inline: var(--space-4, 1rem);
 }
 
@@ -560,8 +561,8 @@
 .erp-dashboard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6, 1.5rem);
-  padding-block-end: var(--space-10, 2.5rem);
+  gap: var(--space-4, 1rem);
+  padding-block-end: var(--space-6, 1.5rem);
 }
 
 /* 1. Page header — greeting, date, user */
@@ -571,7 +572,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-3, 0.75rem);
-  padding-block-end: var(--space-4, 1rem);
+  padding-block-end: var(--space-2, 0.5rem);
   border-block-end: 1px solid var(--edge, rgba(255 255 255 / 0.08));
 }
 
@@ -598,7 +599,7 @@
 .erp-dashboard-kpi {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-4, 1rem);
+  gap: var(--space-3, 0.75rem);
 }
 
 /* 5. Primary chart — hero trend, full-width */
@@ -700,8 +701,8 @@
 .erp-settings-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4, 1rem);
-  padding-block-end: var(--space-8, 2rem);
+  gap: var(--space-3, 0.75rem);
+  padding-block-end: var(--space-6, 1.5rem);
 }
 
 /* Optional page header */
@@ -745,14 +746,14 @@
   min-inline-size: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5, 1.25rem);
+  gap: var(--space-4, 1rem);
 }
 
 /* Main settings panels */
 .erp-settings-main {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5, 1.25rem);
+  gap: var(--space-4, 1rem);
 }
 
 /* Independent save bar — per-section save surface */
@@ -1222,8 +1223,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 320px;
-  padding-block: var(--space-8, 2rem);
+  min-block-size: 200px;
+  padding-block: var(--space-5, 1.25rem);
   padding-inline: var(--space-4, 1rem);
 }
 
@@ -1280,8 +1281,9 @@
 
 @media (max-width: 600px) {
   .erp-app-page {
-    padding: var(--space-4, 1rem);
-    gap: var(--space-4, 1rem);
+    padding-block: var(--space-3, 0.75rem);
+    padding-inline: var(--space-4, 1rem);
+    gap: var(--space-3, 0.75rem);
   }
 
   .erp-page-header-title {

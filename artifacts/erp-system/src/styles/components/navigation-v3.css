@@ -403,8 +403,8 @@
 
 /* Underline trigger */
 .erp-tabs-trigger--underline {
-  padding-block:  var(--space-2-5, 10px);
-  padding-inline: var(--space-4);
+  padding-block:  var(--space-2, 8px);
+  padding-inline: var(--space-3-5, 14px);
   border-block-end: 2px solid transparent;
   margin-block-end: -1px;
 }
@@ -441,7 +441,7 @@
 /* ── Tab Content ── */
 .erp-tabs-content {
   flex:          1;
-  padding-block: var(--space-4);
+  padding-block: var(--space-3);
   outline:       none;
 }
 
