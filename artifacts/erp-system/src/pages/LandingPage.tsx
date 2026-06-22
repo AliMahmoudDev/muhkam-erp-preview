@@ -602,11 +602,10 @@ function FAQSection() {
 /* ══════════════════════════════════════════════
    Footer
 ══════════════════════════════════════════════ */
-function FooterComp({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+function FooterComp(_: { onLogin: () => void; onRegister: () => void }) {
   const cols = [
     { title: 'مُحكم ERP', links: [{ l: 'عن مُحكم', fn: undefined }, { l: 'المدونة', fn: undefined }] },
     { title: 'المنتج', links: [{ l: 'التطبيقات', fn: undefined }, { l: 'الأسعار', fn: undefined }, { l: 'الأسئلة الشائعة', fn: undefined }] },
-    { title: 'الحساب', links: [{ l: 'تسجيل الدخول', fn: onLogin }, { l: 'إنشاء حساب', fn: onRegister }] },
     { title: 'تواصل معنا', links: [{ l: 'support@muhkam.com', fn: undefined }, { l: 'واتساب', fn: undefined }] },
   ];
 
