@@ -161,7 +161,6 @@ const FAQ_ITEMS = [
   { q: 'هل مُحكم متوافق مع هيئة الزكاة والضريبة والجمارك؟', a: 'نعم، النظام متوافق مع متطلبات الفوترة الإلكترونية (ZATCA) ويدعم احتساب ضريبة القيمة المضافة تلقائياً.' },
 ] as const;
 
-const BRANDS = ['شركة الأجهزة الحديثة', 'مجموعة الخير', 'النجم للتقنية', 'مؤسسة الرشيد', 'بيت التقنية', 'التحول الرقمي'];
 
 const COMPLIANCE = [
   { icon: '🔐', label: 'تشفير TLS' },
@@ -364,26 +363,6 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
   );
 }
 
-/* ══════════════════════════════════════════════
-   Trust logos
-══════════════════════════════════════════════ */
-function TrustStrip() {
-  return (
-    <div style={{ background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, padding: '28px 24px' }}>
-      <div style={{ maxWidth: 1160, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <span style={{ fontSize: 13, color: C.muted, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>جهات تثق بنا</span>
-          <div style={{ width: 1, height: 24, background: C.border }} />
-          <div className="lp-trust-logos" style={{ display: 'flex', alignItems: 'center', gap: 36, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {BRANDS.map((b) => (
-              <span key={b} style={{ fontSize: 14, fontWeight: 600, color: '#94A3B8', whiteSpace: 'nowrap' }}>{b}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ══════════════════════════════════════════════
    Features grid
@@ -832,7 +811,6 @@ export default function LandingPage() {
     <div dir="rtl" style={{ background: C.bg, color: C.text, fontFamily: "'Tajawal', system-ui, sans-serif", minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}>
       <Navbar onLogin={goLogin} onRegister={goRegister} />
       <HeroSection onRegister={goRegister} onLogin={goLogin} />
-      <TrustStrip />
       <FeaturesSection />
       <HowSection />
       <ShowcaseSection />
