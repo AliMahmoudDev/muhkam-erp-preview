@@ -209,7 +209,7 @@ function Navbar({ onLogin, onRegister }: { onLogin: () => void; onRegister: () =
     e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setOpen(false);
   };
 
-  const links: [string, string][] = [['features', 'التطبيقات'], ['how', 'كيف يعمل؟'], ['pricing', 'الأسعار'], ['faq', 'الأسئلة الشائعة']];
+  const links: [string, string][] = [['features', 'التطبيقات'], ['pricing', 'الأسعار'], ['faq', 'الأسئلة الشائعة']];
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '14px 24px' }}>
