@@ -1,9 +1,7 @@
-// ✔ POS UX CLEANED — SINGLE ENTRY POINT
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
-import { AlertTriangle } from 'lucide-react';
 import { SplitPaymentModal } from '@/components/SplitPaymentModal';
 import { SuccessModal } from './PosReceipt';
 import { usePosData } from './hooks/usePosData';
@@ -18,6 +16,7 @@ import AdminPOSSetup from './AdminPOSSetup';
 import { POSPattern } from '@/components/patterns';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ErrorState } from '@/components/ui/error-state';
 
 /* ─────────────────────────────────────────────────────────────
    MAIN POS PAGE
@@ -43,17 +42,12 @@ export default function POSPage() {
   if (!warehouseId || !safeId) {
     if (!isAdmin) {
       return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 p-8 bg-[var(--bg)]" dir="rtl">
-          <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-            <AlertTriangle className="w-10 h-10 text-red-400" />
-          </div>
-          <div className="text-center space-y-2 max-w-sm">
-            <h2 className="text-2xl font-bold">وصول مرفوض</h2>
-            <p className="text-red-400 font-bold text-lg">يجب ربط حسابك بمخزن وخزينة أولاً</p>
-            <p className="opacity-60">
-              تواصل مع المدير لإتمام إعداد حسابك قبل استخدام نقطة البيع
-            </p>
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]" dir="rtl">
+          <ErrorState
+            variant="permission"
+            title="وصول مرفوض"
+            description="يجب ربط حسابك بمخزن وخزينة أولاً. تواصل مع المدير لإتمام إعداد حسابك قبل استخدام نقطة البيع."
+          />
         </div>
       );
     }
@@ -104,8 +98,6 @@ function POSBody({
   const actions = usePosActions({ data, state, user: user ?? null, warehouseId, safeId });
 
   const cm = state.cashierMode;
-  const stockClass = (qty: number) =>
-    qty <= 0 ? 'erp-badge-danger' : qty <= 5 ? 'erp-badge-warning' : 'erp-badge-neutral';
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-[var(--bg)]" dir="rtl">
@@ -173,7 +165,6 @@ function POSBody({
             recentlyAdded={state.recentlyAdded}
             cashierMode={cm}
             addToCart={actions.addToCart}
-            stockClass={stockClass}
           />
         }
         cartSlot={

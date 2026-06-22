@@ -1,6 +1,8 @@
 import { RotateCcw, Search, X, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { ReturnSale, ReturnItem } from './pos-types';
 
 interface PosReturnPanelProps {
@@ -58,7 +60,9 @@ export function PosReturnPanel({
           <div className="flex items-center gap-2 erp-input px-3 py-2">
             <Search
               className={`w-4 h-4 shrink-0 transition-colors ${
-                returnSearchFetching || returnFetching ? 'text-[var(--brand)] animate-pulse' : 'opacity-30'
+                returnSearchFetching || returnFetching
+                  ? 'text-[var(--brand)] animate-pulse'
+                  : 'opacity-30'
               }`}
             />
             <input
@@ -136,7 +140,7 @@ export function PosReturnPanel({
       {returnSale && (
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           {/* Invoice summary */}
-          <div className="rounded-xl p-3 space-y-1 bg-[var(--raised)] border border-[var(--line)]">
+          <Card className="p-3 space-y-1">
             <div className="flex justify-between">
               <span className="text-xs opacity-50">الفاتورة</span>
               <span className="font-bold text-sm" dir="ltr">{returnSale.invoice_no}</span>
@@ -153,15 +157,12 @@ export function PosReturnPanel({
                 {formatCurrency(returnSale.total_amount)}
               </span>
             </div>
-          </div>
+          </Card>
 
           <p className="text-xs opacity-50">الأصناف المرتجعة</p>
 
           {returnItems.map((item, idx) => (
-            <div
-              key={idx}
-              className="rounded-xl p-3 bg-[var(--surface)] border border-[var(--line)]"
-            >
+            <Card key={idx} className="p-3">
               <p className="text-sm font-bold mb-2">{item.product_name}</p>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs opacity-50">الكمية (max {item.max_qty})</span>
@@ -198,7 +199,7 @@ export function PosReturnPanel({
                   {formatCurrency(item.return_qty * item.unit_price)}
                 </span>
               </div>
-            </div>
+            </Card>
           ))}
 
           {/* Reason */}
@@ -261,12 +262,19 @@ export function PosReturnPanel({
         </div>
       )}
 
+      {/* Idle state — no invoice selected yet */}
       {!returnSale && !returnFetching && !returnInvoiceNo && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-30">
-          <RefreshCw className="w-10 h-10 mx-auto" />
-          <p className="text-sm">ابحث بالرقم أو الاسم أو رمز العميل</p>
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            variant="no-data"
+            icon={<RefreshCw className="w-10 h-10" />}
+            title="لا توجد فاتورة محددة"
+            description="ابحث بالرقم أو الاسم أو رمز العميل"
+          />
         </div>
       )}
+
+      {/* Loading state */}
       {returnFetching && !returnSale && (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-40">
           <RefreshCw className="w-8 h-8 mx-auto animate-spin" />

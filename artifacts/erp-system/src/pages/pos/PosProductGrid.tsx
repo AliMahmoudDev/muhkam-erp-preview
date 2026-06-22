@@ -1,8 +1,9 @@
-import { X } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { SearchInput } from '@/components/ui/search-input';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 import type { CartItem } from './PosReceipt';
 import type { PosProduct } from './hooks/usePosData';
 
@@ -15,14 +16,13 @@ interface PosProductGridProps {
   recentlyAdded: number | null;
   cashierMode: boolean;
   addToCart: (product: PosProduct) => void;
-  stockClass: (qty: number) => string;
 }
 
-const stockVariant: Record<string, 'unpaid' | 'partial' | 'neutral'> = {
-  'erp-badge-danger': 'unpaid',
-  'erp-badge-warning': 'partial',
-  'erp-badge-neutral': 'neutral',
-};
+function stockBadgeVariant(qty: number): 'unpaid' | 'partial' | 'neutral' {
+  if (qty <= 0) return 'unpaid';
+  if (qty <= 5) return 'partial';
+  return 'neutral';
+}
 
 export function PosProductGrid({
   search,
@@ -33,7 +33,6 @@ export function PosProductGrid({
   recentlyAdded,
   cashierMode,
   addToCart,
-  stockClass,
 }: PosProductGridProps) {
   const cm = cashierMode;
 
@@ -54,7 +53,7 @@ export function PosProductGrid({
         />
       </div>
 
-      {/* Result count */}
+      {/* Result count hint */}
       {search && (
         <div className="px-3 py-1 bg-[var(--surface)] border-b border-[var(--line)] shrink-0">
           <span className="text-[11px] opacity-50">{filtered.length} نتيجة</span>
@@ -64,9 +63,24 @@ export function PosProductGrid({
       {/* Products grid */}
       <div className="flex-1 overflow-y-auto p-3">
         {filtered.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center gap-3 opacity-40">
-            <X className="w-8 h-8" />
-            <p className="text-sm">{search ? 'لا توجد نتائج مطابقة' : 'لا توجد منتجات'}</p>
+          <div className="h-full flex items-center justify-center">
+            {search ? (
+              <EmptyState
+                variant="no-results"
+                query={search}
+                action={
+                  <Button size="sm" variant="ghost" onClick={() => setSearch('')}>
+                    مسح البحث
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                variant="no-data"
+                title="لا توجد منتجات"
+                description="لم يتم إضافة أي منتجات لهذا الفرع بعد"
+              />
+            )}
           </div>
         ) : (
           <div
@@ -82,7 +96,6 @@ export function PosProductGrid({
               const outOfStock = qty <= 0;
               const isJustAdded = recentlyAdded === p.id;
               const inCart = cart.find((i) => i.product_id === p.id);
-              const cls = stockClass(qty);
 
               return (
                 <button
@@ -93,10 +106,8 @@ export function PosProductGrid({
                     'relative flex flex-col text-right p-3 rounded-[0.875rem] transition-all active:scale-[0.97]',
                     'bg-[var(--surface)] border border-[var(--line)]',
                     outOfStock && 'opacity-40 cursor-not-allowed',
-                    isJustAdded &&
-                      'border-amber-500/70 bg-amber-500/10 scale-[0.97]',
-                    !outOfStock && !isJustAdded && inCart &&
-                      'border-emerald-500/40 bg-emerald-500/10'
+                    isJustAdded && 'border-amber-500/70 bg-amber-500/10 scale-[0.97]',
+                    !outOfStock && !isJustAdded && inCart && 'border-emerald-500/40 bg-emerald-500/10'
                   )}
                 >
                   {inCart && (
@@ -117,7 +128,7 @@ export function PosProductGrid({
                     >
                       {formatCurrency(p.sale_price)}
                     </p>
-                    <Badge variant={stockVariant[cls] ?? 'neutral'} className="text-[10px]">
+                    <Badge variant={stockBadgeVariant(qty)} className="text-[10px]">
                       {qty > 0 ? qty : 'نفد'}
                     </Badge>
                   </div>

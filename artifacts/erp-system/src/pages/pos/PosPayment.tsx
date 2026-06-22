@@ -1,5 +1,6 @@
-import { Receipt, AlertTriangle } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { ErrorText } from '@/components/ui/error-text';
 import { PosCustomerPicker, type CustomerPickerItem } from './PosCustomerPicker';
 
 interface Props {
@@ -85,12 +86,7 @@ export function PosPayment({
       </div>
 
       {/* Checkout error */}
-      {checkoutError && (
-        <div className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20">
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-          {checkoutError}
-        </div>
-      )}
+      {checkoutError && <ErrorText>{checkoutError}</ErrorText>}
 
       {/* CHECKOUT BUTTON */}
       <button

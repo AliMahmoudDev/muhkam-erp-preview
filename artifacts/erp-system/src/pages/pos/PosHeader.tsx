@@ -45,7 +45,7 @@ export function PosHeader({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 text-black bg-gradient-to-br from-amber-500 to-amber-600">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 text-black bg-[var(--brand)]">
             {(userName ?? '?').slice(0, 2)}
           </div>
           <p className="opacity-60 text-sm font-medium">{userName}</p>
@@ -76,7 +76,7 @@ export function PosHeader({
           <Button
             size="sm"
             variant={returnMode ? 'default' : 'ghost'}
-            className={returnMode ? 'bg-red-500 hover:bg-red-600 text-white' : ''}
+            className={returnMode ? 'bg-red-500 hover:bg-red-600 text-ink' : ''}
             onClick={onToggleReturnMode}
           >
             <RotateCcw className="w-3.5 h-3.5" />

@@ -1,5 +1,6 @@
 import { ShoppingCart, Plus, Minus, Trash2, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { CartItem } from './PosReceipt';
 
 interface Props {
@@ -53,10 +54,13 @@ export function PosCart({
       {/* Cart items */}
       <div className="flex-1 overflow-y-auto">
         {cart.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center gap-3 opacity-40">
-            <ShoppingCart className="w-10 h-10" />
-            <p className="text-sm">السلة فارغة</p>
-            <p className="text-xs opacity-70">اضغط Enter لإضافة أول صنف</p>
+          <div className="h-full flex items-center justify-center">
+            <EmptyState
+              variant="no-data"
+              icon={<ShoppingCart className="w-10 h-10" />}
+              title="السلة فارغة"
+              description="اضغط Enter لإضافة أول صنف"
+            />
           </div>
         ) : (
           <div className="p-2 space-y-1.5">
@@ -82,7 +86,7 @@ export function PosCart({
                         if (e.key === 'Enter') commitPrice(item.product_id, editingPriceVal);
                         if (e.key === 'Escape') setEditingPriceId(null);
                       }}
-                      className="erp-input text-xs mt-0.5 py-0.5 px-1.5 border-amber-500/50"
+                      className="erp-input text-xs mt-0.5 py-0.5 px-1.5 border-[var(--brand)]"
                     />
                   ) : (
                     <p
