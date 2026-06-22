@@ -412,7 +412,6 @@ function MobileSection() {
             </div>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {[
-                { icon: '🍎', label: 'App Store',    sub: 'تنزيل على iOS'     },
                 { icon: '🤖', label: 'Google Play',  sub: 'تنزيل على Android' },
               ].map((s) => (
                 <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', background: C.text, borderRadius: 10, cursor: 'pointer', transition: 'background .15s' }}>
