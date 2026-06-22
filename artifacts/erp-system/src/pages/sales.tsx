@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { ClipboardList } from 'lucide-react';
+import { ShoppingBag, ClipboardList, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import SalesReturnsPanel from './sales/SalesReturnsPanel';
 import SaleDetailModal from './sales/SaleDetailModal';
 import { NewSalePanel } from './sales/NewSalePanel';
 import { SalesHistoryPanel } from './sales/SalesHistoryPanel';
+import { PageHeader } from '@/components/patterns';
 
 export default function Sales() {
   const { user: currentUser } = useAuth();
@@ -33,33 +34,38 @@ export default function Sales() {
         : tab;
 
   return (
-    <div className="erp-page" dir="rtl">
-      <div className="erp-page-header">
-        <div className="erp-tab-bar">
-          {canCreateSale && (
-            <button
-              onClick={() => changeTab('new')}
-              className={`erp-tab${effectiveTab === 'new' ? ' erp-tab--active' : ''}`}
-            >
-              فاتورة بيع جديدة
-            </button>
-          )}
+    <div className="space-y-6">
+      <PageHeader
+        title="المبيعات"
+        subtitle="تسجيل فواتير البيع ومتابعة المرتجعات"
+      />
+
+      <div className="erp-tab-bar erp-tab-bar--underline">
+        {canCreateSale && (
           <button
-            onClick={() => changeTab('history')}
-            className={`erp-tab${effectiveTab === 'history' ? ' erp-tab--active' : ''}`}
+            onClick={() => changeTab('new')}
+            className={`erp-tab${effectiveTab === 'new' ? ' erp-tab--active' : ''}`}
           >
-            <ClipboardList />
-            سجل الفواتير
+            <ShoppingBag className="w-4 h-4" />
+            فاتورة بيع جديدة
           </button>
-          {canReturnSale && (
-            <button
-              onClick={() => changeTab('returns')}
-              className={`erp-tab${effectiveTab === 'returns' ? ' erp-tab--active' : ''}`}
-            >
-              المرتجعات
-            </button>
-          )}
-        </div>
+        )}
+        <button
+          onClick={() => changeTab('history')}
+          className={`erp-tab${effectiveTab === 'history' ? ' erp-tab--active' : ''}`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          سجل الفواتير
+        </button>
+        {canReturnSale && (
+          <button
+            onClick={() => changeTab('returns')}
+            className={`erp-tab${effectiveTab === 'returns' ? ' erp-tab--active' : ''}`}
+          >
+            <RotateCcw className="w-4 h-4" />
+            المرتجعات
+          </button>
+        )}
       </div>
 
       {selectedSaleId && (

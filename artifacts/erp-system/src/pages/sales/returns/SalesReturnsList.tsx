@@ -1,7 +1,19 @@
 import { Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/format';
-import { TableSkeleton } from '@/components/skeletons';
 import type { SalesReturn } from '../salesTypes';
+
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { IconButton } from '@/components/ui/icon-button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 interface SalesReturnsListProps {
   returns: SalesReturn[];
@@ -16,63 +28,82 @@ export function SalesReturnsList({
   canDelete,
   onDelete,
 }: SalesReturnsListProps) {
+  if (isLoading) {
+    return <SkeletonTable rows={5} cols={7} />;
+  }
+
+  if (returns_.length === 0) {
+    return (
+      <EmptyState
+        variant="no-data"
+        title="لا توجد مرتجعات"
+        description="سجّل أول مرتجع مبيعات للبدء"
+      />
+    );
+  }
+
   return (
-    <div className="glass-panel rounded-3xl overflow-hidden border border-line">
-      <div className="overflow-x-auto">
-        <table className="w-full text-right text-sm whitespace-nowrap">
-          <thead className="bg-surface border-b border-line">
-            <tr>
-              <th className="p-4 text-ink/60">رقم المرتجع</th>
-              <th className="p-4 text-ink/60">العميل</th>
-              <th className="p-4 text-ink/60">الإجمالي</th>
-              <th className="p-4 text-ink/60">نوع الاسترداد</th>
-              <th className="p-4 text-ink/60">السبب</th>
-              <th className="p-4 text-ink/60">التاريخ</th>
-              <th className="p-4 w-12"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <TableSkeleton cols={7} rows={5} />
-            ) : returns_.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-12 text-center text-ink/40">
-                  لا توجد مرتجعات
-                </td>
-              </tr>
-            ) : (
-              returns_.map((r) => (
-                <tr key={r.id} className="border-b border-line erp-table-row">
-                  <td className="p-4 font-bold text-amber-400 font-mono">{r.return_no}</td>
-                  <td className="p-4 text-ink">{r.customer_name || 'عميل نقدي'}</td>
-                  <td className="p-4 font-bold text-orange-400">
-                    {formatCurrency(r.total_amount)}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${r.refund_type === 'cash' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}
-                    >
-                      {r.refund_type === 'cash' ? `نقدي — ${r.safe_name || ''}` : 'خصم رصيد'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-ink/50">{r.reason || '—'}</td>
-                  <td className="p-4 text-ink/40 text-xs">{r.date || formatDate(r.created_at)}</td>
-                  <td className="p-4">
-                    {canDelete && (
-                      <button
-                        onClick={() => onDelete(r.id)}
-                        className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableHeader>رقم المرتجع</TableHeader>
+          <TableHeader>العميل</TableHeader>
+          <TableHeader>الإجمالي</TableHeader>
+          <TableHeader>نوع الاسترداد</TableHeader>
+          <TableHeader>السبب</TableHeader>
+          <TableHeader>التاريخ</TableHeader>
+          <TableHeader />
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {returns_.map((r) => (
+          <TableRow key={r.id}>
+            <TableCell>
+              <span className="font-bold font-mono text-[var(--brand)]">{r.return_no}</span>
+            </TableCell>
+
+            <TableCell>
+              <span className="font-medium">{r.customer_name || 'عميل نقدي'}</span>
+            </TableCell>
+
+            <TableCell variant="number">
+              <span className="font-bold text-orange-400">{formatCurrency(r.total_amount)}</span>
+            </TableCell>
+
+            <TableCell variant="status">
+              {r.refund_type === 'cash' ? (
+                <Badge variant="paid">
+                  نقدي{r.safe_name ? ` — ${r.safe_name}` : ''}
+                </Badge>
+              ) : (
+                <Badge variant="info">خصم رصيد</Badge>
+              )}
+            </TableCell>
+
+            <TableCell>
+              <span className="opacity-60">{r.reason || '—'}</span>
+            </TableCell>
+
+            <TableCell variant="date">
+              {r.date || formatDate(r.created_at)}
+            </TableCell>
+
+            <TableCell variant="action">
+              {canDelete && (
+                <IconButton
+                  aria-label="حذف المرتجع"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                  onClick={() => onDelete(r.id)}
+                >
+                  <Trash2 />
+                </IconButton>
+              )}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

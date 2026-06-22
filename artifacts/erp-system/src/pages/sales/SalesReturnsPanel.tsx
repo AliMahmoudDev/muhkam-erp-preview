@@ -10,6 +10,7 @@ import { safeArray } from '@/lib/safe-data';
 import { useGetProducts, useGetCustomers, useGetSettingsSafes } from '@workspace/api-client-react';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { SalesReturn, InvoiceSummary, InvoiceDetail, ReturnLineItem } from './salesTypes';
 import { InvoiceSearchModal } from './returns/InvoiceSearchModal';
 import { InvoiceReturnForm } from './returns/InvoiceReturnForm';
@@ -306,32 +307,32 @@ export default function SalesReturnsPanel() {
 
       <div className="flex gap-3 items-center justify-between flex-wrap">
         {totalReturns > 0 && (
-          <div className="glass-panel rounded-2xl px-5 py-2 border border-orange-500/20 bg-orange-500/5 text-sm">
+          <div className="bg-[var(--surface)] rounded-2xl px-5 py-2 border border-orange-500/20 text-sm">
             إجمالي المرتجعات:{' '}
             <span className="text-orange-400 font-black">{formatCurrency(totalReturns)}</span>
           </div>
         )}
         <div className="flex gap-2 mr-auto items-center">
           {isAdmin && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 resetStandalone();
                 setPhase('standalone');
               }}
-              className="px-4 py-2 rounded-xl text-xs font-bold border border-line text-ink/40 hover:text-ink/60 hover:border-line transition-all"
             >
               مرتجع مستقل
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             onClick={() => {
               setInvoiceSearch('');
               setPhase('select-invoice');
             }}
-            className="btn-primary px-5 py-2 text-sm flex items-center gap-2"
           >
             <RotateCcw className="w-4 h-4" /> مرتجع جديد
-          </button>
+          </Button>
         </div>
       </div>
 
