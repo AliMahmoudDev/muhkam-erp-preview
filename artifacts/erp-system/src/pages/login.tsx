@@ -349,7 +349,7 @@ export default function Login() {
           <div style={{ animation: 'lg-up .4s ease both' }}>
             <h1
               style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 8 }}
-              className="text-[color:var(--brand)]">إنشاء حساب جديد</h1>
+              className="text-[color:var(--color-blue-700)]">إنشاء حساب جديد</h1>
             <p style={{ fontSize: 14, color: C.sub, marginBottom: 28 }}>تجربة مجانية لمدة ٧ أيام — بدون بطاقة ائتمان</p>
             <RegisterForm onSuccess={handleRegisterSuccess} onSwitch={() => { setShowRegister(false); setError(''); }} />
           </div>
