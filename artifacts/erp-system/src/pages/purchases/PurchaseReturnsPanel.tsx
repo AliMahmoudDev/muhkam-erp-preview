@@ -6,8 +6,22 @@ import { Plus, Minus, Trash2, RotateCcw, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
-import { TableSkeleton } from '@/components/skeletons';
 import { api } from '@/lib/api';
+
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { Badge } from '@/components/ui/badge';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 interface PurchaseReturnRecord {
   id: number;
@@ -182,30 +196,33 @@ export default function PurchaseReturnsPanel() {
 
   return (
     <div className="space-y-4">
+      {/* New return toggle button */}
       <div className="flex justify-end">
-        <button
+        <Button
+          variant={showForm ? 'ghost' : 'default'}
           onClick={() => {
             resetForm();
             setShowForm((v) => !v);
           }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all ${showForm ? 'bg-surface text-ink/60' : 'btn-primary'}`}
         >
-          <Plus className="w-4 h-4" /> مرتجع شراء جديد
-        </button>
+          <Plus /> مرتجع شراء جديد
+        </Button>
       </div>
 
+      {/* New return form */}
       {showForm && (
-        <div className="glass-panel rounded-3xl p-6 border border-line space-y-5">
+        <Card className="p-6 space-y-5">
           <div className="flex items-center gap-3 mb-2">
-            <RotateCcw className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg font-bold text-ink">تسجيل مرتجع شراء</h3>
+            <RotateCcw className="w-5 h-5 text-[var(--brand)]" />
+            <h3 className="text-lg font-bold">تسجيل مرتجع شراء</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Supplier */}
             <div>
-              <label className="block text-ink/60 text-xs font-semibold mb-1">المورد</label>
+              <label className="block opacity-60 text-xs font-semibold mb-1">المورد</label>
               <select
-                className="glass-input"
+                className="erp-input w-full"
                 value={supplierId}
                 onChange={(e) => {
                   setSupplierId(e.target.value);
@@ -222,12 +239,13 @@ export default function PurchaseReturnsPanel() {
               </select>
             </div>
 
+            {/* Linked purchase */}
             <div>
-              <label className="block text-ink/60 text-xs font-semibold mb-1">
+              <label className="block opacity-60 text-xs font-semibold mb-1">
                 فاتورة الشراء (اختياري)
               </label>
               <select
-                className="glass-input"
+                className="erp-input w-full"
                 value={purchaseId}
                 onChange={(e) => {
                   setPurchaseId(e.target.value);
@@ -243,41 +261,51 @@ export default function PurchaseReturnsPanel() {
                 ))}
               </select>
               {purchaseId && purchaseItems.length === 0 && (
-                <p className="text-ink/40 text-xs mt-1">جاري تحميل بنود الفاتورة…</p>
+                <p className="opacity-40 text-xs mt-1">جاري تحميل بنود الفاتورة…</p>
               )}
             </div>
 
+            {/* Date */}
             <div>
-              <label className="block text-ink/60 text-xs font-semibold mb-1">التاريخ</label>
+              <label className="block opacity-60 text-xs font-semibold mb-1">التاريخ</label>
               <input
                 type="date"
-                className="glass-input"
+                className="erp-input w-full"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
 
+            {/* Refund type */}
             <div>
-              <label className="block text-ink/60 text-xs font-semibold mb-1">نوع الاسترداد</label>
+              <label className="block opacity-60 text-xs font-semibold mb-1">نوع الاسترداد</label>
               <div className="flex gap-2">
                 {(['balance_credit', 'cash'] as const).map((t) => (
-                  <button
+                  <Button
                     key={t}
                     type="button"
+                    variant={refundType === t ? 'outline' : 'ghost'}
+                    className={`flex-1 ${
+                      refundType === t
+                        ? t === 'cash'
+                          ? 'border-emerald-500/50 text-emerald-400'
+                          : 'border-blue-500/50 text-blue-400'
+                        : ''
+                    }`}
                     onClick={() => setRefundType(t)}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border ${refundType === t ? (t === 'cash' ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-blue-500/20 border-blue-500/50 text-blue-400') : 'bg-surface border-line text-ink/40 hover:text-ink/60'}`}
                   >
                     {t === 'cash' ? '💵 نقدي' : '📒 قيد دائن'}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
 
+            {/* Safe (cash refund only) */}
             {refundType === 'cash' && (
               <div>
-                <label className="block text-ink/60 text-xs font-semibold mb-1">الخزينة *</label>
+                <label className="block opacity-60 text-xs font-semibold mb-1">الخزينة *</label>
                 <select
-                  className="glass-input"
+                  className="erp-input w-full"
                   value={safeId}
                   onChange={(e) => setSafeId(e.target.value)}
                 >
@@ -291,11 +319,12 @@ export default function PurchaseReturnsPanel() {
               </div>
             )}
 
+            {/* Reason */}
             <div>
-              <label className="block text-ink/60 text-xs font-semibold mb-1">السبب</label>
+              <label className="block opacity-60 text-xs font-semibold mb-1">السبب</label>
               <input
                 type="text"
-                className="glass-input"
+                className="erp-input w-full"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="مثال: منتج تالف"
@@ -303,31 +332,36 @@ export default function PurchaseReturnsPanel() {
             </div>
           </div>
 
+          {/* Cart items */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-ink/60 text-xs font-semibold">أصناف المرتجع</span>
+              <span className="opacity-60 text-xs font-semibold">أصناف المرتجع</span>
               {cart.length > 0 && (
-                <span className="text-amber-400 font-bold text-sm">{formatCurrency(total)}</span>
+                <span className="text-[var(--brand)] font-bold text-sm">
+                  {formatCurrency(total)}
+                </span>
               )}
             </div>
 
             {cart.length === 0 ? (
-              <div className="bg-surface border border-line rounded-2xl p-6 text-center">
-                <AlertCircle className="w-8 h-8 text-ink/20 mx-auto mb-2" />
-                <p className="text-ink/40 text-sm">
-                  {purchaseId ? 'جاري تحميل بنود الفاتورة…' : 'اختر فاتورة لتحميل بنودها تلقائياً'}
+              <Card className="p-6 text-center">
+                <AlertCircle className="w-8 h-8 opacity-20 mx-auto mb-2" />
+                <p className="opacity-40 text-sm">
+                  {purchaseId
+                    ? 'جاري تحميل بنود الفاتورة…'
+                    : 'اختر فاتورة لتحميل بنودها تلقائياً'}
                 </p>
-              </div>
+              </Card>
             ) : (
               <div className="space-y-2">
                 {cart.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-3 bg-surface rounded-2xl px-4 py-3 border border-line"
+                    className="flex items-center gap-3 bg-[var(--surface)] rounded-2xl px-4 py-3 border border-[var(--line)]"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-ink font-bold text-sm truncate">{item.product_name}</p>
-                      <p className="text-ink/40 text-xs">
+                      <p className="font-bold text-sm truncate">{item.product_name}</p>
+                      <p className="opacity-40 text-xs">
                         {formatCurrency(item.unit_price)} / وحدة
                       </p>
                     </div>
@@ -335,7 +369,7 @@ export default function PurchaseReturnsPanel() {
                       <button
                         type="button"
                         onClick={() => updateQty(idx, item.quantity - 1)}
-                        className="w-7 h-7 rounded-lg bg-surface text-ink/60 hover:bg-raised flex items-center justify-center"
+                        className="w-7 h-7 rounded-lg bg-[var(--surface)] opacity-60 hover:bg-[var(--raised)] flex items-center justify-center"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
@@ -346,122 +380,135 @@ export default function PurchaseReturnsPanel() {
                         step={0.01}
                         value={item.quantity}
                         onChange={(e) => updateQty(idx, parseFloat(e.target.value) || 0)}
-                        className="w-16 text-center bg-surface border border-line rounded-lg text-ink text-sm py-1"
+                        className="w-16 text-center bg-[var(--surface)] border border-[var(--line)] rounded-lg text-sm py-1"
                       />
                       <button
                         type="button"
                         onClick={() => updateQty(idx, item.quantity + 1)}
-                        className="w-7 h-7 rounded-lg bg-surface text-ink/60 hover:bg-raised flex items-center justify-center"
+                        className="w-7 h-7 rounded-lg bg-[var(--surface)] opacity-60 hover:bg-[var(--raised)] flex items-center justify-center"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
-                    <span className="text-amber-400 font-bold text-sm w-24 text-left shrink-0">
+                    <span className="text-[var(--brand)] font-bold text-sm w-24 text-start shrink-0">
                       {formatCurrency(item.total_price)}
                     </span>
-                    <button
+                    <IconButton
+                      aria-label="حذف الصنف"
                       type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                       onClick={() => removeItem(idx)}
-                      className="p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <Trash2 />
+                    </IconButton>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
+          {/* Notes */}
           <div>
-            <label className="block text-ink/60 text-xs font-semibold mb-1">ملاحظات</label>
+            <label className="block opacity-60 text-xs font-semibold mb-1">ملاحظات</label>
             <input
               type="text"
-              className="glass-input"
+              className="erp-input w-full"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="اختياري"
             />
           </div>
 
+          {/* Actions */}
           <div className="flex gap-3 pt-2">
-            <button
+            <Button
+              className="flex-1 py-3"
               onClick={() => createMutation.mutate()}
               disabled={createMutation.isPending || cart.length === 0}
-              className="flex-1 btn-primary py-3 font-bold disabled:opacity-50"
+              loading={createMutation.isPending}
             >
               {createMutation.isPending
                 ? 'جاري التسجيل…'
                 : `✦ تسجيل المرتجع — ${formatCurrency(total)}`}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              className="px-6 py-3"
               onClick={() => {
                 setShowForm(false);
                 resetForm();
               }}
-              className="px-6 btn-secondary py-3"
             >
               إلغاء
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="glass-panel rounded-3xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-line flex items-center gap-2">
-          <RotateCcw className="w-4 h-4 text-amber-400" />
-          <span className="text-ink font-bold text-sm">سجل مرتجعات المشتريات</span>
+      {/* Returns history */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <RotateCcw className="w-4 h-4 text-[var(--brand)]" />
+          <span className="font-bold text-sm">سجل مرتجعات المشتريات</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-ink/80 whitespace-nowrap text-sm">
-            <thead className="bg-surface border-b border-line">
-              <tr>
-                <th className="p-3 font-medium">رقم المرتجع</th>
-                <th className="p-3 font-medium">المورد</th>
-                <th className="p-3 font-medium">الإجمالي</th>
-                <th className="p-3 font-medium">نوع الاسترداد</th>
-                <th className="p-3 font-medium">السبب</th>
-                <th className="p-3 font-medium">التاريخ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <TableSkeleton cols={6} rows={4} />
-              ) : returns.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-ink/40">
-                    لا توجد مرتجعات بعد
-                  </td>
-                </tr>
-              ) : (
-                returns.map((r) => (
-                  <tr key={r.id} className="border-b border-line erp-table-row">
-                    <td className="p-3 font-mono text-amber-400">{r.return_no}</td>
-                    <td className="p-3 font-bold text-ink">{r.supplier_name || '—'}</td>
-                    <td className="p-3 font-bold text-blue-400">
+
+        {isLoading ? (
+          <SkeletonTable rows={4} cols={6} />
+        ) : returns.length === 0 ? (
+          <EmptyState
+            variant="no-data"
+            title="لا توجد مرتجعات بعد"
+            description="سجّل أول مرتجع شراء للبدء"
+          />
+        ) : (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeader>رقم المرتجع</TableHeader>
+                <TableHeader>المورد</TableHeader>
+                <TableHeader>الإجمالي</TableHeader>
+                <TableHeader>نوع الاسترداد</TableHeader>
+                <TableHeader>السبب</TableHeader>
+                <TableHeader>التاريخ</TableHeader>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {returns.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>
+                    <span className="font-mono font-bold text-[var(--brand)]">
+                      {r.return_no}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-bold">{r.supplier_name || '—'}</span>
+                  </TableCell>
+                  <TableCell variant="number">
+                    <span className="font-bold text-blue-400">
                       {formatCurrency(r.total_amount)}
-                    </td>
-                    <td className="p-3">
-                      {r.refund_type === 'cash' ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
-                          نقدي
-                        </span>
-                      ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">
-                          قيد دائن
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 text-ink/60">{r.reason || '—'}</td>
-                    <td className="p-3 text-ink/50">
-                      {r.date || r.created_at?.slice(0, 10) || '—'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    </span>
+                  </TableCell>
+                  <TableCell variant="status">
+                    {r.refund_type === 'cash' ? (
+                      <Badge variant="paid">نقدي</Badge>
+                    ) : (
+                      <Badge variant="info">قيد دائن</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="opacity-60">{r.reason || '—'}</span>
+                  </TableCell>
+                  <TableCell variant="date">
+                    {r.date || r.created_at?.slice(0, 10) || '—'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </section>
     </div>
   );
 }

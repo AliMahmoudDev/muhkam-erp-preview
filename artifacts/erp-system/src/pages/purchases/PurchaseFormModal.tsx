@@ -9,6 +9,8 @@ import {
 } from '@workspace/api-client-react';
 import { formatCurrency } from '@/lib/format';
 import { Search, Plus, Minus, Trash2, ShoppingBag, Package, User, Vault, Upload, Loader2, FileSpreadsheet } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
@@ -519,7 +521,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               />
             </div>
             <select
-              className="bg-black/30 text-ink/70 border border-line rounded-xl px-3 py-1.5 text-sm outline-none appearance-none"
+              className="erp-input text-sm"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
@@ -531,24 +533,28 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               ))}
             </select>
             <div className="flex gap-1 shrink-0">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => importFileRef.current?.click()}
                 disabled={importLoading}
                 title="استيراد بنود الفاتورة من ملف Excel أو CSV"
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-surface hover:bg-raised border border-line rounded-xl text-ink/50 text-[11px] font-bold transition-all disabled:opacity-40"
+                className="text-[11px] font-bold gap-1 px-2.5 py-1.5"
               >
                 {importLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                 {importLoading ? '...' : 'استيراد'}
-              </button>
-              <button
+              </Button>
+              <IconButton
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleDownloadImportTemplate}
                 title="تحميل نموذج الاستيراد (Excel)"
-                className="flex items-center px-2 py-1.5 border border-line hover:border-line/70 rounded-xl text-ink/35 hover:text-ink/60 transition-all"
+                aria-label="تحميل نموذج الاستيراد"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-              </button>
+                <FileSpreadsheet />
+              </IconButton>
             </div>
             <input
               ref={importFileRef}
@@ -855,7 +861,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                 type="number"
                 step="0.01"
                 placeholder="المبلغ المدفوع نقداً الآن..."
-                className="glass-input text-xs py-2"
+                className="erp-input text-xs py-2"
                 value={paidAmount}
                 onChange={(e) => setPaidAmount(e.target.value)}
               />
@@ -929,14 +935,15 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={handleCheckout}
               disabled={createMutation.isPending || cart.length === 0 || !canCreate}
-              className="w-full btn-primary py-3 text-sm disabled:opacity-50 font-bold rounded-2xl"
+              loading={createMutation.isPending}
+              className="w-full py-3 text-sm font-bold rounded-2xl"
               title={!canCreate ? 'ليس لديك صلاحية إنشاء فاتورة شراء' : undefined}
             >
               {createMutation.isPending ? 'جاري التسجيل...' : '✦ تسجيل فاتورة الشراء'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

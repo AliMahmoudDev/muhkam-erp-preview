@@ -6,6 +6,20 @@ import { formatCurrency } from '@/lib/format';
 import { openPrintWindow } from '@/lib/print-utils';
 import { Receipt, Printer, X } from 'lucide-react';
 
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
+
 interface PurchaseDetail {
   id: number;
   invoice_no: string;
@@ -120,46 +134,43 @@ ${purchase.notes ? `<p style="margin-bottom:12px;font-size:12px;color:#6b7280;fo
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       dir="rtl"
     >
-      <div className="glass-panel rounded-3xl p-6 w-full max-w-2xl border border-line shadow-2xl max-h-[90vh] overflow-y-auto">
+      <Card className="p-6 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
         <div className="flex justify-between items-center mb-5">
-          <h3 className="text-xl font-bold text-ink flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-amber-400" /> تفاصيل فاتورة الشراء
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-[var(--brand)]" /> تفاصيل فاتورة الشراء
           </h3>
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handlePrint}
               disabled={isLoading || !purchase}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-500/30 hover:bg-amber-500/30 text-amber-300 transition-colors text-sm font-bold"
             >
-              <Printer className="w-4 h-4" /> طباعة
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-surface hover:bg-raised text-ink/70"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              <Printer /> طباعة
+            </Button>
+            <IconButton aria-label="إغلاق" variant="ghost" size="sm" onClick={onClose}>
+              <X />
+            </IconButton>
           </div>
         </div>
 
+        {/* States */}
         {isLoading ? (
-          <div className="space-y-3 p-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton-shimmer h-8 rounded-xl" />
-            ))}
-          </div>
+          <SkeletonTable rows={4} cols={2} />
         ) : !purchase ? (
-          <div className="text-center py-12 text-ink/40">لم يتم العثور على الفاتورة</div>
+          <EmptyState variant="no-data" title="لم يتم العثور على الفاتورة" />
         ) : (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-surface rounded-2xl border border-line">
+            {/* Meta grid */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--surface)] rounded-2xl border border-[var(--line)]">
               <div>
-                <p className="text-ink/40 text-xs mb-1">رقم الفاتورة</p>
-                <p className="text-amber-400 font-bold font-mono">{purchase.invoice_no}</p>
+                <p className="opacity-40 text-xs mb-1">رقم الفاتورة</p>
+                <p className="text-[var(--brand)] font-bold font-mono">{purchase.invoice_no}</p>
               </div>
               <div>
-                <p className="text-ink/40 text-xs mb-1">التاريخ</p>
-                <p className="text-ink text-sm">
+                <p className="opacity-40 text-xs mb-1">التاريخ</p>
+                <p className="text-sm">
                   {purchase.date ||
                     new Date(purchase.created_at).toLocaleDateString('ar-EG', {
                       year: 'numeric',
@@ -169,68 +180,74 @@ ${purchase.notes ? `<p style="margin-bottom:12px;font-size:12px;color:#6b7280;fo
                 </p>
               </div>
               <div>
-                <p className="text-ink/40 text-xs mb-1">المورد / البائع</p>
-                <p className="text-ink font-semibold text-sm">
+                <p className="opacity-40 text-xs mb-1">المورد / البائع</p>
+                <p className="font-semibold text-sm">
                   {purchase.supplier_name || purchase.customer_name || '—'}
                 </p>
               </div>
               <div>
-                <p className="text-ink/40 text-xs mb-1">طريقة الدفع</p>
-                <p className="text-ink text-sm">
+                <p className="opacity-40 text-xs mb-1">طريقة الدفع</p>
+                <p className="text-sm">
                   {payLabels[purchase.payment_type] || purchase.payment_type}
                 </p>
               </div>
               {purchase.notes && (
                 <div className="col-span-2">
-                  <p className="text-ink/40 text-xs mb-1">ملاحظات</p>
-                  <p className="text-ink/70 text-sm italic">{purchase.notes}</p>
+                  <p className="opacity-40 text-xs mb-1">ملاحظات</p>
+                  <p className="opacity-70 text-sm italic">{purchase.notes}</p>
                 </div>
               )}
             </div>
 
+            {/* Items table */}
             <div>
-              <h4 className="text-ink font-bold mb-3 text-sm">أصناف الفاتورة</h4>
-              <div className="rounded-2xl overflow-hidden border border-line">
-                <table className="w-full text-right text-sm">
-                  <thead className="bg-surface border-b border-line">
-                    <tr>
-                      <th className="p-3 text-ink/50 font-medium">#</th>
-                      <th className="p-3 text-ink/50 font-medium">الصنف</th>
-                      <th className="p-3 text-ink/50 font-medium">الكمية</th>
-                      <th className="p-3 text-ink/50 font-medium">سعر الوحدة</th>
-                      <th className="p-3 text-ink/50 font-medium">الإجمالي</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {purchase.items.map((item, i) => (
-                      <tr key={item.id} className="border-b border-line hover:bg-surface">
-                        <td className="p-3 text-ink/40">{i + 1}</td>
-                        <td className="p-3 text-ink font-medium">{item.product_name}</td>
-                        <td className="p-3 text-ink/70">{item.quantity}</td>
-                        <td className="p-3 text-ink/70">{formatCurrency(item.unit_price)}</td>
-                        <td className="p-3 text-blue-400 font-bold">
+              <h4 className="font-bold mb-3 text-sm">أصناف الفاتورة</h4>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>#</TableHeader>
+                    <TableHeader>الصنف</TableHeader>
+                    <TableHeader>الكمية</TableHeader>
+                    <TableHeader>سعر الوحدة</TableHeader>
+                    <TableHeader>الإجمالي</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {purchase.items.map((item, i) => (
+                    <TableRow key={item.id}>
+                      <TableCell variant="metadata">{i + 1}</TableCell>
+                      <TableCell>
+                        <span className="font-medium">{item.product_name}</span>
+                      </TableCell>
+                      <TableCell variant="number">{item.quantity}</TableCell>
+                      <TableCell variant="number">
+                        {formatCurrency(item.unit_price)}
+                      </TableCell>
+                      <TableCell variant="number">
+                        <span className="text-blue-400 font-bold">
                           {formatCurrency(item.total_price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
 
-            <div className="bg-surface rounded-2xl border border-line p-4 space-y-2">
+            {/* Totals */}
+            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--line)] p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-ink/50">الإجمالي</span>
-                <span className="text-ink font-bold">{formatCurrency(purchase.total_amount)}</span>
+                <span className="opacity-50">الإجمالي</span>
+                <span className="font-bold">{formatCurrency(purchase.total_amount)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-ink/50">المدفوع</span>
+                <span className="opacity-50">المدفوع</span>
                 <span className="text-emerald-400 font-bold">
                   {formatCurrency(purchase.paid_amount)}
                 </span>
               </div>
               {purchase.remaining_amount > 0 && (
-                <div className="flex justify-between text-sm border-t border-line pt-2">
+                <div className="flex justify-between text-sm border-t border-[var(--line)] pt-2">
                   <span className="text-red-400/80">المتبقي</span>
                   <span className="text-red-400 font-bold">
                     {formatCurrency(purchase.remaining_amount)}
@@ -240,7 +257,7 @@ ${purchase.notes ? `<p style="margin-bottom:12px;font-size:12px;color:#6b7280;fo
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

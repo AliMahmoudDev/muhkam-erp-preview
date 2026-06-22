@@ -3,13 +3,25 @@ import { useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
-import { TableSkeleton } from '@/components/skeletons';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import { Eye, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
 import PurchaseDetails from './PurchaseDetails';
+
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { IconButton } from '@/components/ui/icon-button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 interface PurchaseRecord {
   id: number;
@@ -26,25 +38,17 @@ interface PurchaseRecord {
   exchange_rate?: number;
 }
 
-function PostingBadge({ status }: { status: string }) {
-  if (status === 'posted')
-    return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">
-        مرحَّل
-      </span>
-    );
-  if (status === 'cancelled')
-    return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">
-        ملغى
-      </span>
-    );
-  return (
-    <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink/50 font-medium">
-      مسودة
-    </span>
-  );
-}
+const postingLabel: Record<string, string> = {
+  posted: 'مرحَّل',
+  cancelled: 'ملغى',
+  draft: 'مسودة',
+};
+
+const paymentLabel: Record<string, string> = {
+  cash: 'نقدي',
+  credit: 'آجل',
+  partial: 'جزئي',
+};
 
 export default function PurchaseList() {
   const [, navigate] = useLocation();
@@ -97,100 +101,130 @@ export default function PurchaseList() {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 
+  if (isLoading) {
+    return <SkeletonTable rows={5} cols={7} />;
+  }
+
+  if (purchases.length === 0) {
+    return (
+      <EmptyState
+        variant="no-data"
+        title="لا توجد فواتير بعد"
+        description="انتقل إلى تبويب فاتورة شراء لتسجيل أول فاتورة"
+      />
+    );
+  }
+
   return (
     <>
-      <div className="glass-panel rounded-3xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-ink/80 whitespace-nowrap text-sm">
-            <thead className="bg-surface border-b border-line">
-              <tr>
-                <th className="p-3 font-medium">رقم الفاتورة</th>
-                <th className="p-3 font-medium">العميل</th>
-                <th className="p-3 font-medium">الإجمالي</th>
-                <th className="p-3 font-medium">نوع الدفع</th>
-                <th className="p-3 font-medium">حالة الترحيل</th>
-                <th className="p-3 font-medium">التاريخ</th>
-                <th className="p-3 w-28"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <TableSkeleton cols={7} rows={5} />
-              ) : purchases.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-ink/40">
-                    لا توجد فواتير بعد
-                  </td>
-                </tr>
-              ) : (
-                purchases.map((p) => (
-                  <tr key={p.id} className="border-b border-line erp-table-row">
-                    <td className="p-3 font-mono text-amber-400">{p.invoice_no}</td>
-                    <td className="p-3 font-bold text-ink">{p.supplier_name || '—'}</td>
-                    <td className="p-3 font-bold text-blue-400">
-                      {formatCurrency(p.total_amount)}
-                      {p.currency && p.currency !== 'EGP' && (
-                        <span className="mr-1 text-xs text-blue-300/60 font-normal">
-                          ({p.currency} × {p.exchange_rate?.toFixed(2)})
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 text-ink/60">
-                      {p.payment_type === 'cash'
-                        ? 'نقدي'
-                        : p.payment_type === 'credit'
-                          ? 'آجل'
-                          : 'جزئي'}
-                    </td>
-                    <td className="p-3">
-                      <PostingBadge status={p.posting_status} />
-                    </td>
-                    <td className="p-3 text-ink/50">{p.date || '—'}</td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setSelectedPurchaseId(p.id)}
-                          title="عرض التفاصيل"
-                          className="btn-icon text-ink/50 hover:text-ink hover:bg-surface"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {p.posting_status === 'draft' && (
-                          <button
-                            onClick={() => postMutation.mutate(p.id)}
-                            disabled={postMutation.isPending}
-                            title="ترحيل"
-                            className="btn-icon text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        {p.posting_status === 'posted' && canCancel && (
-                          <button
-                            onClick={() => cancelMutation.mutate(p.id)}
-                            disabled={cancelMutation.isPending}
-                            title="إلغاء"
-                            className="btn-icon text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => navigate(`/returns?q=${encodeURIComponent(p.invoice_no)}`)}
-                          title="عرض مرتجعات هذه الفاتورة"
-                          className="btn-icon text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeader>رقم الفاتورة</TableHeader>
+            <TableHeader>المورد</TableHeader>
+            <TableHeader>الإجمالي</TableHeader>
+            <TableHeader>نوع الدفع</TableHeader>
+            <TableHeader>حالة الترحيل</TableHeader>
+            <TableHeader>التاريخ</TableHeader>
+            <TableHeader />
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {purchases.map((p) => (
+            <TableRow key={p.id}>
+              <TableCell>
+                <span className="font-mono font-bold text-[var(--brand)]">{p.invoice_no}</span>
+              </TableCell>
+
+              <TableCell>
+                <span className="font-bold">{p.supplier_name || '—'}</span>
+              </TableCell>
+
+              <TableCell variant="number">
+                <span className="font-bold text-blue-400">
+                  {formatCurrency(p.total_amount)}
+                </span>
+                {p.currency && p.currency !== 'EGP' && (
+                  <span className="ms-1 text-xs text-blue-300/60 font-normal">
+                    ({p.currency} × {p.exchange_rate?.toFixed(2)})
+                  </span>
+                )}
+              </TableCell>
+
+              <TableCell variant="status">
+                <Badge variant="type">
+                  {paymentLabel[p.payment_type] ?? p.payment_type}
+                </Badge>
+              </TableCell>
+
+              <TableCell variant="status">
+                <Badge variant={p.posting_status as 'posted' | 'cancelled' | 'draft'}>
+                  {postingLabel[p.posting_status] ?? p.posting_status}
+                </Badge>
+              </TableCell>
+
+              <TableCell variant="date">
+                {p.date || '—'}
+              </TableCell>
+
+              <TableCell variant="action">
+                <div className="flex items-center gap-1">
+                  <IconButton
+                    aria-label="عرض التفاصيل"
+                    title="عرض التفاصيل"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedPurchaseId(p.id)}
+                  >
+                    <Eye />
+                  </IconButton>
+
+                  {p.posting_status === 'draft' && (
+                    <IconButton
+                      aria-label="ترحيل"
+                      title="ترحيل"
+                      variant="ghost"
+                      size="sm"
+                      className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                      onClick={() => postMutation.mutate(p.id)}
+                      disabled={postMutation.isPending}
+                    >
+                      <CheckCircle />
+                    </IconButton>
+                  )}
+
+                  {p.posting_status === 'posted' && canCancel && (
+                    <IconButton
+                      aria-label="إلغاء"
+                      title="إلغاء"
+                      variant="ghost"
+                      size="sm"
+                      className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                      onClick={() => cancelMutation.mutate(p.id)}
+                      disabled={cancelMutation.isPending}
+                    >
+                      <XCircle />
+                    </IconButton>
+                  )}
+
+                  <IconButton
+                    aria-label="عرض مرتجعات هذه الفاتورة"
+                    title="عرض مرتجعات هذه الفاتورة"
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                    onClick={() =>
+                      navigate(`/returns?q=${encodeURIComponent(p.invoice_no)}`)
+                    }
+                  >
+                    <RotateCcw />
+                  </IconButton>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
       {selectedPurchaseId && (
         <PurchaseDetails

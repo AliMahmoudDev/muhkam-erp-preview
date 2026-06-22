@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { ClipboardList, RotateCcw } from 'lucide-react';
+import { ShoppingBag, ClipboardList, RotateCcw } from 'lucide-react';
 import PurchaseFormModal from './PurchaseFormModal';
 import PurchaseList from './PurchaseList';
 import PurchaseReturnsPanel from './PurchaseReturnsPanel';
+import { PageHeader } from '@/components/patterns';
 
 export default function Purchases() {
   const searchStr = useSearch();
@@ -17,30 +18,34 @@ export default function Purchases() {
   };
 
   return (
-    <div className="erp-page" dir="rtl">
-      <div className="erp-page-header">
-        <div className="erp-tab-bar">
-          <button
-            onClick={() => changeTab('new')}
-            className={`erp-tab${tab === 'new' ? ' erp-tab--active' : ''}`}
-          >
-            فاتورة شراء
-          </button>
-          <button
-            onClick={() => changeTab('history')}
-            className={`erp-tab${tab === 'history' ? ' erp-tab--active' : ''}`}
-          >
-            <ClipboardList />
-            سجل الفواتير
-          </button>
-          <button
-            onClick={() => changeTab('returns')}
-            className={`erp-tab${tab === 'returns' ? ' erp-tab--active' : ''}`}
-          >
-            <RotateCcw />
-            المرتجعات
-          </button>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="المشتريات"
+        subtitle="تسجيل فواتير الشراء ومتابعة المرتجعات"
+      />
+
+      <div className="erp-tab-bar erp-tab-bar--underline">
+        <button
+          onClick={() => changeTab('new')}
+          className={`erp-tab${tab === 'new' ? ' erp-tab--active' : ''}`}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          فاتورة شراء
+        </button>
+        <button
+          onClick={() => changeTab('history')}
+          className={`erp-tab${tab === 'history' ? ' erp-tab--active' : ''}`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          سجل الفواتير
+        </button>
+        <button
+          onClick={() => changeTab('returns')}
+          className={`erp-tab${tab === 'returns' ? ' erp-tab--active' : ''}`}
+        >
+          <RotateCcw className="w-4 h-4" />
+          المرتجعات
+        </button>
       </div>
 
       {tab === 'new' ? (
