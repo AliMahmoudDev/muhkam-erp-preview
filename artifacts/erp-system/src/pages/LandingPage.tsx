@@ -1,7 +1,7 @@
 /* eslint-disable erp/no-hardcoded-colors -- LandingPage v6: Qyam-structured clean Arabic SaaS landing */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { DashboardShot, AccountingShot } from './landing/AppScreenshots';
+import { DashboardShot } from './landing/AppScreenshots';
 
 /* ══════════════════════════════════════════════
    CSS
@@ -162,14 +162,6 @@ const FAQ_ITEMS = [
 ] as const;
 
 
-const COMPLIANCE = [
-  { icon: '🔐', label: 'تشفير TLS' },
-  { icon: '🧾', label: 'متوافق مع ZATCA' },
-  { icon: '📋', label: 'سجلات مراجعة كاملة' },
-  { icon: '🏢', label: 'عزل بيانات كل شركة' },
-  { icon: '☁️', label: 'نسخ احتياطي يومي' },
-  { icon: '✅', label: 'ضريبة القيمة المضافة' },
-];
 
 /* ══════════════════════════════════════════════
    Shared helpers
@@ -444,41 +436,6 @@ function ShowcaseSection() {
   );
 }
 
-/* ══════════════════════════════════════════════
-   Compliance
-══════════════════════════════════════════════ */
-function ComplianceSection() {
-  return (
-    <section style={{ padding: '80px 0', background: C.surface }}>
-      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', gap: 64, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div className="lp-reveal" style={{ flex: '0 0 42%', minWidth: 280 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 12 }}>الامتثال والأمان</div>
-            <h2 style={{ fontSize: 'clamp(24px,3vw,36px)', fontWeight: 700, color: C.text, letterSpacing: '-0.025em', marginBottom: 14 }}>
-              متوافق مع متطلبات الجهات الرسمية
-            </h2>
-            <p style={{ fontSize: 16, color: C.sub, lineHeight: 1.8, marginBottom: 28 }}>
-              مُحكم مُصمَّم ليلتزم بمتطلبات هيئة الزكاة والضريبة والجمارك ومعايير حماية البيانات.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {COMPLIANCE.map((c) => (
-                <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: C.bg, borderRadius: 8, border: `1px solid ${C.border}` }}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{c.icon}</span>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{c.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="lp-reveal lp-d2" style={{ flex: 1, minWidth: 280 }}>
-            <BrowserFrame height={340}>
-              <AccountingShot />
-            </BrowserFrame>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /* ══════════════════════════════════════════════
    Mobile app section
@@ -814,7 +771,6 @@ export default function LandingPage() {
       <FeaturesSection />
       <HowSection />
       <ShowcaseSection />
-      <ComplianceSection />
       <MobileSection />
       <PricingSection onRegister={goRegister} />
       <TestimonialsSection />
