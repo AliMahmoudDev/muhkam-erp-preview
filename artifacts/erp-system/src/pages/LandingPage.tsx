@@ -114,11 +114,6 @@ const FEATURES = [
   { icon: '🔔', bg: '#FFFBEB', title: 'التنبيهات الذكية',   desc: 'إشعارات فورية للمخزون المنخفض والديون والأحداث الهامة' },
 ] as const;
 
-const HOW_STEPS = [
-  { n: '١', title: 'سجّل حسابك',         desc: 'أنشئ حسابك المجاني في أقل من دقيقتين، بلا بطاقة ائتمان.' },
-  { n: '٢', title: 'أعدّ شركتك',          desc: 'أدخل بيانات شركتك والمخازن والموظفين بكل سهولة.' },
-  { n: '٣', title: 'ابدأ الإدارة الفعلية','desc': 'استخدم جميع الأدوات من نفس اليوم — لا انتظار.' },
-] as const;
 
 const PLANS_MONTHLY = [
   {
@@ -362,31 +357,6 @@ function FeaturesSection() {
   );
 }
 
-/* ══════════════════════════════════════════════
-   How it works
-══════════════════════════════════════════════ */
-function HowSection() {
-  return (
-    <section id="how" style={{ padding: '96px 0', background: C.bg }}>
-      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
-        <div className="lp-reveal" style={{ textAlign: 'center' }}>
-          <SectionHeader center eyebrow="كيف يعمل؟" title="ابدأ في ثلاث خطوات فقط" sub="لا تعقيد، لا تدريب طويل. مُحكم مُصمّم ليكون جاهزاً من الدقيقة الأولى." />
-        </div>
-        <div className="lp-how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 32, marginTop: 8 }}>
-          {HOW_STEPS.map((s, i) => (
-            <div key={i} className={`lp-reveal lp-d${(i + 1) as 1|2|3}`} style={{ textAlign: 'center', padding: '32px 24px' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.primaryBg, border: `2px solid #BFDBFE`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 22, fontWeight: 800, color: C.primary }}>
-                {s.n}
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: C.text, marginBottom: 10 }}>{s.title}</div>
-              <div style={{ fontSize: 14, color: C.sub, lineHeight: 1.75 }}>{s.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /* ══════════════════════════════════════════════
    Product showcase (full-width)
@@ -694,7 +664,6 @@ export default function LandingPage() {
       <Navbar onLogin={goLogin} onRegister={goRegister} />
       <HeroSection onRegister={goRegister} onLogin={goLogin} />
       <FeaturesSection />
-      <HowSection />
       <ShowcaseSection />
       <MobileSection />
       <PricingSection onRegister={goRegister} />
