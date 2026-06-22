@@ -312,7 +312,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
 
             {/* Checks */}
             <div className="lp-hero-checks" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'flex-end', animation: 'lp-up .5s .18s ease both' }}>
-              {['لا تحتاج بطاقة ائتمان', 'إعداد في ٥ دقائق', 'دعم على مدار الساعة'].map((c) => (
+              {['لا تحتاج بطاقة ائتمان', 'إعداد في دقائق', 'دعم على مدار الساعة'].map((c) => (
                 <span key={c} className="lp-check" style={{ fontSize: 13 }}>{c}</span>
               ))}
             </div>

@@ -1,4 +1,4 @@
-/* eslint-disable erp/no-hardcoded-colors -- RegisterForm is a standalone auth component with intentional dark color palette for v4 redesign; tokens do not apply here. */
+/* eslint-disable erp/no-hardcoded-colors -- RegisterForm auth component; uses lg-* CSS classes injected by login.tsx */
 import { useEffect, useRef, useState } from 'react';
 
 const BASE_REGISTER = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -69,18 +69,10 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
     const el = errorRef.current;
     el.style.animation = 'none';
     void el.offsetWidth;
-    el.style.animation = 'v4-shake .35s ease';
+    el.style.animation = 'lg-shake .35s ease';
   }, [error]);
 
   const strength = pwStrength(password);
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#A1A1AA',
-    marginBottom: 8,
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,36 +118,24 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
   if (success) {
     return (
       <div style={{ textAlign: 'center', padding: '20px 0' }} dir="rtl">
-        <div
-          style={{
-            width: 56, height: 56, borderRadius: '50%', margin: '0 auto 18px',
-            background: 'rgba(99,102,241,.12)',
-            border: '1px solid rgba(99,102,241,.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6366F1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <div style={{ width: 56, height: 56, borderRadius: '50%', margin: '0 auto 18px', background: '#EFF6FF', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#F8F8FA', marginBottom: 8, letterSpacing: '-0.01em' }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 8, letterSpacing: '-0.01em' }}>
           تم إنشاء حسابك بنجاح
         </h3>
         {createdUsername && (
-          <div
-            style={{
-              margin: '14px auto', maxWidth: 320, padding: '14px 16px',
-              borderRadius: 8, background: '#0D0D12', border: '1px solid #1C1C21',
-            }}
-          >
-            <p style={{ fontSize: 12, color: '#71717A', fontWeight: 600, marginBottom: 4 }}>رقم الدخول الخاص بك</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#6366F1', letterSpacing: '0.04em', direction: 'ltr', fontFamily: "'Inter', monospace" }}>
+          <div style={{ margin: '14px auto', maxWidth: 320, padding: '14px 16px', borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+            <p style={{ fontSize: 12, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>رقم الدخول الخاص بك</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: '#2563EB', letterSpacing: '0.04em', direction: 'ltr', fontFamily: "'Inter', monospace" }}>
               {createdUsername}
             </p>
-            <p style={{ fontSize: 11, color: '#52525B', marginTop: 6 }}>استخدم هذا الرقم لتسجيل الدخول</p>
+            <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>استخدم هذا الرقم لتسجيل الدخول</p>
           </div>
         )}
-        <p style={{ fontSize: 13, color: '#71717A' }}>جاري تسجيل الدخول…</p>
+        <p style={{ fontSize: 13, color: '#94A3B8' }}>جاري تسجيل الدخول…</p>
       </div>
     );
   }
@@ -176,11 +156,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
           ref={errorRef}
           role="alert"
           aria-live="polite"
-          style={{
-            marginBottom: 16, padding: '10px 12px',
-            background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.25)',
-            borderRadius: 8, fontSize: 13, color: '#F87171', fontWeight: 500,
-          }}
+          style={{ marginBottom: 16, padding: '11px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, color: '#B91C1C', fontWeight: 500 }}
         >
           {error}
         </div>
@@ -189,7 +165,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
         {fields.map((f) => (
           <div key={f.id}>
-            <label htmlFor={`reg-${f.id}`} style={labelStyle}>{f.label}</label>
+            <label htmlFor={`reg-${f.id}`} className="lg-label">{f.label}</label>
             <input
               id={`reg-${f.id}`}
               type={f.type}
@@ -197,7 +173,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
               onChange={(e) => { f.setter(e.target.value); setError(''); }}
               placeholder={f.placeholder}
               required
-              className="v4-input"
+              className="lg-input"
               style={{ direction: f.dir, textAlign: f.dir === 'ltr' ? 'left' : 'right' }}
             />
           </div>
@@ -205,7 +181,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
 
         {/* Password */}
         <div>
-          <label htmlFor="reg-password" style={labelStyle}>كلمة المرور</label>
+          <label htmlFor="reg-password" className="lg-label">كلمة المرور</label>
           <div style={{ position: 'relative' }}>
             <input
               id="reg-password"
@@ -215,13 +191,13 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
               placeholder="مثال: MyPass@2024"
               required
               autoComplete="new-password"
-              className="v4-input v4-input-pw"
+              className="lg-input lg-input-pw"
             />
             <button
               type="button"
               tabIndex={-1}
               onClick={() => setShowPw(!showPw)}
-              className="v4-pw-toggle"
+              className="lg-pw-btn"
               aria-label={showPw ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
             >
               <EyeIcon open={showPw} />
@@ -231,7 +207,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
             <div style={{ marginTop: 8 }}>
               <div style={{ display: 'flex', gap: 4 }}>
                 {[1,2,3,4].map((i) => (
-                  <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength.score ? strength.color : '#27272A', transition: 'background .25s ease' }} />
+                  <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength.score ? strength.color : '#E2E8F0', transition: 'background .25s ease' }} />
                 ))}
               </div>
               {strength.label && (
@@ -243,7 +219,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
 
         {/* Confirm password */}
         <div>
-          <label htmlFor="reg-confirm" style={labelStyle}>تأكيد كلمة المرور</label>
+          <label htmlFor="reg-confirm" className="lg-label">تأكيد كلمة المرور</label>
           <input
             id="reg-confirm"
             type={showPw ? 'text' : 'password'}
@@ -252,25 +228,25 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
             placeholder="أعد كتابة كلمة المرور"
             required
             autoComplete="new-password"
-            className={`v4-input v4-input-pw${confirmPw && confirmPw !== password ? ' v4-input-error' : ''}`}
+            className={`lg-input lg-input-pw${confirmPw && confirmPw !== password ? ' lg-input-error' : ''}`}
           />
         </div>
       </div>
 
       {/* Submit */}
-      <button type="submit" disabled={loading} className="v4-btn-primary" style={{ width: '100%', height: 48, marginBottom: 14 }}>
+      <button type="submit" disabled={loading} className="lg-submit" style={{ marginBottom: 14 }}>
         {loading ? (
           <>
-            <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.25)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'v4-spin .7s linear infinite' }} />
+            <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.25)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'lg-spin .7s linear infinite' }} />
             <span>جاري الإنشاء…</span>
           </>
         ) : <span>إنشاء الحساب مجاناً</span>}
       </button>
 
       {/* Switch to login */}
-      <div style={{ textAlign: 'center', fontSize: 13, color: '#71717A' }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: '#64748B' }}>
         لديك حساب بالفعل؟{' '}
-        <button type="button" onClick={onSwitch} className="v4-link">سجّل الدخول</button>
+        <button type="button" onClick={onSwitch} className="lg-link">سجّل الدخول</button>
       </div>
     </form>
   );

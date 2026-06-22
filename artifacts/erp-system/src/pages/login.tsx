@@ -1,8 +1,7 @@
-/* eslint-disable erp/no-hardcoded-colors -- Login v6: clean white RTL form + dark product panel */
+/* eslint-disable erp/no-hardcoded-colors -- Login: clean white centered RTL auth page */
 /**
- * MUHKAM Login — v6
- * RTL: Form panel on RIGHT (first DOM child), Product panel on LEFT (second DOM child, dark).
- * Standard rounded inputs, blue primary button.
+ * MUHKAM Login — v7
+ * Full-page white background, centered auth card.
  * All auth logic preserved 1:1.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -59,6 +58,7 @@ const LG_CSS = `
   background:#2563EB;color:#fff;
   border:none;border-radius:9px;cursor:pointer;
   font-family:'Tajawal',sans-serif;font-size:16px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:8px;
   transition:background .15s;
 }
 .lg-submit:hover:not(:disabled){background:#1D4ED8;}
@@ -75,17 +75,11 @@ const LG_CSS = `
   display:block;font-size:13px;font-weight:600;color:#374151;
   margin-bottom:6px;
 }
-
-@media(max-width:860px){
-  .lg-product-panel{display:none!important;}
-  .lg-form-panel{flex:1!important;}
-}
 `;
 
 /* ── Palette ── */
 const C = {
   bg:      '#FFFFFF',
-  dark:    '#0F172A',
   border:  '#E2E8F0',
   primary: '#2563EB',
   text:    '#0F172A',
@@ -111,90 +105,6 @@ const LockIcon = () => (
     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
   </svg>
 );
-
-/* ── Product panel (dark) ── */
-function ProductPanel() {
-  const features = [
-    { icon: '🏪', label: 'نقطة البيع والفواتير' },
-    { icon: '💰', label: 'محاسبة تلقائية' },
-    { icon: '📦', label: 'إدارة المخزون' },
-    { icon: '🔧', label: 'تتبع الصيانة' },
-  ];
-
-  /* Mini KPIs */
-  const kpis = [
-    { l: 'الإيرادات', v: '١٢٤٫٨ ألف', d: '+١٢٪', up: true },
-    { l: 'الطلبات',   v: '٢٤١',        d: '+٧٪',  up: true },
-    { l: 'الأرباح',   v: '٧٦٫٦ ألف',  d: '+١٨٪', up: true },
-  ];
-
-  return (
-    <div
-      className="lg-product-panel"
-      style={{
-        flex: 1,
-        minHeight: '100vh',
-        background: C.dark,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '52px 44px',
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
-      {/* Subtle grid bg */}
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,.04) 1px, transparent 0)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
-
-      {/* Brand */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 16 }}>
-          <span style={{ fontSize: 28, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.03em' }}>مُحكم</span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#60A5FA', letterSpacing: '.15em' }}>ERP</span>
-        </div>
-        <p style={{ fontSize: 15, color: '#94A3B8', lineHeight: 1.75, marginBottom: 40, maxWidth: 320 }}>
-          منصة ERP عربية متكاملة لإدارة مبيعاتك ومحاسبتك ومخزونك — من مكان واحد.
-        </p>
-
-        {/* Feature pills */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 44 }}>
-          {features.map((f) => (
-            <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10 }}>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>{f.icon}</span>
-              <span style={{ fontSize: 13, fontWeight: 500, color: '#CBD5E1' }}>{f.label}</span>
-              <span style={{ marginRight: 'auto', fontSize: 10, color: '#22C55E', fontWeight: 600 }}>✓</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Mini KPI card (product preview) */}
-        <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>لوحة التحكم — اليوم</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
-            {kpis.map((k) => (
-              <div key={k.l} style={{ background: 'rgba(0,0,0,.3)', borderRadius: 10, padding: '10px 12px' }}>
-                <div style={{ fontSize: 9, color: '#52525B', marginBottom: 4 }}>{k.l}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#F4F4F5', letterSpacing: '-0.02em' }}>{k.v}</div>
-                <div style={{ fontSize: 9, color: k.up ? '#22C55E' : '#EF4444', fontWeight: 600, marginTop: 2 }}>{k.d}</div>
-              </div>
-            ))}
-          </div>
-          {/* Mini chart bars */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 40 }}>
-            {[40, 65, 50, 80, 60, 90, 72].map((h, i) => (
-              <div key={i} style={{ flex: 1, height: `${h}%`, borderRadius: '3px 3px 0 0', background: i === 5 ? '#2563EB' : 'rgba(99,102,241,.3)', transition: 'height .3s' }} />
-            ))}
-          </div>
-        </div>
-
-        {/* Trust */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#475569' }}>
-          <LockIcon />
-          <span>بيانات مشفرة · كل شركة معزولة تماماً</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ════════════════════════════════════════════
    Login form
@@ -274,10 +184,10 @@ function LoginForm({
       {/* Submit */}
       <button type="submit" disabled={loading} className="lg-submit" style={{ marginBottom: 16 }}>
         {loading ? (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <>
             <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'lg-spin .7s linear infinite' }} />
-            جاري التحقق…
-          </span>
+            <span>جاري التحقق…</span>
+          </>
         ) : 'تسجيل الدخول'}
       </button>
 
@@ -289,7 +199,8 @@ function LoginForm({
       </div>
 
       {/* Register */}
-      <button type="button" onClick={onShowRegister} style={{ width: '100%', height: 46, background: 'transparent', border: `1.5px solid ${C.border}`, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: C.text, transition: 'border-color .15s, background .15s' }}
+      <button type="button" onClick={onShowRegister}
+        style={{ width: '100%', height: 46, background: 'transparent', border: `1.5px solid ${C.border}`, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: C.text, transition: 'border-color .15s, background .15s' }}
         onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F8FAFC'; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
         إنشاء حساب جديد
@@ -401,82 +312,66 @@ export default function Login() {
 
   /* ─── RENDER ─── */
   return (
-    <div dir="rtl" className="lp-login-wrap" style={{ minHeight: '100vh', display: 'flex', color: C.text, background: C.bg }}>
-      {/* ═══ FORM PANEL — first DOM = RIGHT in RTL ═══ */}
-      <div
-        className="lg-form-panel"
-        style={{
-          flex: '0 0 44%',
-          minHeight: '100vh',
-          background: C.bg,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '60px 48px',
-          borderLeft: `1px solid ${C.border}`,
-        }}
-      >
-        <div style={{ width: '100%', maxWidth: 360 }}>
-          {/* Brand (mobile-only or small screens) */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 40, justifyContent: 'center' }}>
-            <span style={{ fontSize: 20, fontWeight: 800, color: C.text, letterSpacing: '-0.025em' }}>مُحكم</span>
-            <span style={{ fontSize: 8, fontWeight: 700, color: C.primary, letterSpacing: '.15em' }}>ERP</span>
-          </div>
+    <div dir="rtl" className="lp-login-wrap" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.bg, padding: '40px 24px' }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
 
-          {/* 2FA */}
-          {requires2FA ? (
-            <form onSubmit={handleTotpSubmit} noValidate style={{ animation: 'lg-up .4s ease both' }}>
-              <h2 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 8 }}>التحقق الثنائي</h2>
-              <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.7, marginBottom: 28 }}>
-                افتح <strong style={{ color: C.text }}>Google Authenticator</strong> وأدخل الرمز المكوّن من ٦ أرقام.
-              </p>
-              {error && <div ref={errorRef} role="alert" style={{ marginBottom: 20, padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, color: '#B91C1C' }}>{error}</div>}
-              <input
-                value={totpCode}
-                onChange={(e) => { setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-                placeholder="000 000" inputMode="numeric" autoFocus maxLength={6}
-                className="lg-input"
-                style={{ fontSize: 24, fontFamily: "'Inter', monospace", letterSpacing: '0.5em', textAlign: 'center', marginBottom: 20, paddingLeft: 0, paddingRight: 0, height: 64 }}
-              />
-              <button type="submit" disabled={totpLoading || totpCode.length !== 6} className="lg-submit" style={{ marginBottom: 12 }}>
-                {totpLoading ? 'جاري التحقق…' : 'تحقق'}
-              </button>
-              <button type="button" onClick={() => { setRequires2FA(false); setTempToken(''); setTotpCode(''); setError(''); setPin(''); }} style={{ width: '100%', height: 44, background: 'transparent', border: `1.5px solid ${C.border}`, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: C.sub }}>
-                رجوع
-              </button>
-            </form>
-
-          ) : showRegister ? (
-            <div style={{ animation: 'lg-up .4s ease both' }}>
-              <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 8 }}>إنشاء حساب جديد</h1>
-              <p style={{ fontSize: 14, color: C.sub, marginBottom: 28 }}>تجربة مجانية لمدة ٧ أيام — بدون بطاقة ائتمان</p>
-              <RegisterForm onSuccess={handleRegisterSuccess} onSwitch={() => { setShowRegister(false); setError(''); }} />
-            </div>
-
-          ) : (
-            <LoginForm
-              username={username} setUsername={setUsername}
-              pin={pin} setPin={setPin}
-              showPin={showPin} setShowPin={setShowPin}
-              error={error} setError={setError}
-              loading={loading}
-              usernameRef={usernameRef} pinRef={pinRef} errorRef={errorRef}
-              handleSubmit={handleSubmit}
-              onShowRegister={() => { setShowRegister(true); setError(''); }}
-            />
-          )}
-
-          {/* Security note */}
-          <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 11, color: C.muted }}>
-            <LockIcon />
-            <span>بحماية TLS · بيانات كل شركة معزولة تماماً</span>
-          </div>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 40, justifyContent: 'center' }}>
+          <span style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.025em' }}>مُحكم</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: C.primary, letterSpacing: '.15em' }}>ERP</span>
         </div>
-      </div>
 
-      {/* ═══ PRODUCT PANEL — second DOM = LEFT in RTL ═══ */}
-      <ProductPanel />
+        {/* 2FA */}
+        {requires2FA ? (
+          <form onSubmit={handleTotpSubmit} noValidate style={{ animation: 'lg-up .4s ease both' }}>
+            <h2 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 8 }}>التحقق الثنائي</h2>
+            <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.7, marginBottom: 28 }}>
+              افتح <strong style={{ color: C.text }}>Google Authenticator</strong> وأدخل الرمز المكوّن من ٦ أرقام.
+            </p>
+            {error && <div ref={errorRef} role="alert" style={{ marginBottom: 20, padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, color: '#B91C1C' }}>{error}</div>}
+            <input
+              value={totpCode}
+              onChange={(e) => { setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+              placeholder="000 000" inputMode="numeric" autoFocus maxLength={6}
+              className="lg-input"
+              style={{ fontSize: 24, fontFamily: "'Inter', monospace", letterSpacing: '0.5em', textAlign: 'center', marginBottom: 20, paddingLeft: 0, paddingRight: 0, height: 64 }}
+            />
+            <button type="submit" disabled={totpLoading || totpCode.length !== 6} className="lg-submit" style={{ marginBottom: 12 }}>
+              {totpLoading ? 'جاري التحقق…' : 'تحقق'}
+            </button>
+            <button type="button" onClick={() => { setRequires2FA(false); setTempToken(''); setTotpCode(''); setError(''); setPin(''); }}
+              style={{ width: '100%', height: 44, background: 'transparent', border: `1.5px solid ${C.border}`, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: C.sub }}>
+              رجوع
+            </button>
+          </form>
+
+        ) : showRegister ? (
+          <div style={{ animation: 'lg-up .4s ease both' }}>
+            <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 8 }}>إنشاء حساب جديد</h1>
+            <p style={{ fontSize: 14, color: C.sub, marginBottom: 28 }}>تجربة مجانية لمدة ٧ أيام — بدون بطاقة ائتمان</p>
+            <RegisterForm onSuccess={handleRegisterSuccess} onSwitch={() => { setShowRegister(false); setError(''); }} />
+          </div>
+
+        ) : (
+          <LoginForm
+            username={username} setUsername={setUsername}
+            pin={pin} setPin={setPin}
+            showPin={showPin} setShowPin={setShowPin}
+            error={error} setError={setError}
+            loading={loading}
+            usernameRef={usernameRef} pinRef={pinRef} errorRef={errorRef}
+            handleSubmit={handleSubmit}
+            onShowRegister={() => { setShowRegister(true); setError(''); }}
+          />
+        )}
+
+        {/* Security note */}
+        <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 11, color: C.muted }}>
+          <LockIcon />
+          <span>بحماية TLS · بيانات كل شركة معزولة تماماً</span>
+        </div>
+
+      </div>
     </div>
   );
 }
