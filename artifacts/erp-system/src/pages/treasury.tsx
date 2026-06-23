@@ -15,7 +15,6 @@ import {
   TrendingDown,
   Wallet,
   ChevronLeft,
-  ReceiptText,
   Landmark,
   Plus,
   Trash2,
@@ -467,17 +466,6 @@ export default function Treasury() {
         </div>
       </div>
 
-      {/* Quick link to vouchers list */}
-      <div className="flex items-center justify-center">
-        <a
-          href="/vouchers"
-          className="flex items-center gap-2 text-ink/30 hover:text-amber-400 transition-colors text-sm group"
-        >
-          <ReceiptText className="w-4 h-4" />
-          <span>عرض سجل السندات الكامل</span>
-          <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
-        </a>
-      </div>
     </div>
   );
 }

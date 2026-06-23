@@ -18,13 +18,10 @@ import {
   HandCoins,
   ArrowUpFromLine,
   ReceiptText,
-  ChevronRight,
-  Wallet,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
-import { useLocation } from 'wouter';
 
 /* ── interfaces ── */
 interface ReceiptVoucher {
@@ -227,8 +224,7 @@ function StatusBadge({ status }: { status: string | null }) {
 /* ── main component ── */
 type TabFilter = 'الكل' | 'قبض' | 'صرف';
 
-export default function Vouchers() {
-  const [, navigate] = useLocation();
+export default function Vouchers({ embedded = false }: { embedded?: boolean }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: safesRaw } = useGetSettingsSafes();
@@ -410,7 +406,7 @@ export default function Vouchers() {
     .reduce((s, r) => s + r.amount, 0);
 
   return (
-    <div className="erp-page" dir="rtl">
+    <div className={embedded ? 'space-y-5' : 'erp-page'} dir="rtl">
       {/* Confirm delete */}
       {confirmDelete && (
         <ConfirmModal
@@ -421,51 +417,6 @@ export default function Vouchers() {
           onCancel={() => setConfirmDelete(null)}
         />
       )}
-
-      {/* ── Back navigation ── */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate('/treasury')}
-          className="flex items-center gap-2 text-ink/40 hover:text-amber-400 transition-colors group text-sm"
-        >
-          <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          <Wallet className="w-4 h-4" />
-          <span>العودة إلى الخزينة</span>
-        </button>
-        <span className="text-ink/15">|</span>
-        <div className="flex items-center gap-2 text-ink/50">
-          <ReceiptText className="w-4 h-4 text-amber-400" />
-          <span className="text-sm font-bold text-ink">سجل السندات</span>
-        </div>
-      </div>
-
-      {/* ── Header ── */}
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title flex items-center gap-3">
-            <ReceiptText className="w-6 h-6 text-amber-400" />
-            سجل السندات
-          </h1>
-          <p className="erp-page-subtitle">
-            عرض جميع السندات والتحويلات — لإنشاء سند جديد انتقل إلى{' '}
-            <button
-              onClick={() => navigate('/treasury')}
-              className="text-amber-400 hover:underline"
-            >
-              الخزينة
-            </button>
-          </p>
-        </div>
-        <div className="erp-page-actions">
-          <button
-            onClick={() => navigate('/treasury')}
-            className="erp-btn erp-btn-primary erp-btn-sm"
-          >
-            <Wallet className="w-4 h-4" />
-            إضافة سند جديد
-          </button>
-        </div>
-      </div>
 
       {/* Safe balances */}
       {safes.length > 0 && (
@@ -558,12 +509,11 @@ export default function Vouchers() {
                   <td colSpan={9} className="p-16 text-center">
                     <ReceiptText className="w-10 h-10 text-ink/15 mx-auto mb-3" />
                     <p className="text-ink/40 text-sm">لا توجد سندات بعد</p>
-                    <button
-                      onClick={() => navigate('/treasury')}
-                      className="mt-3 text-amber-400 text-xs hover:underline"
-                    >
-                      أنشئ سنداً جديداً من صفحة الخزينة
-                    </button>
+                    {!embedded && (
+                      <p className="mt-2 text-ink/30 text-xs">
+                        أنشئ سنداً جديداً من صفحة الخزينة
+                      </p>
+                    )}
                   </td>
                 </tr>
               ) : (
