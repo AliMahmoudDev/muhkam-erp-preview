@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- toggle knob and UI patterns use intentional fixed colors */
 import { useState } from 'react';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { safeArray } from '@/lib/safe-data';

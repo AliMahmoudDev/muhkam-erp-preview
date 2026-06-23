@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- LandingPage: clean Arabic SaaS landing, Egypt-localized */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { DashboardShot } from './landing/AppScreenshots';

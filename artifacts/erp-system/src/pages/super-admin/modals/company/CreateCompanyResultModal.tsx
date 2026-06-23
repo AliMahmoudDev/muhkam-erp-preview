@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- Super-admin credential card uses intentional light-mode pastel tints (orange-50, amber-50) that have no token equivalent. */
 import { type CreateResult, FONT } from '../../types';
 
 interface Props {

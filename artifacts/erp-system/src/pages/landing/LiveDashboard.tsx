@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- LiveDashboard is a purely presentational animated mockup; tokens do not apply here. */
 /**
  * LiveDashboard — animated ERP dashboard mockup for marketing surfaces.
  * Used in: Landing product reveal section + Login left panel.

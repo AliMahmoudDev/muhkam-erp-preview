@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- toggle knob and UI patterns use intentional fixed colors */
 import { api } from '@/lib/api';
 /**
  * invoice-tab.tsx — إعدادات الفاتورة والطباعة

@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- intentional data visualization or decorative colors */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -148,7 +147,6 @@ export default function ChecklistTab() {
 
   const invalidate = useCallback(
     () => qc.invalidateQueries({ queryKey: qKey }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [qc, qKey.join(',')]
   );
 
@@ -159,7 +157,6 @@ export default function ChecklistTab() {
       dbCategories.forEach((c) => n.add(c));
       return n;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbCategories.join(',')]);
 
   useEffect(() => {

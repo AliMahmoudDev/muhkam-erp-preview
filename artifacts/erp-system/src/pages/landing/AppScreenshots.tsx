@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- AppScreenshots are purely presentational marketing mockups designed to look like real app screenshots. */
 /**
  * High-fidelity application screenshots for marketing surfaces.
  * These are JSX representations of actual MUHKAM ERP screens.

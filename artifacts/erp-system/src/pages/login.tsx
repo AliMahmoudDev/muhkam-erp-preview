@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- Login: clean white centered RTL auth page */
 /**
  * MUHKAM Login — v7
  * Full-page white background, centered auth card.

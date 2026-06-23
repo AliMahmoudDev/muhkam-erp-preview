@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- super-admin is a dark-only internal tool with intentional color palette */
 import React from 'react';
 import { type BackupFile, C, FONT } from './types';
 import { SupportPanel } from './settings/SupportPanel';

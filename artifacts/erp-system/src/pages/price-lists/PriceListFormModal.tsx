@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- toggle knob and UI patterns use intentional fixed colors */
 import { useState, useMemo } from 'react';
 import { Tags, Plus, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';

@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- Super-admin reset-password card uses intentional light-mode pastel tints (purple-50, violet-100, amber-50) and alpha hex that have no token equivalent. */
 import { type ResetPassResult, FONT } from '../../types';
 
 interface Props {

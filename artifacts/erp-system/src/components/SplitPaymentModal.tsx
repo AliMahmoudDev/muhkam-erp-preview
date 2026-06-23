@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- intentional data visualization or decorative colors */
 import { useState, useRef, useEffect } from 'react';
 import {
   X,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { openPrintWindow } from '@/lib/print-utils';
 import {
@@ -25,10 +25,8 @@ import {
   CheckCircle,
   Wrench,
 } from 'lucide-react';
-import type { Employee, AnyRec, EmpDocument, DetailTab } from './types';
 import { EmployeeDocuments } from './EmployeeDocuments';
 import { CustodyLinesPanel } from './CustodyLinesPanel';
-import { CommissionLedgerSection } from './CommissionLedgerSection';
 import { EmployeeMaintenanceTab } from './EmployeeMaintenanceTab';
 import { EmployeeRepairsTab } from './EmployeeRepairsTab';
 

@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- intentional data visualization or decorative colors */
 /**
  * Reports — Analytics-only module
  * Sprint 10: Grouped IA — مالية / مبيعات ومخزون / إدارية

@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- intentional data visualization or decorative colors */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, Plus, Package, AlertTriangle, XCircle } from 'lucide-react';

@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- intentional data visualization or decorative colors */
 import { useState, useEffect } from 'react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';

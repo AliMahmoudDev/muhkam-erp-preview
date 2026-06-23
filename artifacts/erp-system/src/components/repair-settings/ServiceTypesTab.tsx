@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- toggle knob and UI patterns use intentional fixed colors */
 /**
  * ServiceTypesTab.tsx — إعدادات أنواع خدمات الصيانة والكوميشن
  *

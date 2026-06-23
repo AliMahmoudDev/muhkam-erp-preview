@@ -1,4 +1,3 @@
-/* eslint-disable erp/no-hardcoded-colors -- Landing mockups are purely presentational marketing visuals with intentional fixed colors; tokens do not apply here. */
 /**
  * Mini mockup components for the Landing Page bento grid.
  * Extracted from LandingPage.tsx for maintainability.

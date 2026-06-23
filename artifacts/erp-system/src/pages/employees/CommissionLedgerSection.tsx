@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
-import { Plus, Banknote, X } from 'lucide-react';
-import type { AnyRec } from './types';
+import { Banknote, X } from 'lucide-react';
 
 function fmt(v: unknown) {
   return v != null ? Number(Number(v).toFixed(2)).toLocaleString('ar-EG-u-nu-latn') : '0';
