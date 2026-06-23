@@ -70,7 +70,7 @@ export function OBSuppliersTab() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-[#1A2235] border border-amber-500/20 rounded-2xl p-5 space-y-4">
+      <div className="bg-surface border border-amber-500/20 rounded-2xl p-5 space-y-4">
         <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
           <Truck className="w-4 h-4" /> إضافة رصيد افتتاحي لمورد
         </h4>
@@ -86,7 +86,7 @@ export function OBSuppliersTab() {
               }}
             />
             {search && !form.supplier_id && filteredSuppliers.length > 0 && (
-              <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-[#111827] border border-line rounded-xl max-h-48 overflow-y-auto shadow-2xl">
+              <div className="absolute top-full mt-1 right-0 left-0 z-20 bg-canvas border border-line rounded-xl max-h-48 overflow-y-auto shadow-2xl">
                 {filteredSuppliers.slice(0, 10).map((s) => (
                   <button
                     key={s.id}
@@ -136,7 +136,7 @@ export function OBSuppliersTab() {
         </PrimaryBtn>
       </div>
 
-      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-line">
+      <div className="bg-canvas rounded-2xl overflow-hidden border border-line">
         <div className="p-4 border-b border-line flex items-center justify-between">
           <h4 className="font-bold text-ink/60 text-sm">أرصدة الموردين المسجلة</h4>
           <span className="text-ink/30 text-xs bg-surface px-2 py-0.5 rounded-lg">

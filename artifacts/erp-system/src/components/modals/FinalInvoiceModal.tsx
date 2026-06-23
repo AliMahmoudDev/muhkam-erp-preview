@@ -565,7 +565,7 @@ ${
                 >
                   <option value="">— اختر الخزنة —</option>
                   {safes.map((s) => (
-                    <option key={s.id} value={s.id} className="bg-[#1a1530]">
+                    <option key={s.id} value={s.id} className="bg-raised">
                       {s.name} — رصيد: {Number(s.balance).toFixed(2)}
                     </option>
                   ))}

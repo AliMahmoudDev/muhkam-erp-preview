@@ -170,7 +170,7 @@ function RequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#0f1623] border border-line rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-canvas border border-line rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-line">
           <span className="font-bold text-ink flex items-center gap-2">
             <ArrowRightLeft className="w-4 h-4 text-ink/50" /> طلب تحويل جديد
@@ -193,7 +193,7 @@ function RequestModal({
             >
               <option value="">— اختر منتجاً —</option>
               {products.map((p) => (
-                <option key={p.id} value={p.id} className="bg-[#1a1a2e]">
+                <option key={p.id} value={p.id} className="bg-surface">
                   {p.name}
                 </option>
               ))}
@@ -213,7 +213,7 @@ function RequestModal({
               >
                 <option value="">— اختر —</option>
                 {branches.map((b) => (
-                  <option key={b.id} value={b.id} className="bg-[#1a1a2e]">
+                  <option key={b.id} value={b.id} className="bg-surface">
                     {b.name}
                   </option>
                 ))}
@@ -236,7 +236,7 @@ function RequestModal({
               >
                 <option value="">— اختر —</option>
                 {branches.map((b) => (
-                  <option key={b.id} value={b.id} className="bg-[#1a1a2e]">
+                  <option key={b.id} value={b.id} className="bg-surface">
                     {b.name}
                   </option>
                 ))}
@@ -332,7 +332,7 @@ function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#0f1623] border border-line rounded-2xl w-full max-w-sm shadow-2xl">
+      <div className="bg-canvas border border-line rounded-2xl w-full max-w-sm shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-line">
           <span className="font-bold text-ink flex items-center gap-2">
             <Package className="w-4 h-4 text-emerald-400" /> تأكيد الاستلام
@@ -611,7 +611,7 @@ export default function Transfers() {
               return (
                 <div
                   key={t.id}
-                  className="bg-[#111827] border border-line rounded-2xl p-4 hover:border-line transition-colors"
+                  className="bg-canvas border border-line rounded-2xl p-4 hover:border-line transition-colors"
                 >
                   <div className="flex items-start gap-3 flex-wrap">
                     {/* معلومات */}

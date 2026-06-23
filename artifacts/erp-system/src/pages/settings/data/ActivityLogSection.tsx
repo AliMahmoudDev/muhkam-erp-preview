@@ -8,7 +8,7 @@ interface ActivityLogSectionProps {
 
 export default function ActivityLogSection({ log, onClear }: ActivityLogSectionProps) {
   return (
-    <div className="bg-[#111827] border border-line rounded-2xl overflow-hidden">
+    <div className="bg-canvas border border-line rounded-2xl overflow-hidden">
       <div className="px-5 py-4 border-b border-line flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-surface flex items-center justify-center">

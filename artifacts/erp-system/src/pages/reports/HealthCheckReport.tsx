@@ -132,7 +132,7 @@ function IssueDetailModal({ issue, onClose }: { issue: HealthIssue; onClose: () 
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.92, opacity: 0 }}
-        className="bg-[#1a1a2e] border border-line rounded-2xl p-6 max-w-lg w-full shadow-2xl"
+        className="bg-surface border border-line rounded-2xl p-6 max-w-lg w-full shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         dir="rtl"
       >

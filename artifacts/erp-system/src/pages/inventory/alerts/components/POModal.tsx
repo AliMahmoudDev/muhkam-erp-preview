@@ -182,7 +182,7 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
       onClick={onClose}
     >
       <div
-        className="bg-[#1a1a2e] border border-line rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-surface border border-line rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -210,11 +210,11 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
               onChange={(e) => setSupplierId(e.target.value)}
               className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:border-amber-500/40"
             >
-              <option value="" className="bg-[#1a1a2e]">
+              <option value="" className="bg-surface">
                 — اختر المورد (اختياري) —
               </option>
               {suppliersRaw.map((s) => (
-                <option key={s.id} value={String(s.id)} className="bg-[#1a1a2e]">
+                <option key={s.id} value={String(s.id)} className="bg-surface">
                   {s.name}
                 </option>
               ))}

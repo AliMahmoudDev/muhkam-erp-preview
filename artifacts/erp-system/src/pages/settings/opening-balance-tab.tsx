@@ -44,7 +44,7 @@ export default function OpeningBalanceTab() {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
                 active
                   ? 'bg-amber-500/15 border-amber-500/50 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
-                  : 'bg-[#1A2235] border-[#2D3748] text-ink/40 hover:text-ink hover:border-amber-500/20'
+                  : 'bg-surface border-white/10 text-ink/40 hover:text-ink hover:border-amber-500/20'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />

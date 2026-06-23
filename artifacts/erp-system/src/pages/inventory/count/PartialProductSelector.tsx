@@ -25,7 +25,7 @@ export function PartialProductSelector({
   loadingProducts: boolean;
 }) {
   return (
-    <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-3">
+    <div className="bg-canvas border border-line rounded-2xl p-5 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
           <Filter className="w-4 h-4" /> اختر المنتجات للجرد
@@ -76,11 +76,11 @@ export function PartialProductSelector({
             onChange={(e) => setPartialCategory(e.target.value)}
             className="bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-1 focus:ring-violet-400/40"
           >
-            <option value="all" className="bg-[#1a1a2e]">
+            <option value="all" className="bg-surface">
               جميع الفئات
             </option>
             {categories.map((c) => (
-              <option key={c} value={c} className="bg-[#1a1a2e]">
+              <option key={c} value={c} className="bg-surface">
                 {c}
               </option>
             ))}

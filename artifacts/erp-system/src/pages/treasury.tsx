@@ -295,7 +295,7 @@ export default function Treasury() {
               return (
                 <div
                   key={s.id}
-                  className="group bg-[#111827] border border-line hover:border-amber-500/20 rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative"
+                  className="group bg-canvas border border-line hover:border-amber-500/20 rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative"
                 >
                   {/* Header row */}
                   <div className="flex items-start justify-between mb-3">

@@ -345,7 +345,7 @@ function CommissionLedgerSection({
           onClick={closeModal}
         >
           <div
-            className="bg-[#1a1f2e] border border-line rounded-2xl p-5 w-80 space-y-4 shadow-2xl"
+            className="bg-surface border border-line rounded-2xl p-5 w-80 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">

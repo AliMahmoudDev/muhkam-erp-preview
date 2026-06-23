@@ -33,8 +33,9 @@
   --color-card-foreground: hsl(var(--card-foreground));
 
   /* ── ERP semantic token aliases → Tailwind utility classes ──────── */
-  /* bg-app  text-ink  border-line  bg-surface  bg-raised  text-brand  */
+  /* bg-app  bg-canvas  bg-surface  bg-raised  text-ink  border-line  text-brand  */
   --color-app: var(--bg-app);
+  --color-canvas: var(--primitive-slate-dark-3, #14141F);
   --color-surface: var(--surface);
   --color-raised: var(--surface-raised);
   --color-ink: var(--text-1);

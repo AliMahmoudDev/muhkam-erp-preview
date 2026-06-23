@@ -100,13 +100,13 @@ export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: num
               onChange={(e) => setTopLimit(e.target.value as 'all' | '5' | '10')}
               className="bg-surface border border-line rounded-xl px-3 py-1.5 text-xs font-bold text-ink/70 cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-400/40"
             >
-              <option value="all" className="bg-[#1a1a2e]">
+              <option value="all" className="bg-surface">
                 الكل
               </option>
-              <option value="5" className="bg-[#1a1a2e]">
+              <option value="5" className="bg-surface">
                 Top 5
               </option>
-              <option value="10" className="bg-[#1a1a2e]">
+              <option value="10" className="bg-surface">
                 Top 10
               </option>
             </select>

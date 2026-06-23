@@ -79,7 +79,7 @@ export default function BackupLocalTab({
               <button
                 key={m.key}
                 onClick={() => onToggleModule(m.key)}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border text-right transition-all ${on ? 'bg-amber-500/10 border-amber-500/25' : 'bg-[#1A2235] border-[#2D3748] hover:border-amber-500/15'}`}
+                className={`flex items-center gap-2.5 p-3 rounded-xl border text-right transition-all ${on ? 'bg-amber-500/10 border-amber-500/25' : 'bg-surface border-white/10 hover:border-amber-500/15'}`}
               >
                 <span className="text-lg shrink-0">{MODULE_ICONS[m.key] ?? '📁'}</span>
                 <div className="flex-1 min-w-0">

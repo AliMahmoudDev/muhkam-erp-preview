@@ -275,7 +275,7 @@ function TransferTab({
 
       {view === 'new' && (
         <div className="space-y-5">
-          <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
+          <div className="bg-canvas border border-line rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
               <Truck className="w-4 h-4 text-ink/50" /> بيانات التحويل
             </h3>
@@ -290,7 +290,7 @@ function TransferTab({
                   className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:border-amber-500/40"
                 >
                   {warehouses.map((w) => (
-                    <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
+                    <option key={w.id} value={w.id} className="bg-surface">
                       {w.name}
                     </option>
                   ))}
@@ -313,7 +313,7 @@ function TransferTab({
                   }`}
                 >
                   {warehouses.map((w) => (
-                    <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
+                    <option key={w.id} value={w.id} className="bg-surface">
                       {w.name}
                     </option>
                   ))}
@@ -335,7 +335,7 @@ function TransferTab({
             </div>
           </div>
 
-          <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
+          <div className="bg-canvas border border-line rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-ink/70">المنتجات المحوَّلة</h3>
             <div className="space-y-3">
               {lines.map((line, idx) => {
@@ -355,11 +355,11 @@ function TransferTab({
                           onChange={(e) => updateLine(idx, 'product_id', e.target.value)}
                           className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
                         >
-                          <option value={0} className="bg-[#1a1a2e]">
+                          <option value={0} className="bg-surface">
                             — اختر منتجاً —
                           </option>
                           {allProducts.map((p) => (
-                            <option key={p.id} value={p.id} className="bg-[#1a1a2e]">
+                            <option key={p.id} value={p.id} className="bg-surface">
                               {p.name}
                             </option>
                           ))}
@@ -487,7 +487,7 @@ function TransferTab({
               minute: '2-digit',
             });
             return (
-              <div key={t.id} className="bg-[#111827] border border-line rounded-2xl p-4">
+              <div key={t.id} className="bg-canvas border border-line rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">

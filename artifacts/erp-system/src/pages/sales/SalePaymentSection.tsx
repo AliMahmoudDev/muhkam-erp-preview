@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- WhatsApp brand green (#25D366) is intentional and fixed */
 /**
  * SalePaymentSection.tsx
  * Cart footer: customer selector, quick-customer form, discount,

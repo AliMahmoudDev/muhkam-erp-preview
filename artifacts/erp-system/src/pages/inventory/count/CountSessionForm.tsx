@@ -27,7 +27,7 @@ export function CountSessionForm({
   setCountMode: (v: CountMode) => void;
 }) {
   return (
-    <div className="bg-[#111827] border border-line rounded-2xl p-5 space-y-4">
+    <div className="bg-canvas border border-line rounded-2xl p-5 space-y-4">
       <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
         <ClipboardList className="w-4 h-4 text-ink/50" /> إعدادات جلسة الجرد
       </h3>
@@ -41,11 +41,11 @@ export function CountSessionForm({
             onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
             className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:border-amber-500/40"
           >
-            <option value={0} className="bg-[#1a1a2e]">
+            <option value={0} className="bg-surface">
               — اختر مخزناً —
             </option>
             {warehouses.map((w) => (
-              <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
+              <option key={w.id} value={w.id} className="bg-surface">
                 {w.name}
               </option>
             ))}

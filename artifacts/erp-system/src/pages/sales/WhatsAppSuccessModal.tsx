@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- WhatsApp brand green (#25D366) is intentional and fixed */
 import { formatCurrency } from '@/lib/format';
 import { Receipt } from 'lucide-react';
 import type { SuccessInvoice } from './salesTypes';

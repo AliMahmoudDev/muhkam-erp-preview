@@ -50,7 +50,7 @@ export default function DangerZoneSection({
   onSetSelectedWarehouseId,
 }: DangerZoneSectionProps) {
   return (
-    <div className="bg-[#111827] border border-red-500/25 rounded-2xl overflow-hidden">
+    <div className="bg-canvas border border-red-500/25 rounded-2xl overflow-hidden">
       <div className="px-5 py-4 border-b border-red-500/15 bg-red-500/5 flex items-center gap-3">
         <div className="w-8 h-8 rounded-xl bg-red-500/15 flex items-center justify-center">
           <AlertTriangle className="w-4 h-4 text-red-400" />
@@ -91,7 +91,7 @@ export default function DangerZoneSection({
                 <button
                   key={g.key}
                   onClick={() => onToggle(g.key)}
-                  className={`p-3 rounded-xl text-right border transition-all ${on ? 'bg-red-500/12 border-red-500/35' : 'bg-[#1A2235] border-[#2D3748] hover:border-red-500/20'}`}
+                  className={`p-3 rounded-xl text-right border transition-all ${on ? 'bg-red-500/12 border-red-500/35' : 'bg-surface border-white/10 hover:border-red-500/20'}`}
                 >
                   <div className="flex items-center justify-between mb-0.5">
                     <span

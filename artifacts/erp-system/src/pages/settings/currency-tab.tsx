@@ -321,7 +321,7 @@ export default function CurrencyTab() {
                         setLogoPreview(e.target.value);
                       }}
                       dir="ltr"
-                      className="w-full bg-[#0D1424] border border-line rounded-lg px-3 py-2 text-ink/70 text-xs font-mono focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                      className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-ink/70 text-xs font-mono focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
                     />
                     <div className="flex gap-2 flex-wrap">
                       <button
@@ -378,7 +378,7 @@ export default function CurrencyTab() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   dir="rtl"
-                  className="w-full bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-ink/85 text-sm font-bold focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                  className="w-full bg-canvas border border-line rounded-lg px-3 py-2.5 text-ink/85 text-sm font-bold focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
                 />
                 <p className="text-ink/20 text-[10px] mt-1">
                   يظهر في الشريط الجانبي وصفحة تسجيل الدخول
@@ -397,7 +397,7 @@ export default function CurrencyTab() {
                   value={companySlogan}
                   onChange={(e) => setCompanySlogan(e.target.value)}
                   dir="rtl"
-                  className="w-full bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-ink/70 text-sm focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
+                  className="w-full bg-canvas border border-line rounded-lg px-3 py-2.5 text-ink/70 text-sm focus:outline-none focus:border-amber-500/50 transition-colors placeholder-white/20"
                 />
                 <p className="text-ink/20 text-[10px] mt-1">سطر وصفي أسفل اسم الشركة</p>
               </div>
@@ -571,7 +571,7 @@ export default function CurrencyTab() {
                   className={`w-full flex items-center gap-4 p-4 rounded-xl border text-right transition-all ${
                     active
                       ? 'bg-amber-500/10 border-amber-500/60 shadow-[0_0_14px_rgba(245,158,11,0.12)]'
-                      : 'bg-[#0D1424] border-line hover:border-amber-500/25 hover:bg-amber-500/5'
+                      : 'bg-canvas border-line hover:border-amber-500/25 hover:bg-amber-500/5'
                   }`}
                 >
                   <span className="text-2xl shrink-0">{o.flag}</span>
@@ -610,7 +610,7 @@ export default function CurrencyTab() {
                   className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
                     active
                       ? 'bg-amber-500/10 border-amber-500/60 shadow-[0_0_14px_rgba(245,158,11,0.12)]'
-                      : 'bg-[#0D1424] border-line'
+                      : 'bg-canvas border-line'
                   }`}
                 >
                   {/* Currency info — clickable to set as main */}
@@ -718,7 +718,7 @@ export default function CurrencyTab() {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
                   active
                     ? 'bg-amber-500/8 border-amber-500/40'
-                    : 'bg-[#0D1424] border-line hover:border-line'
+                    : 'bg-canvas border-line hover:border-line'
                 }`}
               >
                 {/* ── Left: format type selector ── */}
@@ -757,7 +757,7 @@ export default function CurrencyTab() {
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
                         decimalPlaces === o.dp
                           ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                          : 'bg-[#1A2235] text-ink/35 border border-line hover:border-amber-500/25 hover:text-ink/60'
+                          : 'bg-surface text-ink/35 border border-line hover:border-amber-500/25 hover:text-ink/60'
                       }`}
                     >
                       {o.label}
@@ -780,7 +780,7 @@ export default function CurrencyTab() {
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
                         thousandsSep === o.sep
                           ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                          : 'bg-[#1A2235] text-ink/35 border border-line hover:border-amber-500/25 hover:text-ink/60'
+                          : 'bg-surface text-ink/35 border border-line hover:border-amber-500/25 hover:text-ink/60'
                       }`}
                     >
                       {o.label}
@@ -809,7 +809,7 @@ export default function CurrencyTab() {
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-right transition-all ${
                       active
                         ? 'bg-amber-500/15 border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.12)]'
-                        : 'bg-[#1A2235] border-line hover:border-amber-500/30'
+                        : 'bg-surface border-line hover:border-amber-500/30'
                     }`}
                   >
                     <span
@@ -839,14 +839,14 @@ export default function CurrencyTab() {
             <div className="flex items-center gap-3 flex-1">
               {/* حجم الخط — select */}
               <div className="relative flex-1 max-w-[180px]">
-                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-[#0D1424] leading-none z-10">
+                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-canvas leading-none z-10">
                   حجم الخط
                 </label>
                 <select
                   value={fontSize}
                   onChange={(e) => setFontSize(e.target.value as FontSize)}
                   dir="rtl"
-                  className="w-full appearance-none bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 font-bold focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                  className="w-full appearance-none bg-canvas border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 font-bold focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
                   style={{ fontFamily: `'${fontFamily}', sans-serif` }}
                 >
                   {FONT_SIZE_OPTIONS.map((o) => (
@@ -862,14 +862,14 @@ export default function CurrencyTab() {
 
               {/* وزن الخط — select */}
               <div className="relative flex-1 max-w-[180px]">
-                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-[#0D1424] leading-none z-10">
+                <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-canvas leading-none z-10">
                   وزن الخط
                 </label>
                 <select
                   value={fontWeight}
                   onChange={(e) => setFontWeight(Number(e.target.value))}
                   dir="rtl"
-                  className="w-full appearance-none bg-[#0D1424] border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                  className="w-full appearance-none bg-canvas border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
                   style={{ fontFamily: `'${fontFamily}', sans-serif`, fontWeight }}
                 >
                   {FONT_WEIGHT_OPTIONS.map((w) => (
@@ -888,7 +888,7 @@ export default function CurrencyTab() {
               </div>
 
               {/* معاينة حية */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-line bg-[#0D1424] shrink-0">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-line bg-canvas shrink-0">
                 <span
                   className="text-amber-400/80"
                   style={{

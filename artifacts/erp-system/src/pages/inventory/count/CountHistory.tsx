@@ -47,7 +47,7 @@ export function CountHistory({
           minute: '2-digit',
         });
         return (
-          <div key={s.id} className="bg-[#111827] border border-line rounded-2xl p-4">
+          <div key={s.id} className="bg-canvas border border-line rounded-2xl p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">

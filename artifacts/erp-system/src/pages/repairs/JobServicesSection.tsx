@@ -230,7 +230,7 @@ function ServiceForm({
                 className="erp-input w-full text-xs pr-7"
               />
               {showPartDrop && (
-                <div className="absolute z-50 top-full mt-0.5 right-0 left-0 rounded-lg border border-line bg-[#0f1117] shadow-xl overflow-hidden max-h-44 overflow-y-auto">
+                <div className="absolute z-50 top-full mt-0.5 right-0 left-0 rounded-lg border border-line bg-canvas shadow-xl overflow-hidden max-h-44 overflow-y-auto">
                   {filteredProducts.length === 0 ? (
                     <div className="px-3 py-2 text-[10px] text-ink/30 text-center">
                       لا توجد نتائج

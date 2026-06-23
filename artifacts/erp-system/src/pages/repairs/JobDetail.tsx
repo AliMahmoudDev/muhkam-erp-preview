@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- WhatsApp brand green (#25D366) is intentional and fixed */
 import { useState } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import {

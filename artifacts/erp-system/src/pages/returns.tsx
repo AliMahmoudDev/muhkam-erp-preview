@@ -164,7 +164,7 @@ function ReturnDetailModal({ type, id, onClose }: { type: Tab; id: number; onClo
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-[#1a1a2e] rounded-2xl border border-line shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl bg-surface rounded-2xl border border-line shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-line bg-surface">

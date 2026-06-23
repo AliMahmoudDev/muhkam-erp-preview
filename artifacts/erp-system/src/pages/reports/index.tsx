@@ -53,11 +53,11 @@ function WarehouseFilter({
       onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
       className="bg-surface border border-line rounded-xl px-3 py-2 text-sm font-bold text-ink/70 focus:outline-none focus:ring-1 focus:ring-amber-400/40"
     >
-      <option value="" className="bg-[#1a1a2e]">
+      <option value="" className="bg-surface">
         🏪 كل الفروع
       </option>
       {warehouses.map((w) => (
-        <option key={w.id} value={w.id} className="bg-[#1a1a2e]">
+        <option key={w.id} value={w.id} className="bg-surface">
           {w.name}
         </option>
       ))}

@@ -195,7 +195,7 @@ export default function InvoiceTab() {
                     className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
                       active
                         ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
-                        : 'bg-[#1A2235] border-[#2D3748] hover:border-amber-500/30'
+                        : 'bg-surface border-white/10 hover:border-amber-500/30'
                     }`}
                   >
                     {active && (

@@ -261,11 +261,11 @@ export default function RepairReturnModal({
                       border: '1px solid rgba(239,68,68,0.3)',
                     }}
                   >
-                    <option value="" className="bg-[#1a1530]">
+                    <option value="" className="bg-raised">
                       — اختر الخزنة —
                     </option>
                     {safes.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-[#1a1530]">
+                      <option key={s.id} value={s.id} className="bg-raised">
                         {s.name} — رصيد: {Number(s.balance).toFixed(2)}
                       </option>
                     ))}

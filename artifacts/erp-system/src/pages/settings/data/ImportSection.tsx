@@ -305,7 +305,7 @@ interface ImportSectionProps extends ImportProductsProps, ImportPurchasesProps {
 
 export default function ImportSection({ importTab, onSetImportTab, ...rest }: ImportSectionProps) {
   return (
-    <div className="bg-[#111827] border border-line rounded-2xl overflow-hidden">
+    <div className="bg-canvas border border-line rounded-2xl overflow-hidden">
       <div className="flex border-b border-line">
         {(
           [

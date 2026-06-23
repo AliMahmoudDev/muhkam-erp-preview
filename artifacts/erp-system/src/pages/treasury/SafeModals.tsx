@@ -58,7 +58,7 @@ export default function SafeModals({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
         >
-          <div className="bg-[#111827] border border-line rounded-2xl w-full max-w-sm shadow-2xl">
+          <div className="bg-canvas border border-line rounded-2xl w-full max-w-sm shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-sky-500/15 flex items-center justify-center">
@@ -178,7 +178,7 @@ export default function SafeModals({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
         >
-          <div className="bg-[#111827] border border-red-500/20 rounded-2xl w-full max-w-sm shadow-2xl">
+          <div className="bg-canvas border border-red-500/20 rounded-2xl w-full max-w-sm shadow-2xl">
             <div className="p-6 text-center space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
                 <AlertTriangle className="w-7 h-7 text-red-400" />
@@ -240,7 +240,7 @@ export default function SafeModals({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
         >
-          <div className="bg-[#111827] border border-line rounded-2xl w-full max-w-sm shadow-2xl">
+          <div className="bg-canvas border border-line rounded-2xl w-full max-w-sm shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">

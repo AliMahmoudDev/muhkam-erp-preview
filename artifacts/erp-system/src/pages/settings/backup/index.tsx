@@ -9,7 +9,7 @@ export default function BackupTab() {
   const bk = useBackupActions();
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-line bg-[#111827]">
+    <div className="rounded-2xl overflow-hidden border border-line bg-canvas">
       {/* Header */}
       <div className="px-5 py-4 border-b border-line flex items-center gap-3 bg-surface">
         <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">

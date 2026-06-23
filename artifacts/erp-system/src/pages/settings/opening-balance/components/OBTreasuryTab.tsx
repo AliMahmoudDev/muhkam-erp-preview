@@ -53,7 +53,7 @@ export function OBTreasuryTab() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-[#1A2235] border border-amber-500/20 rounded-2xl p-5 space-y-4">
+      <div className="bg-surface border border-amber-500/20 rounded-2xl p-5 space-y-4">
         <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
           <Banknote className="w-4 h-4" /> إضافة رصيد افتتاحي للخزينة
         </h4>
@@ -106,7 +106,7 @@ export function OBTreasuryTab() {
         </PrimaryBtn>
       </div>
 
-      <div className="bg-[#111827] rounded-2xl overflow-hidden border border-line">
+      <div className="bg-canvas rounded-2xl overflow-hidden border border-line">
         <div className="p-4 border-b border-line flex items-center justify-between">
           <h4 className="font-bold text-ink/60 text-sm">القيود المسجلة</h4>
           <span className="text-ink/30 text-xs bg-surface px-2 py-0.5 rounded-lg">
