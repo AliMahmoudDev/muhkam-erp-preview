@@ -1,24 +1,14 @@
 /** attendance/shifts.ts */
 import { Router, type IRouter } from 'express';
-import { eq, and, desc, gte, lte, sql, isNull } from 'drizzle-orm';
+import { eq, and, asc, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import {
-  db,
-  attendanceRecordsTable,
-  shiftSchedulesTable,
-  employeeShiftAssignmentsTable,
-  overtimeRecordsTable,
-  publicHolidaysTable,
-  attendanceSummaryTable,
-  employeesTable,
-} from '@workspace/db';
+import { db, shiftSchedulesTable, employeesTable, employeeShiftAssignmentsTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { requireFeature } from '../../middleware/feature-guard';
 import { getTenant } from '../../middleware/auth';
 
-
-/* ── Zod schemas for mutation bodies ── */
+/* ── Zod schemas ── */
 const shiftSchema = z.object({
   name_ar: z.string().min(1, 'اسم الوردية مطلوب'),
   name_en: z.string().optional(),
@@ -42,64 +32,9 @@ const employeeShiftSchema = z.object({
     .optional(),
 });
 
-const checkInSchema = z.object({
-  employee_id: z.number().int().positive().optional(),
-  attendance_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  check_in_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  notes: z.string().max(500).nullable().optional(),
-});
-
-const checkOutSchema = z.object({
-  employee_id: z.number().int().positive().optional(),
-  attendance_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  check_out_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  notes: z.string().max(500).nullable().optional(),
-});
-
-const attendanceEditSchema = z.object({
-  check_in_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  check_out_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  status: z.enum(['present', 'absent', 'late', 'half_day', 'leave', 'holiday']).optional(),
-  notes: z.string().max(500).nullable().optional(),
-  working_hours: z.number().min(0).max(24).optional(),
-  late_minutes: z.number().int().min(0).optional(),
-  overtime_hours: z.number().min(0).max(24).optional(),
-});
-
-const overtimeSchema = z.object({
-  employee_id: z.number().int().positive('معرّف الموظف مطلوب'),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ غير صحيحة'),
-  hours: z.number().min(0.25).max(24, 'عدد الساعات لا يمكن أن يتجاوز 24'),
-  reason: z.string().max(500).nullable().optional(),
-});
-
-const holidaySchema = z.object({
-  holiday_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ غير صحيحة'),
-  name_ar: z.string().min(1, 'اسم الإجازة مطلوب').max(200),
-  name_en: z.string().max(200).optional(),
-});
-
 const router: IRouter = Router();
 
-const router: IRouter = Router();
+
 
 router.use(
   ['/attendance', '/shifts', '/employee-shifts', '/public-holidays'],
