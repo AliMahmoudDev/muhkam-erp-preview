@@ -65,27 +65,26 @@
   flex-direction: column;
   gap: var(--space-1, 0.25rem);
 
-  /* ── Sticky band just below topbar ── */
+  /* ── Sticky band at top of scroll container (= just below topbar) ── */
   position: sticky;
-  top: 64px;
+  top: 0;
   z-index: 20;
   background: var(--erp-bg-topbar, var(--bg-surface));
   border-block-end: 1px solid var(--erp-border-sidebar, var(--edge));
   padding-block: var(--space-3, 0.75rem);
 
-  /* sm: wrapper is p-4 (1rem) — bleed edge-to-edge and pull flush to top */
+  /* sm: bleed edge-to-edge (wrapper px-4 = 1rem) */
   padding-inline: var(--space-4, 1rem);
   margin-inline: calc(-1 * var(--space-4, 1rem));
-  margin-block-start: calc(-1 * var(--space-4, 1rem));
+  margin-block-start: 0;
   margin-block-end: 0;
 }
 
-/* md+: wrapper is p-6 (1.5rem) */
+/* md+: wrapper px-6 = 1.5rem */
 @media (min-width: 768px) {
   .erp-page-header {
     padding-inline: var(--space-6, 1.5rem);
     margin-inline: calc(-1 * var(--space-6, 1.5rem));
-    margin-block-start: calc(-1 * var(--space-6, 1.5rem));
   }
 }
 
