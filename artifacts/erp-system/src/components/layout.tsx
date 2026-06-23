@@ -22,11 +22,10 @@ import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
 import { resolveUploadedFileUrl } from '@/lib/file-upload';
 /* ── Nav sections ───────────────────────────────────────────
-   Sprint 09 IA refactor:
-   - "التجارة" (10 items) split into 4 focused sections
-   - /vouchers added to المالية (route + permission existed; nav was missing)
-   - /transfers added to المخزون والمنتجات (was hidden — nav item existed but no section)
-   - /my-portal added to النظام (was hardcoded at sidebar bottom; now in section system)
+   IA: parent modules only. Child pages live inside their parent tabs.
+   - /transfers → embedded in /inventory (التحويلات بين الفروع tab)
+   - /vouchers  → companion to /treasury; removed from sidebar (السندات والخزينة is the entry)
+   - /my-portal → النظام section
 ────────────────────────────────────────────────────────────── */
 const NAV_SECTIONS = [
   { label: 'القائمة',            hrefs: ['/'] },
@@ -39,7 +38,7 @@ const NAV_SECTIONS = [
   { label: 'الأجهزة والصيانة',  hrefs: ['/devices', '/repairs'] },
   {
     label: 'المالية',
-    hrefs: ['/treasury', '/vouchers', '/expenses', '/income', '/reports'],
+    hrefs: ['/treasury', '/expenses', '/income', '/reports'],
   },
   { label: 'الموارد البشرية',   hrefs: ['/employees', '/attendance', '/payroll'] },
   {

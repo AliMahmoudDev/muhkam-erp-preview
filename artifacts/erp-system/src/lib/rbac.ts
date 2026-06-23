@@ -28,10 +28,8 @@ import {
   PiggyBank,
   Wrench,
   Smartphone,
-  ArrowLeftRight,
   UserCircle,
   Tags,
-  ScrollText,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -89,7 +87,6 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   { name: 'المنتجات',              href: '/products',            icon: Package,         roles: ['admin', 'manager', 'cashier', 'salesperson'] },
   { name: 'قوائم الأسعار',         href: '/price-lists',         icon: Tags,            roles: ['admin', 'manager'] },
   { name: 'المخزون',               href: '/inventory',           icon: ClipboardList,   roles: ['admin', 'manager'] },
-  { name: 'التحويلات',             href: '/transfers',           icon: ArrowLeftRight,  roles: ['admin', 'manager'] },
 
   /* ── الشراء ────────────────────────────────────────────── */
   { name: 'المشتريات',             href: '/purchases',           icon: CreditCard,      roles: ['admin', 'manager'] },
@@ -101,7 +98,6 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
 
   /* ── المالية ───────────────────────────────────────────── */
   { name: 'السندات والخزينة',      href: '/treasury',            icon: Wallet,          roles: ['admin', 'manager', 'cashier', 'salesperson'] },
-  { name: 'السندات',               href: '/vouchers',            icon: ScrollText,      roles: ['admin', 'manager', 'cashier', 'salesperson'] },
   { name: 'المصروفات',             href: '/expenses',            icon: ReceiptText,     roles: ['admin', 'manager'] },
   { name: 'الإيرادات',             href: '/income',              icon: TrendingUp,      roles: ['admin', 'manager'] },
   { name: 'التقارير',              href: '/reports',             icon: FileText,        roles: ['admin', 'manager'] },
