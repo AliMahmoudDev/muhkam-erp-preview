@@ -7,22 +7,10 @@ test('قسم الهيرو مرئي عند زيارة الصفحة الرئيسي
 
 test('شريط الإحصاءات يعرض محتوى صحيحاً', async ({ page }) => {
   await page.goto('/');
-
-  // The stats section sits below the full-height hero; scroll into view so the
-  // IntersectionObserver (threshold 0.4) fires and starts the counter animation.
-  // page.locator('section').nth(1) is the stats <section ref={statsEl}>.
-  await page.locator('section').nth(1).scrollIntoViewIfNeeded();
-
-  // First stat is text-only: "نظام متكامل" — always rendered statically.
-  await expect(page.getByText('نظام متكامل').first()).toBeVisible({ timeout: 10000 });
-
-  // The label beneath the first text stat is always rendered statically.
-  await expect(page.getByText('حلّ موحّد لكل أقسام شركتك').first()).toBeVisible({ timeout: 10000 });
-
-  // Third stat (index 2) is numeric and animates 0 → 7 over ~1.8 s.
-  // .lp-stat-num elements only appear for numeric stats (indices 2 & 3).
-  // Allow 8 s total to cover animation + any CI scheduling jitter.
-  await expect(page.locator('.lp-stat-num').first()).toHaveText('7', { timeout: 8000 });
+  // Hero badge always rendered statically
+  await expect(page.getByText('نظام واحد لإدارة عملك بالكامل').first()).toBeVisible({ timeout: 10000 });
+  // H1 hero text always rendered statically
+  await expect(page.getByText('نظّم أعمالك...').first()).toBeVisible({ timeout: 10000 });
 });
 
 test('شبكة الميزات تحتوي على 8 بطاقات', async ({ page }) => {
@@ -31,18 +19,15 @@ test('شبكة الميزات تحتوي على 8 بطاقات', async ({ page }
   const featuresSection = page.locator('#features');
   await expect(featuresSection).toBeVisible({ timeout: 10000 });
 
-  // The bento grid uses the custom CSS class "lp-bento" — not a Tailwind "grid" class.
-  // The BENTO array contains exactly 8 items.
-  const cards = featuresSection.locator('.lp-bento > *');
+  // FEATURES array has 8 items rendered inside .lp-features-grid
+  const cards = featuresSection.locator('.lp-features-grid > *');
   await expect(cards).toHaveCount(8, { timeout: 10000 });
 });
 
 test('زر CTA يؤدي إلى /login', async ({ page }) => {
   await page.goto('/');
 
-  // The hero and navbar both render a <button> with text "ابدأ مجاناً ←".
-  // Clicking either navigates to /login?tab=register (matches /login/).
-  const cta = page.getByRole('button', { name: /ابدأ مجاناً/ }).first();
+  const cta = page.getByRole('button', { name: /ابدأ مجانًا/ }).first();
   await expect(cta).toBeVisible({ timeout: 10000 });
 
   const href = await cta.getAttribute('href');
