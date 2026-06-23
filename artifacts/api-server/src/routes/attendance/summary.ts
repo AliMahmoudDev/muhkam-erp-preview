@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { db, attendanceRecordsTable, overtimeRecordsTable, attendanceSummaryTable, employeesTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
-import { requireFeature } from '../../middleware/feature-guard';
 import { getTenant } from '../../middleware/auth';
 
 /* ── Zod schemas ── */

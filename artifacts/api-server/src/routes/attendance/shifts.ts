@@ -1,8 +1,8 @@
 /** attendance/shifts.ts */
 import { Router, type IRouter } from 'express';
-import { eq, and, asc, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { db, shiftSchedulesTable, employeesTable, employeeShiftAssignmentsTable } from '@workspace/db';
+import { db, shiftSchedulesTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { requireFeature } from '../../middleware/feature-guard';
@@ -21,16 +21,6 @@ const shiftSchema = z.object({
   is_active: z.boolean().optional().default(true),
 });
 
-const employeeShiftSchema = z.object({
-  employee_id: z.number().int().positive('معرّف الموظف مطلوب'),
-  shift_schedule_id: z.number().int().positive('معرّف الوردية مطلوب'),
-  assigned_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ غير صحيحة'),
-  end_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable()
-    .optional(),
-});
 
 const router: IRouter = Router();
 

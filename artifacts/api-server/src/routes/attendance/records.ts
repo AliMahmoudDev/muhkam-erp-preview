@@ -1,8 +1,8 @@
 /** attendance/records.ts */
 import { Router, type IRouter } from 'express';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, isNull } from 'drizzle-orm';
 import { z } from 'zod';
-import { db, attendanceRecordsTable, employeesTable } from '@workspace/db';
+import { db, attendanceRecordsTable, employeesTable, employeeShiftAssignmentsTable, shiftSchedulesTable, overtimeRecordsTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { getTenant } from '../../middleware/auth';
@@ -34,21 +34,6 @@ const checkOutSchema = z.object({
   notes: z.string().max(500).nullable().optional(),
 });
 
-const attendanceEditSchema = z.object({
-  check_in_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  check_out_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  status: z.enum(['present', 'absent', 'late', 'half_day', 'leave', 'holiday']).optional(),
-  notes: z.string().max(500).nullable().optional(),
-  working_hours: z.number().min(0).max(24).optional(),
-  late_minutes: z.number().int().min(0).optional(),
-  overtime_hours: z.number().min(0).max(24).optional(),
-});
 
 const router: IRouter = Router();
 
