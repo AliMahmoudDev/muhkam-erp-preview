@@ -6,34 +6,7 @@ import { db, attendanceRecordsTable, employeesTable, employeeShiftAssignmentsTab
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { getTenant } from '../../middleware/auth';
-import { fmt } from './_helpers';
-
-/* ── Zod schemas ── */
-const checkInSchema = z.object({
-  employee_id: z.number().int().positive().optional(),
-  attendance_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  check_in_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  notes: z.string().max(500).nullable().optional(),
-});
-
-const checkOutSchema = z.object({
-  employee_id: z.number().int().positive().optional(),
-  attendance_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  check_out_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/)
-    .optional(),
-  notes: z.string().max(500).nullable().optional(),
-});
+import { fmt, employeeShiftSchema, checkInSchema, checkOutSchema } from './_helpers';
 
 
 const router: IRouter = Router();

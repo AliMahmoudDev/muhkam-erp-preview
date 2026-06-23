@@ -6,15 +6,8 @@ import { db, attendanceRecordsTable, overtimeRecordsTable, attendanceSummaryTabl
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { getTenant } from '../../middleware/auth';
-import { fmt } from './_helpers';
+import { fmt, attendanceEditSchema, overtimeSchema } from './_helpers';
 
-/* ── Zod schemas ── */
-const overtimeSchema = z.object({
-  employee_id: z.number().int().positive('معرّف الموظف مطلوب'),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ غير صحيحة'),
-  hours: z.number().min(0.25).max(24, 'عدد الساعات لا يمكن أن يتجاوز 24'),
-  reason: z.string().max(500).nullable().optional(),
-});
 
 const router: IRouter = Router();
 

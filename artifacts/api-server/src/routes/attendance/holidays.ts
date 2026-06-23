@@ -1,18 +1,13 @@
 /** attendance/holidays.ts */
 import { Router, type IRouter } from 'express';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, publicHolidaysTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { getTenant } from '../../middleware/auth';
+import { fmt, holidaySchema } from './_helpers';
 
-/* ── Zod schemas ── */
-const holidaySchema = z.object({
-  holiday_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ غير صحيحة'),
-  name_ar: z.string().min(1, 'اسم الإجازة مطلوب').max(200),
-  name_en: z.string().max(200).optional(),
-});
 
 const router: IRouter = Router();
 

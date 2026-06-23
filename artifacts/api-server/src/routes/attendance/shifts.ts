@@ -7,20 +7,7 @@ import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { requireFeature } from '../../middleware/feature-guard';
 import { getTenant } from '../../middleware/auth';
-import { fmt } from './_helpers';
-
-/* ── Zod schemas ── */
-const shiftSchema = z.object({
-  name_ar: z.string().min(1, 'اسم الوردية مطلوب'),
-  name_en: z.string().optional(),
-  start_time: z.string().regex(/^\d{2}:\d{2}$/, 'صيغة الوقت غير صحيحة'),
-  end_time: z.string().regex(/^\d{2}:\d{2}$/, 'صيغة الوقت غير صحيحة'),
-  break_duration: z.number().int().min(0).optional().default(60),
-  grace_minutes: z.number().int().min(0).optional().default(5),
-  weekly_hours: z.number().min(0).max(168).optional().default(40),
-  working_days: z.string().optional().default('0,1,2,3,4'),
-  is_active: z.boolean().optional().default(true),
-});
+import { fmt, shiftSchema } from './_helpers';
 
 
 const router: IRouter = Router();
