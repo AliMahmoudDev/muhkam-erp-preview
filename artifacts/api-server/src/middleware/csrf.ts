@@ -87,7 +87,7 @@ function isExemptPath(path: string): boolean {
  */
 function isBearerOnlyRequest(req: Request): boolean {
   const hasAuthHeader = req.headers.authorization?.startsWith("Bearer ");
-  const hasCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token;
+  const hasCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token; // eslint-disable-line security/detect-object-injection
   return !!hasAuthHeader && !hasCookie;
 }
 
@@ -104,7 +104,7 @@ function isBearerOnlyRequest(req: Request): boolean {
  */
 export function csrfProtection(req: Request, res: Response, next: NextFunction): void {
   /* ── 1. ضبط كوكي CSRF إن لم يكن موجوداً ── */
-  const existingToken = (req.cookies as Record<string, string> | undefined)?.[CSRF_COOKIE_NAME];
+  const existingToken = (req.cookies as Record<string, string> | undefined)?.[CSRF_COOKIE_NAME]; // eslint-disable-line security/detect-object-injection
 
   if (!existingToken) {
     const newToken = generateToken();
@@ -142,7 +142,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   }
 
   /* ── 5b. تخطّي الطلبات التي لا تحمل أي بيانات مصادقة (ستُرفض لاحقاً بـ 401) ── */
-  const hasAccessCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token;
+  const hasAccessCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token; // eslint-disable-line security/detect-object-injection
   const hasAuthHeader = !!req.headers.authorization;
   if (!hasAccessCookie && !hasAuthHeader) {
     next();
@@ -181,7 +181,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
  * يُستخدم لضمان أن الصفحة الأولى تحصل على الرمز.
  */
 export function ensureCsrfCookie(req: Request, res: Response, next: NextFunction): void {
-  const existing = (req.cookies as Record<string, string> | undefined)?.[CSRF_COOKIE_NAME];
+  const existing = (req.cookies as Record<string, string> | undefined)?.[CSRF_COOKIE_NAME]; // eslint-disable-line security/detect-object-injection
   if (!existing) {
     res.cookie(CSRF_COOKIE_NAME, generateToken(), {
       httpOnly: false,

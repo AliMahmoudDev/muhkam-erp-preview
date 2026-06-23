@@ -38,8 +38,10 @@ function candidateEnvFiles(): string[] {
 }
 
 for (const envFile of candidateEnvFiles()) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   if (!fs.existsSync(envFile)) continue;
 
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   const content = fs.readFileSync(envFile, 'utf8');
   for (const line of content.split(/\r?\n/)) {
     const parsed = parseEnvLine(line);
