@@ -40,7 +40,7 @@ function notify(
   message: string,
   referenceId: number
 ) {
-  db.insert(notificationsTable)
+  void db.insert(notificationsTable)
     .values({
       company_id: companyId,
       user_id: userId,

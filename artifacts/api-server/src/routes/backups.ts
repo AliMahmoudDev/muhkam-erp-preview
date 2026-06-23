@@ -84,7 +84,7 @@ router.put("/backups/settings", authenticate, requireRole("super_admin"), wrap(a
 
 /* ── GET /api/backups ── list all ─────────────────────────────── */
 router.get("/backups", authenticate, requireRole("super_admin"), wrap(async (_req, res) => {
-  const list = await db.select().from(backupsTable).orderBy(desc(backupsTable.created_at));
+  const list = await db.select().from(backupsTable).orderBy(desc(backupsTable.created_at)).limit(100);
   res.json(list);
 }));
 

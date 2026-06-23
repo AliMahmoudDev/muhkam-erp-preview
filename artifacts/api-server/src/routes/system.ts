@@ -760,6 +760,7 @@ router.post(
         const ins = async <T>(tbl: Parameters<typeof tx.insert>[0], rows: T[]) => {
           // Drizzle insert values() is typed per-table; cast is unavoidable for generic helper.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- restore inserts dynamic schema rows
           if (rows.length > 0) await tx.insert(tbl).values(rows as any[]);
         };
 

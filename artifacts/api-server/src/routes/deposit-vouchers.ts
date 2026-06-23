@@ -42,10 +42,6 @@ const createDepositVoucherSchema = z.object({
 const router: IRouter = Router();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getCid(req: any): number {
-  return getTenant(req);
-}
-
 function fmt(v: typeof depositVouchersTable.$inferSelect) {
   return { ...v, amount: Number(v.amount), created_at: v.created_at.toISOString() };
 }
@@ -53,7 +49,7 @@ function fmt(v: typeof depositVouchersTable.$inferSelect) {
 router.get(
   '/deposit-vouchers',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const limit = Math.min(2000, Math.max(1, parseInt(String(req.query['limit'] ?? '500'), 10)));
     const items = await db
       .select()
@@ -74,7 +70,7 @@ router.post(
       return;
     }
 
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const { safe_id, amount, customer_id, customer_name, source, notes, date } = parsed.data;
     const amt = Number(amount);
 
@@ -223,7 +219,7 @@ async function getVoucherCustomerAcct(
 router.post(
   '/deposit-vouchers/:id/post',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) throw httpError(400, 'معرّف غير صحيح');
 
@@ -287,7 +283,7 @@ router.post(
 router.post(
   '/deposit-vouchers/:id/cancel',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) throw httpError(400, 'معرّف غير صحيح');
 
@@ -341,7 +337,7 @@ router.post(
 router.delete(
   '/deposit-vouchers/:id',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'معرّف غير صالح' });

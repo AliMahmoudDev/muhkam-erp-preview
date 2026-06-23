@@ -20,7 +20,8 @@ router.get("/income", wrap(async (req, res) => {
   const companyId = getTenant(req);
   const income = await db.select().from(incomeTable)
     .where(eq(incomeTable.company_id, companyId))
-    .orderBy(incomeTable.created_at);
+    .orderBy(incomeTable.created_at)
+    .limit(500);
   res.json(GetIncomeResponse.parse(income.map(formatIncome)));
 }));
 

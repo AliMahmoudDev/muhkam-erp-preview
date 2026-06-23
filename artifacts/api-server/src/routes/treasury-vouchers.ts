@@ -21,10 +21,6 @@ const createTreasuryVoucherSchema = z.object({
 const router: IRouter = Router();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getCid(req: any): number {
-  return getTenant(req);
-}
-
 function fmt(v: typeof treasuryVouchersTable.$inferSelect) {
   return { ...v, amount: Number(v.amount), created_at: v.created_at.toISOString() };
 }
@@ -33,7 +29,7 @@ router.get("/treasury-vouchers", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_treasury")) {
     res.status(403).json({ error: "ليس لديك صلاحية عرض الخزينة" }); return;
   }
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const vouchers = await db.select().from(treasuryVouchersTable)
     .where(eq(treasuryVouchersTable.company_id, cid))
     .orderBy(desc(treasuryVouchersTable.created_at));
@@ -44,7 +40,7 @@ router.get("/treasury-vouchers/safe/:safeId", wrap(async (req, res) => {
   if (!hasPermission(req.user, "can_view_treasury")) {
     res.status(403).json({ error: "ليس لديك صلاحية عرض الخزينة" }); return;
   }
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const safeId = parseInt(req.params.safeId as string);
   if (isNaN(safeId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   const vouchers = await db.select().from(treasuryVouchersTable)
@@ -57,7 +53,7 @@ router.post("/treasury-vouchers", wrap(async (req, res) => {
   const parsed = createTreasuryVoucherSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: firstZodError(parsed.error) }); return; }
 
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const { type, safe_id, amount, party_name, description, category } = parsed.data;
   const amt = Number(amount);
 
@@ -128,7 +124,7 @@ router.post("/treasury-vouchers", wrap(async (req, res) => {
 }));
 
 router.delete("/treasury-vouchers/:id", wrap(async (req, res) => {
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   await db.transaction(async (tx) => {

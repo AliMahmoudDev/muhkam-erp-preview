@@ -4,7 +4,7 @@
  * smart alert center, company CSV export, and announcement CRUD.
  */
 import { Router } from "express";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, type SQL } from "drizzle-orm";
 import { db, companiesTable, erpUsersTable } from "@workspace/db";
 import { authenticate, requireRole } from "../../middleware/auth";
 import { wrap } from "../../lib/async-handler";
@@ -21,8 +21,7 @@ router.get("/super/audit-log", ...superOnly, wrap(async (req, res) => {
   const action = req.query.action ? String(req.query.action) : null;
   const recordType = req.query.record_type ? String(req.query.record_type) : null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const conditions: any[] = [sql`${auditLogsTable.company_id} IS NULL`];
+  const conditions: SQL[] = [sql`${auditLogsTable.company_id} IS NULL`];
   if (action)     conditions.push(eq(auditLogsTable.action, action));
   if (recordType) conditions.push(eq(auditLogsTable.record_type, recordType));
 

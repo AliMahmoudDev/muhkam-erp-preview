@@ -23,16 +23,12 @@ const createPaymentVoucherSchema = z.object({
 const router: IRouter = Router();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getCid(req: any): number {
-  return getTenant(req);
-}
-
 function fmt(v: typeof paymentVouchersTable.$inferSelect) {
   return { ...v, amount: Number(v.amount), created_at: v.created_at.toISOString() };
 }
 
 router.get("/payment-vouchers", wrap(async (req, res) => {
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const limit = Math.min(2000, Math.max(1, parseInt(String(req.query["limit"] ?? "500"), 10)));
   const items = await db.select().from(paymentVouchersTable)
     .where(eq(paymentVouchersTable.company_id, cid))
@@ -49,7 +45,7 @@ router.post("/payment-vouchers", wrap(async (req, res) => {
   const parsed = createPaymentVoucherSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: firstZodError(parsed.error) }); return; }
 
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const { customer_id, customer_name, safe_id, amount, notes, date } = parsed.data;
   const amt = Number(amount);
 
@@ -174,7 +170,7 @@ async function getVoucherCustomerAcct(customerId: number | null, companyId: numb
 
 /* ── ترحيل سند الدفع (draft → posted) ─────────────────────────────────── */
 router.post("/payment-vouchers/:id/post", wrap(async (req, res) => {
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
@@ -232,7 +228,7 @@ router.post("/payment-vouchers/:id/post", wrap(async (req, res) => {
 
 /* ── إلغاء سند الدفع → قيد عكسي ───────────────────────────────────────── */
 router.post("/payment-vouchers/:id/cancel", wrap(async (req, res) => {
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) throw httpError(400, "معرّف غير صحيح");
 
@@ -280,7 +276,7 @@ router.post("/payment-vouchers/:id/cancel", wrap(async (req, res) => {
 
 /* ── حذف (draft فقط — posted مقفل) ─────────────────────────────────────── */
 router.delete("/payment-vouchers/:id", wrap(async (req, res) => {
-  const cid = getCid(req);
+  const cid = getTenant(req);
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 

@@ -46,10 +46,6 @@ const createJournalEntrySchema = z.object({
 const router: IRouter = Router();
 router.use('/accounts', requireFeature('accounting'));
 
-function getCid(req: Request): number {
-  return getTenant(req);
-}
-
 function fmt(a: typeof accountsTable.$inferSelect) {
   return {
     ...a,
@@ -71,7 +67,7 @@ function fmtEntry(e: typeof journalEntriesTable.$inferSelect) {
 router.get(
   '/accounts',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const cacheKey = `coa:${cid}`;
     const cached = await getCache<ReturnType<typeof fmt>[]>(cacheKey);
     if (cached) {
@@ -92,7 +88,7 @@ router.get(
 router.post(
   '/accounts',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const v = createAccountSchema.safeParse(req.body);
     if (!v.success) {
       res.status(400).json({ error: v.error.errors[0]?.message ?? 'بيانات غير صالحة' });
@@ -129,7 +125,7 @@ router.post(
 router.put(
   '/accounts/:id',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'معرّف غير صالح' });
@@ -166,7 +162,7 @@ router.put(
 router.delete(
   '/accounts/:id',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'معرّف غير صالح' });
@@ -191,7 +187,7 @@ router.delete(
 router.get(
   '/journal-entries',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const entries = await db
       .select()
       .from(journalEntriesTable)
@@ -204,7 +200,7 @@ router.get(
 router.get(
   '/journal-entries/:id',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'معرّف غير صالح' });
@@ -232,7 +228,7 @@ router.get(
 router.post(
   '/journal-entries',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const v = createJournalEntrySchema.safeParse(req.body);
     if (!v.success) {
       res.status(400).json({ error: v.error.errors[0]?.message ?? 'بيانات غير صالحة' });
@@ -333,7 +329,7 @@ router.post(
 router.patch(
   '/journal-entries/:id/post',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'معرّف غير صالح' });
@@ -397,7 +393,7 @@ router.patch(
 router.delete(
   '/journal-entries/:id',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'معرّف غير صالح' });
@@ -432,7 +428,7 @@ router.delete(
 router.post(
   '/journal-entries/:id/reverse',
   wrap(async (req, res) => {
-    const cid = getCid(req);
+    const cid = getTenant(req);
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'معرّف غير صالح' });

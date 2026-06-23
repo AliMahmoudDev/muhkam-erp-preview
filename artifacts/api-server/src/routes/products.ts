@@ -41,8 +41,7 @@ const CACHE_TTL = 120;
 
 const router: IRouter = Router();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatProduct(p: any & { category_name?: string | null }) {
+function formatProduct(p: Record<string, unknown> & { category_name?: string | null }) {
   return {
     id: p.id,
     name: p.name,

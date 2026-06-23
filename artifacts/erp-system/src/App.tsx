@@ -118,9 +118,11 @@ function Guard({ path, component: Component }: { path: string; component: React.
   const requiredFeature = ROUTE_FEATURES[path];
   if (requiredFeature && !hasFeature(requiredFeature)) return <Redirect to="/" />;
   return (
-    <Suspense fallback={<PageFallback />}>
-      <Component />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<PageFallback />}>
+        <Component />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
