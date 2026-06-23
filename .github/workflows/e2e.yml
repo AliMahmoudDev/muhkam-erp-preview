@@ -19,20 +19,6 @@ jobs:
     timeout-minutes: 20
 
     # PostgreSQL is required so the backend can start and process login requests.
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: e2edb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@v6
 
@@ -67,17 +53,15 @@ jobs:
       - name: Build backend
         run: pnpm --filter @workspace/api-server build
 
-      - name: Wait for Postgres
+      - name: Create E2E database
         run: |
-          for i in {1..10}; do
-            pg_isready -h localhost -p 5432 && break
-            sleep 2
-          done
+          dropdb --if-exists ci_e2edb 2>/dev/null || true
+          createdb ci_e2edb
 
       - name: Push database schema
         run: pnpm --filter @workspace/db run push-force
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e2edb
+          DATABASE_URL: postgresql://deploy@localhost:5432/ci_e2edb
 
       - name: Start backend
         # NODE_ENV=production activates the Express static-file middleware that
@@ -112,7 +96,7 @@ jobs:
           cat /tmp/muhkam-e2e-server.log
           exit 1
         env:
-          DATABASE_URL:          postgresql://postgres:postgres@localhost:5432/e2edb
+          DATABASE_URL:          postgresql://deploy@localhost:5432/ci_e2edb
           JWT_SECRET:            e2e-ci-jwt-secret-minimum-32-characters!!
           JWT_REFRESH_SECRET:    e2e-ci-refresh-secret-minimum-32-chars!!
           TOTP_ENCRYPTION_KEY:   e2e-ci-totp-encryption-key-32-chars!!

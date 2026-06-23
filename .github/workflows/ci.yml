@@ -101,20 +101,6 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -133,21 +119,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Wait for DB
+      - name: Create test database
         run: |
-          for i in {1..10}; do
-            pg_isready -h localhost -p 5432 && break
-            sleep 2
-          done
+          dropdb --if-exists ci_testdb 2>/dev/null || true
+          createdb ci_testdb
 
       - name: Push database schema
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          DATABASE_URL: postgresql://deploy@localhost:5432/ci_testdb
         run: pnpm --filter @workspace/db run push-force
 
       - name: Run backend tests
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          DATABASE_URL: postgresql://deploy@localhost:5432/ci_testdb
           JWT_SECRET: ci-unit-test-jwt-secret-minimum-32chars!!
           JWT_REFRESH_SECRET: ci-unit-test-jwt-refresh-secret-min-32chars!!
           NODE_ENV: test
@@ -155,11 +139,15 @@ jobs:
 
       - name: Check coverage (backend)
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          DATABASE_URL: postgresql://deploy@localhost:5432/ci_testdb
           JWT_SECRET: ci-unit-test-jwt-secret-minimum-32chars!!
           JWT_REFRESH_SECRET: ci-unit-test-jwt-refresh-secret-min-32chars!!
           NODE_ENV: test
         run: pnpm --filter @workspace/api-server test:coverage
+
+      - name: Drop test database
+        if: always()
+        run: dropdb --if-exists ci_testdb
 
   test-frontend:
     name: Frontend Tests
