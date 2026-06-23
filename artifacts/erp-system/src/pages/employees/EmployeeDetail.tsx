@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
 import { openPrintWindow } from '@/lib/print-utils';
 import {
@@ -25,11 +25,13 @@ import {
   CheckCircle,
   Wrench,
 } from 'lucide-react';
+import type { Employee, AnyRec, EmpDocument, DetailTab } from './types';
 import { EmployeeDocuments } from './EmployeeDocuments';
-import { CustodyLinesPanel } from './CustodyLinesPanel';
-import { EmployeeMaintenanceTab } from './EmployeeMaintenanceTab';
-import { EmployeeRepairsTab } from './EmployeeRepairsTab';
 
+/* ── Local helpers (only used in this component) ── */
+function fmt(v: unknown) {
+  return v != null ? Number(Number(v).toFixed(2)).toLocaleString('ar-EG-u-nu-latn') : '0';
+}
 
 function InfoRow({
   icon: Icon,
@@ -101,6 +103,666 @@ function dedLabel(t: string) {
   return DEDUCTION_LABELS[t] ?? DEDUCTION_LABELS['other'];
 }
 
+function CustodyLinesPanel({ custodyId }: { custodyId: number }) {
+  const { data, isLoading } = useQuery<Record<string, unknown>[]>({
+    queryKey: ['/api/employee-custody', custodyId, 'lines'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employee-custody/${custodyId}/lines`);
+      if (!r.ok) throw new Error('failed');
+      return r.json();
+    },
+  });
+  if (isLoading)
+    return <div className="text-xs text-ink/40 mt-2 text-center py-2">جارِ التحميل…</div>;
+  const lines = data ?? [];
+  if (lines.length === 0)
+    return (
+      <div className="text-xs text-ink/40 mt-2 text-center py-2 bg-surface rounded">
+        لا توجد بنود مصروفات
+      </div>
+    );
+  return (
+    <div className="mt-2 bg-black/20 rounded border border-line overflow-hidden">
+      <table className="w-full text-xs">
+        <thead className="bg-surface text-ink/50">
+          <tr>
+            <th className="text-right p-1.5">المبلغ</th>
+            <th className="text-right p-1.5">النوع</th>
+            <th className="text-right p-1.5">الوصف</th>
+            <th className="text-right p-1.5">التاريخ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((l) => (
+            <tr key={String(l['id'])} className="border-t border-line">
+              <td className="p-1.5 font-mono text-amber-300">
+                {Number(l['amount'] ?? 0).toFixed(2)}
+              </td>
+              <td className="p-1.5 text-ink/70">{String(l['category'] ?? '')}</td>
+              <td className="p-1.5 text-ink/60">{String(l['description'] ?? '—')}</td>
+              <td className="p-1.5 font-mono text-ink/40">{String(l['line_date'] ?? '')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ── Callbacks passed from parent (avoids threading many setters) ── */
+
+/* ── Commission Ledger Section ───────────────────────────────── */
+type CommissionLedgerEntry = {
+  id: number;
+  entry_type: string;
+  amount: number;
+  reference_type: string | null;
+  reference_no: string | null;
+  description: string | null;
+  date: string;
+  notes: string | null;
+  created_at: string;
+};
+type CommissionLedgerData = {
+  employee_id: number;
+  balance: number;
+  total_earned: number;
+  total_paid: number;
+  entries: CommissionLedgerEntry[];
+};
+const LEDGER_TYPE_AR: Record<string, { label: string; color: string }> = {
+  commission_earned: { label: 'عمولة محققة', color: 'text-emerald-300' },
+  payout: { label: 'صرف', color: 'text-red-300' },
+  reversal: { label: 'استرداد', color: 'text-orange-300' },
+  bonus: { label: 'حافز', color: 'text-amber-300' },
+  adjustment: { label: 'تعديل', color: 'text-blue-300' },
+  incentive: { label: 'إنسنتف', color: 'text-teal-300' },
+};
+
+function CommissionLedgerSection({
+  employeeId,
+  canManage,
+}: {
+  employeeId: number;
+  canManage: boolean;
+}) {
+  const qc = useQueryClient();
+  const [showModal, setShowModal] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState('');
+  const [payoutNotes, setPayoutNotes] = useState('');
+  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [payoutError, setPayoutError] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery<CommissionLedgerData>({
+    queryKey: ['/api/employees', employeeId, 'commission-ledger'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employees/${employeeId}/commission-ledger`);
+      if (!r.ok) throw new Error('failed');
+      return r.json() as Promise<CommissionLedgerData>;
+    },
+    enabled: !!employeeId,
+  });
+
+  const openModal = () => {
+    setShowModal(true);
+    setPayoutError(null);
+    setPayoutAmount('');
+    setPayoutNotes('');
+  };
+  const closeModal = () => setShowModal(false);
+
+  const handlePayout = async () => {
+    const amount = parseFloat(payoutAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPayoutError('أدخل مبلغاً صحيحاً أكبر من صفر');
+      return;
+    }
+    if (data && amount > data.balance + 0.01) {
+      setPayoutError(`يتجاوز الرصيد المتاح (${fmt(data.balance)})`);
+      return;
+    }
+    setPayoutLoading(true);
+    setPayoutError(null);
+    try {
+      const r = await authFetch(`/api/employees/${employeeId}/commission-ledger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry_type: 'payout',
+          amount,
+          date: new Date().toISOString().split('T')[0],
+          notes: payoutNotes || undefined,
+          description: 'صرف عمولة',
+        }),
+      });
+      if (!r.ok) {
+        const err = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+        throw new Error(String(err['error'] ?? 'فشل الحفظ'));
+      }
+      await qc.invalidateQueries({ queryKey: ['/api/employees', employeeId, 'commission-ledger'] });
+      closeModal();
+    } catch (e) {
+      setPayoutError(e instanceof Error ? e.message : 'خطأ غير متوقع');
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
+
+  if (isLoading) return <div className="h-16 rounded-xl bg-surface animate-pulse mt-2" />;
+  if (!data) return null;
+
+  return (
+    <div className="space-y-3 pt-3 border-t border-line mt-1">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold text-ink/50">العمولات والصرف</p>
+        {canManage && data.balance > 0 && (
+          <button
+            onClick={openModal}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors"
+          >
+            <Banknote size={11} />
+            اعتماد وصرف
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {(
+          [
+            { label: 'إجمالي المحققة', value: fmt(data.total_earned), color: 'text-emerald-300' },
+            { label: 'إجمالي المصروف', value: fmt(data.total_paid), color: 'text-red-300' },
+            {
+              label: 'الرصيد المستحق',
+              value: fmt(data.balance),
+              color: data.balance > 0 ? 'text-amber-300' : 'text-ink/40',
+            },
+          ] as const
+        ).map((c) => (
+          <div key={c.label} className="bg-surface border border-line rounded-xl p-2.5 text-center">
+            <div className={`text-sm font-bold font-mono ${c.color}`}>{c.value}</div>
+            <div className="text-[10px] text-ink/35 mt-0.5 leading-tight">{c.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {data.entries.length > 0 ? (
+        <div className="overflow-x-auto rounded-xl border border-line">
+          <table className="w-full text-[10px]">
+            <thead className="bg-surface text-ink/40">
+              <tr>
+                {['التاريخ', 'النوع', 'المبلغ', 'المرجع', 'البيان'].map((h) => (
+                  <th
+                    key={h}
+                    className="text-right px-2 py-2 font-semibold whitespace-nowrap border-b border-line"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.entries.map((e) => {
+                const ti = LEDGER_TYPE_AR[e.entry_type] ?? {
+                  label: e.entry_type,
+                  color: 'text-ink/60',
+                };
+                const isDebit = e.amount < 0;
+                return (
+                  <tr key={e.id} className="border-t border-line hover:bg-surface">
+                    <td className="px-2 py-1.5 font-mono text-ink/40 whitespace-nowrap">
+                      {e.date}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span className={`text-[9px] font-semibold ${ti.color}`}>{ti.label}</span>
+                    </td>
+                    <td
+                      className={`px-2 py-1.5 font-mono font-semibold whitespace-nowrap ${isDebit ? 'text-red-300' : 'text-emerald-300'}`}
+                    >
+                      {isDebit ? '−' : '+'}
+                      {fmt(Math.abs(e.amount))}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-amber-300/70 whitespace-nowrap">
+                      {e.reference_no ?? '—'}
+                    </td>
+                    <td className="px-2 py-1.5 text-ink/50 max-w-[100px] truncate">
+                      {e.description ?? '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-xs text-ink/30 text-center py-4 bg-surface rounded-xl border border-line">
+          لا توجد حركات بعد
+        </div>
+      )}
+
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-surface border border-line rounded-2xl p-5 w-80 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-ink">اعتماد وصرف العمولة</h3>
+              <button onClick={closeModal} className="text-ink/40 hover:text-ink/70">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="bg-surface rounded-xl p-3 text-center">
+              <div className="text-[10px] text-ink/40 mb-0.5">الرصيد المتاح</div>
+              <div className="text-xl font-bold font-mono text-amber-300">{fmt(data.balance)}</div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-ink/50 block mb-1">المبلغ المراد صرفه</label>
+                <input
+                  type="number"
+                  value={payoutAmount}
+                  onChange={(e) => {
+                    setPayoutAmount(e.target.value);
+                    setPayoutError(null);
+                  }}
+                  placeholder={`الحد الأقصى ${fmt(data.balance)}`}
+                  className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm text-ink placeholder-white/25 focus:outline-none focus:border-amber-500/50"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-ink/50 block mb-1">ملاحظات (اختياري)</label>
+                <input
+                  type="text"
+                  value={payoutNotes}
+                  onChange={(e) => setPayoutNotes(e.target.value)}
+                  placeholder="سبب الصرف…"
+                  className="w-full bg-surface border border-line rounded-lg px-3 py-2 text-sm text-ink placeholder-white/25 focus:outline-none focus:border-amber-500/50"
+                />
+              </div>
+              {payoutError && (
+                <div className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {payoutError}
+                </div>
+              )}
+              <button
+                onClick={handlePayout}
+                disabled={payoutLoading || !payoutAmount}
+                className="w-full py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {payoutLoading ? 'جارٍ الحفظ…' : 'تأكيد الصرف'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Employee Maintenance Tab (Admin/Manager only) ── */
+type MaintenanceServiceRow = {
+  id: number;
+  job_id: number;
+  job_no: string;
+  customer_name: string;
+  service_type: string;
+  amount: number;
+  commission_computed: number | null;
+  commission_locked: boolean;
+  service_status: string;
+  job_status: string;
+  created_at: string;
+  delivered_at: string | null;
+};
+type MaintenanceData = {
+  employee_id: number;
+  has_user: boolean;
+  total_assigned: number;
+  active_count: number;
+  delivered_count: number;
+  total_earned: number;
+  pending_commission: number;
+  avg_commission: number;
+  commission_services_count: number;
+  no_commission_services_count: number;
+  services: MaintenanceServiceRow[];
+};
+
+const SVC_STATUS_AR: Record<string, string> = {
+  pending: 'معلق',
+  in_progress: 'جارِ',
+  completed: 'مكتمل',
+  cancelled: 'ملغي',
+};
+const JOB_STATUS_AR: Record<string, string> = {
+  received: 'مستلم',
+  in_progress: 'قيد الإصلاح',
+  repaired: 'تم الإصلاح',
+  delivered: 'مُسلَّم',
+  cancelled: 'ملغي',
+  pending: 'معلق',
+};
+
+function EmployeeMaintenanceTab({
+  employeeId,
+  canManage = false,
+}: {
+  employeeId: number;
+  canManage?: boolean;
+}) {
+  const { data, isLoading } = useQuery<MaintenanceData>({
+    queryKey: ['/api/employees', employeeId, 'maintenance-tab'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employees/${employeeId}/maintenance-tab`);
+      if (!r.ok) throw new Error('failed');
+      return r.json() as Promise<MaintenanceData>;
+    },
+    enabled: !!employeeId,
+  });
+
+  if (isLoading)
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
+        ))}
+      </div>
+    );
+
+  if (!data) return <div className="text-xs text-ink/40 text-center py-6">لا توجد بيانات</div>;
+
+  if (!data.has_user)
+    return (
+      <div className="text-center py-8 space-y-2">
+        <Wrench size={28} className="mx-auto text-ink/20" />
+        <p className="text-xs text-ink/40">هذا الموظف لا يملك حساب مستخدم مرتبط</p>
+        <p className="text-[10px] text-ink/25">لا يمكن تتبع خدمات الصيانة بدون ربط بحساب</p>
+      </div>
+    );
+
+  if (data.total_assigned === 0)
+    return (
+      <div className="text-center py-8 space-y-2">
+        <Wrench size={28} className="mx-auto text-ink/20" />
+        <p className="text-xs text-ink/40">لم تُسند لهذا الفني أي خدمات بعد</p>
+      </div>
+    );
+
+  return (
+    <div className="space-y-4">
+      {/* ── KPI Cards ── */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: 'إجمالي المُسنَدة', value: String(data.total_assigned), color: 'text-ink/80' },
+          { label: 'النشطة', value: String(data.active_count), color: 'text-amber-300' },
+          { label: 'المُسلَّمة', value: String(data.delivered_count), color: 'text-emerald-300' },
+          { label: 'عمولات محققة', value: fmt(data.total_earned), color: 'text-emerald-300' },
+          { label: 'عمولات معلقة', value: fmt(data.pending_commission), color: 'text-amber-300' },
+          { label: 'متوسط العمولة', value: fmt(data.avg_commission), color: 'text-ink/60' },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="bg-surface border border-line rounded-xl p-2.5 text-center"
+          >
+            <div className={`text-sm font-bold font-mono ${card.color}`}>{card.value}</div>
+            <div className="text-[10px] text-ink/35 mt-0.5 leading-tight">{card.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── جدول الخدمات الأخيرة ── */}
+      {data.services.length > 0 && (
+        <div>
+          <p className="text-[11px] font-semibold text-ink/50 mb-1.5">
+            آخر {data.services.length} خدمة
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-line">
+            <table className="w-full text-[10px]">
+              <thead className="bg-surface text-ink/40">
+                <tr>
+                  {[
+                    'رقم البطاقة',
+                    'العميل',
+                    'نوع الخدمة',
+                    'المبلغ',
+                    'العمولة',
+                    'حالة الخدمة',
+                    'حالة البطاقة',
+                    'تاريخ الإضافة',
+                    'تاريخ التسليم',
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-right px-2 py-2 font-semibold whitespace-nowrap border-b border-line"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.services.map((s) => (
+                  <tr key={s.id} className="border-t border-line hover:bg-surface">
+                    <td className="px-2 py-1.5 font-mono text-amber-300 whitespace-nowrap">
+                      {s.job_no}
+                    </td>
+                    <td className="px-2 py-1.5 text-ink/70 max-w-[70px] truncate">
+                      {s.customer_name}
+                    </td>
+                    <td className="px-2 py-1.5 text-ink/60 max-w-[70px] truncate">
+                      {s.service_type}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-ink/80 whitespace-nowrap">
+                      {fmt(s.amount)}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono whitespace-nowrap">
+                      {s.commission_locked ? (
+                        <span className="text-emerald-300">{fmt(s.commission_computed ?? 0)}</span>
+                      ) : (
+                        <span className="text-ink/25">—</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                          s.service_status === 'completed'
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : s.service_status === 'in_progress'
+                              ? 'bg-amber-500/20 text-amber-300'
+                              : s.service_status === 'cancelled'
+                                ? 'bg-red-500/20 text-red-300'
+                                : 'bg-surface text-ink/50'
+                        }`}
+                      >
+                        {SVC_STATUS_AR[s.service_status] ?? s.service_status}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                          s.job_status === 'delivered'
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : s.job_status === 'cancelled'
+                              ? 'bg-red-500/20 text-red-300'
+                              : 'bg-surface text-ink/50'
+                        }`}
+                      >
+                        {JOB_STATUS_AR[s.job_status] ?? s.job_status}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-ink/35 whitespace-nowrap">
+                      {s.created_at
+                        ? new Date(s.created_at).toLocaleDateString('ar-EG-u-nu-latn')
+                        : '—'}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-ink/35 whitespace-nowrap">
+                      {s.delivered_at
+                        ? new Date(s.delivered_at).toLocaleDateString('ar-EG-u-nu-latn')
+                        : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── قسم ملخص العمولات ── */}
+      <div className="bg-surface border border-line rounded-xl p-3 space-y-2">
+        <p className="text-[11px] font-semibold text-ink/50 border-b border-line pb-1.5">
+          ملخص العمولات
+        </p>
+        <div className="space-y-1.5">
+          {[
+            {
+              label: 'إجمالي العمولات المحققة',
+              value: fmt(data.total_earned),
+              color: 'text-emerald-300',
+            },
+            {
+              label: 'إجمالي العمولات المعلقة',
+              value: fmt(data.pending_commission),
+              color: 'text-amber-300',
+            },
+            {
+              label: 'خدمات تم احتساب عمولتها',
+              value: String(data.commission_services_count),
+              color: 'text-emerald-300',
+            },
+            {
+              label: 'خدمات لم تُحتسب عمولتها بعد',
+              value: String(data.no_commission_services_count),
+              color: 'text-ink/50',
+            },
+          ].map((row) => (
+            <div key={row.label} className="flex justify-between items-center">
+              <span className="text-xs text-ink/40">{row.label}</span>
+              <span className={`text-xs font-bold font-mono ${row.color}`}>{row.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── دفتر العمولات والصرف ── */}
+      <CommissionLedgerSection employeeId={employeeId} canManage={canManage} />
+    </div>
+  );
+}
+
+/* ── Employee Repairs Tab ── */
+function EmployeeRepairsTab({ employeeId }: { employeeId: number }) {
+  const { data, isLoading } = useQuery<{
+    employee_id: number;
+    jobs_count: number;
+    total_revenue: number;
+    jobs: Array<{
+      id: number;
+      job_no: string;
+      customer_name: string;
+      device_brand: string;
+      device_model: string;
+      status: string;
+      final_cost: number;
+      received_at: string;
+      delivered_at?: string;
+    }>;
+  }>({
+    queryKey: ['/api/employees', employeeId, 'repair-stats'],
+    queryFn: async () => {
+      const r = await authFetch(`/api/employees/${employeeId}/repair-stats`);
+      if (!r.ok) throw new Error('failed');
+      return r.json();
+    },
+    enabled: !!employeeId,
+  });
+
+  if (isLoading)
+    return <div className="text-xs text-ink/40 text-center py-6">جارِ تحميل بيانات الصيانة…</div>;
+  if (!data || data.jobs_count === 0)
+    return (
+      <div className="text-xs text-ink/40 text-center py-6 bg-surface rounded-xl">
+        لا توجد بطاقات صيانة لهذا الفني
+      </div>
+    );
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-surface rounded-xl p-3 text-center border border-line">
+          <div className="text-lg font-bold text-amber-300 font-mono">{data.jobs_count}</div>
+          <div className="text-[10px] text-ink/40">بطاقات الصيانة</div>
+        </div>
+        <div className="bg-surface rounded-xl p-3 text-center border border-line">
+          <div className="text-lg font-bold text-emerald-300 font-mono">
+            {fmt(data.total_revenue)}
+          </div>
+          <div className="text-[10px] text-ink/40">إجمالي الإيرادات</div>
+        </div>
+      </div>
+      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+        {data.jobs.map((j) => (
+          <div
+            key={j.id}
+            className="flex items-center justify-between bg-surface rounded-lg px-3 py-2 border border-line text-xs"
+          >
+            <div>
+              <span className="text-ink/80 font-bold font-mono">{j.job_no}</span>
+              <span className="text-ink/40 mr-2">{j.customer_name}</span>
+            </div>
+            <div className="text-left">
+              <span className="text-amber-300 font-mono">{fmt(j.final_cost)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface EmployeeDetailCallbacks {
+  onAddLoan: () => void;
+  onApproveLoan: (data: {
+    id: number;
+    requestedAmount: number;
+    currency: string;
+    safeId: unknown;
+  }) => void;
+  onPayLoan: (loanId: number) => void;
+  onAddDeduction: () => void;
+  onDeleteDeduction: (id: number) => void;
+  onAddBonus: () => void;
+  onDeleteBonus: (id: number) => void;
+  onAddCustody: () => void;
+  onSettleCustody: (custodyId: number) => void;
+  onReimburseCustody: (custodyId: number) => void;
+  onDeleteCustody: (id: number) => void;
+  openEdit: (emp: Employee) => void;
+  setSelected: (e: Employee | null) => void;
+}
+
+interface EmployeeDetailProps extends EmployeeDetailCallbacks {
+  selected: Employee;
+  isSelfService: boolean;
+  detailTab: DetailTab;
+  setDetailTab: (t: DetailTab) => void;
+  canManage: boolean;
+  canViewSalary: boolean;
+  canViewMaintenance: boolean;
+  loans: AnyRec[];
+  loansLoading: boolean;
+  deductions: AnyRec[];
+  ledgerLoading: boolean;
+  bonuses: AnyRec[];
+  custody: AnyRec[];
+  documents: EmpDocument[];
+  totalLoans: number;
+  remainingLoans: number;
+  totalDeducted: number;
+}
 
 export function EmployeeDetail({
   selected,
