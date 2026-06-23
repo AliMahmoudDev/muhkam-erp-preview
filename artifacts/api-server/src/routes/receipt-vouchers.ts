@@ -22,7 +22,6 @@ const createReceiptVoucherSchema = z.object({
 
 const router: IRouter = Router();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fmt(v: typeof receiptVouchersTable.$inferSelect) {
   return { ...v, amount: Number(v.amount), created_at: v.created_at.toISOString() };
 }

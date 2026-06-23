@@ -41,7 +41,6 @@ const createDepositVoucherSchema = z.object({
 
 const router: IRouter = Router();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fmt(v: typeof depositVouchersTable.$inferSelect) {
   return { ...v, amount: Number(v.amount), created_at: v.created_at.toISOString() };
 }

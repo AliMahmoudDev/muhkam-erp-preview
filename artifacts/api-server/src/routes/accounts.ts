@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request } from 'express';
+import { Router, type IRouter } from 'express';
 import { eq, asc, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, accountsTable, journalEntriesTable, journalEntryLinesTable } from '@workspace/db';

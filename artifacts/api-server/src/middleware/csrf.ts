@@ -87,7 +87,7 @@ function isExemptPath(path: string): boolean {
  */
 function isBearerOnlyRequest(req: Request): boolean {
   const hasAuthHeader = req.headers.authorization?.startsWith("Bearer ");
-  const hasCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token; // eslint-disable-line security/detect-object-injection
+  const hasCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token;
   return !!hasAuthHeader && !hasCookie;
 }
 
@@ -142,7 +142,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   }
 
   /* ── 5b. تخطّي الطلبات التي لا تحمل أي بيانات مصادقة (ستُرفض لاحقاً بـ 401) ── */
-  const hasAccessCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token; // eslint-disable-line security/detect-object-injection
+  const hasAccessCookie = !!(req.cookies as Record<string, string> | undefined)?.access_token;
   const hasAuthHeader = !!req.headers.authorization;
   if (!hasAccessCookie && !hasAuthHeader) {
     next();

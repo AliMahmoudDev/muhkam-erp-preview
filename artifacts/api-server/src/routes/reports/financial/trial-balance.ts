@@ -63,8 +63,7 @@ router.get("/reports/trial-balance", wrap(async (req, res) => {
     ORDER BY a.code
   `);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const accounts = (rawRows.rows as Record<string, unknown>[]).map((r: Record<string, unknown>) => ({
+    const accounts = (rawRows.rows as Record<string, unknown>[]).map((r: Record<string, unknown>) => ({
     account_id:    r.account_id,
     account_code:  r.account_code,
     account_name:  r.account_name,

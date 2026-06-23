@@ -759,9 +759,7 @@ router.post(
         const tenantOnly = (col: Parameters<typeof eq>[0]) => eq(col, companyId);
         const ins = async <T>(tbl: Parameters<typeof tx.insert>[0], rows: T[]) => {
           // Drizzle insert values() is typed per-table; cast is unavoidable for generic helper.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- restore inserts dynamic schema rows
-          if (rows.length > 0) await tx.insert(tbl).values(rows as any[]);
+                              if (rows.length > 0) await tx.insert(tbl).values(rows as any[]);
         };
 
         /* ── Module: sales ── */
