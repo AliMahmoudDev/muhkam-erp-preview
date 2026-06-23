@@ -50,7 +50,7 @@ router.get(
 );
 
 /* ── بناء قيود المشتريات ────────────────────────────────────────────────── */
-async function buildPurchaseJournalLines(
+export async function buildPurchaseJournalLines(
   purchase: typeof purchasesTable.$inferSelect,
   companyId: number
 ): Promise<JournalLine[]> {

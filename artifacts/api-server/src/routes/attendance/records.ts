@@ -1,8 +1,8 @@
 /** attendance/records.ts */
 import { Router, type IRouter } from 'express';
-import { eq, and, desc, sql, isNull } from 'drizzle-orm';
+import { eq, and, or, desc, gte, lte, sql, isNull } from 'drizzle-orm';
 import { z } from 'zod';
-import { db, attendanceRecordsTable, employeesTable, employeeShiftAssignmentsTable, shiftSchedulesTable, overtimeRecordsTable } from '@workspace/db';
+import { db, attendanceRecordsTable, employeesTable, employeeShiftAssignmentsTable, shiftSchedulesTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { getTenant } from '../../middleware/auth';
