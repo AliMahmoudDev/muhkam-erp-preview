@@ -6,6 +6,10 @@
  *
  * Convention: actionsSlot should contain at most 1 primary action button
  * and secondary actions. Overflow handled by caller (e.g. a "more" menu).
+ *
+ * tabsSlot: optional module-level tab bar.
+ * When provided, it renders at the bottom of the sticky header band so
+ * tabs appear as part of the band rather than below it.
  */
 import * as React from 'react';
 import { cn } from '@/lib/utils';
@@ -29,6 +33,13 @@ export interface PageHeaderProps {
    * Convention: max 1 primary action button.
    */
   actionsSlot?: React.ReactNode;
+  /**
+   * Tabs slot — module-level tab bar rendered at the bottom of the band.
+   * Use for pages that have multiple top-level tabs (e.g. Inventory).
+   * When present, the band's bottom border is replaced by the tab bar's
+   * underline so the visual rhythm is seamless.
+   */
+  tabsSlot?: React.ReactNode;
   className?: string;
 }
 
@@ -38,11 +49,11 @@ export function PageHeader({
   eyebrowSlot,
   statusSlot,
   actionsSlot,
+  tabsSlot,
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn('erp-page-header', className)}>
-      {/* Eyebrow / breadcrumb */}
+    <div className={cn('erp-page-header', tabsSlot ? 'erp-page-header--with-tabs' : '', className)}>
       {eyebrowSlot && (
         <div className="erp-page-header-eyebrow">{eyebrowSlot}</div>
       )}
@@ -71,6 +82,13 @@ export function PageHeader({
           </div>
         )}
       </div>
+
+      {/* Tabs — bottom of band */}
+      {tabsSlot && (
+        <div className="erp-page-header-tabs">
+          {tabsSlot}
+        </div>
+      )}
     </div>
   );
 }

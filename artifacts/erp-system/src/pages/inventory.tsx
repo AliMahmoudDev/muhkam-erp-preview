@@ -278,45 +278,35 @@ export default function Inventory() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* ══ Page Header ═══════════════════════════════════════════════════════ */}
-      <PageHeader
-        title="المخزون"
-        subtitle="إدارة المنتجات والكميات وحركات المخزون"
+  const tabBar = (
+    <div className="erp-tab-bar erp-tab-bar--underline overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <TabBtn
+        id="overview"
+        label="نظرة عامة"
+        icon={<LayoutDashboard className="w-4 h-4" />}
+        active={activeTab}
+        onClick={setActiveTab}
       />
-
-      {/* ══ Tab bar ═══════════════════════════════════════════════════════════ */}
-      <div
-        className="erp-tab-bar erp-tab-bar--underline overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
+      <TabBtn
+        id="movements"
+        label="الحركات"
+        icon={<Package className="w-4 h-4" />}
+        active={activeTab}
+        onClick={setActiveTab}
+      />
+      {canAdjustInventory && (
         <TabBtn
-          id="overview"
-          label="نظرة عامة"
-          icon={<LayoutDashboard className="w-4 h-4" />}
+          id="count"
+          label="الجرد"
+          icon={<ClipboardList className="w-4 h-4" />}
           active={activeTab}
           onClick={setActiveTab}
         />
-        <TabBtn
-          id="movements"
-          label="الحركات"
-          icon={<Package className="w-4 h-4" />}
-          active={activeTab}
-          onClick={setActiveTab}
-        />
-        {canAdjustInventory && (
-          <TabBtn
-            id="count"
-            label="الجرد"
-            icon={<ClipboardList className="w-4 h-4" />}
-            active={activeTab}
-            onClick={setActiveTab}
-          />
-        )}
-        {canAdjustInventory && (
-          <Link to="/transfers">
-            <button className="erp-tab">
-              <Truck className="w-4 h-4" />
+      )}
+      {canAdjustInventory && (
+        <Link to="/transfers">
+          <button className="erp-tab">
+            <Truck className="w-4 h-4" />
               التحويلات بين الفروع
             </button>
           </Link>
@@ -353,6 +343,16 @@ export default function Inventory() {
           onClick={setActiveTab}
         />
       </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* ══ Page Header — contains tab bar in sticky band ══════════════════ */}
+      <PageHeader
+        title="المخزون"
+        subtitle="إدارة المنتجات والكميات وحركات المخزون"
+        tabsSlot={tabBar}
+      />
 
       {/* ══ Overview tab ══════════════════════════════════════════════════════ */}
       {activeTab === 'overview' && !gs && (
