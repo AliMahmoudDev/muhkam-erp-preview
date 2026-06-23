@@ -14,7 +14,7 @@ concurrency:
 jobs:
   migration-safety-check:
     name: Migration SQL Safety Scan
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     timeout-minutes: 2
     if: github.event_name == 'pull_request'
     steps:
@@ -67,7 +67,7 @@ jobs:
 
   lint-typecheck:
     name: Lint & Type Check
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -98,7 +98,7 @@ jobs:
 
   test-backend:
     name: Backend Tests
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     timeout-minutes: 10
 
     services:
@@ -163,7 +163,7 @@ jobs:
 
   test-frontend:
     name: Frontend Tests
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     timeout-minutes: 10
     steps:
       - name: Checkout
