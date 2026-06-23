@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- intentional data visualization or decorative colors */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {

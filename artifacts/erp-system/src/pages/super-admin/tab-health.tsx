@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- super-admin is a dark-only internal tool with intentional color palette */
 import { C, FONT } from './types';
 import { SAErrorState } from './sa-primitives';
 

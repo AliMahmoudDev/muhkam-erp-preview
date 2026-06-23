@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- toggle knob and UI patterns use intentional fixed colors */
 import {
   Loader2,
   Clock,

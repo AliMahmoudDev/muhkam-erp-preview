@@ -319,6 +319,11 @@ html.dark {
   --color-negative-subtle: rgba(239, 68, 68, 0.10);
   --color-negative-border: rgba(239, 68, 68, 0.20);
 
+  /* ── Error UI tokens (alert banners, inline errors) ─────────── */
+  --color-error-bg:     rgba(239, 68, 68, 0.12);
+  --color-error-border: rgba(239, 68, 68, 0.25);
+  --color-error-text:   var(--primitive-red-400);
+
   /* ── Status: Informative (Sky Blue) ─────────────────────────── */
   --color-informative:        var(--primitive-sky-500);  /* #0EA5E9 */
   --color-informative-text:   var(--primitive-sky-400);  /* #38BDF8 */

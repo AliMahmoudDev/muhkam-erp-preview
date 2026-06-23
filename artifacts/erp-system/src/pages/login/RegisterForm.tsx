@@ -118,24 +118,24 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
   if (success) {
     return (
       <div style={{ textAlign: 'center', padding: '20px 0' }} dir="rtl">
-        <div style={{ width: 56, height: 56, borderRadius: '50%', margin: '0 auto 18px', background: '#EFF6FF', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', margin: '0 auto 18px', background: 'var(--color-informative-subtle)', border: '1px solid var(--color-informative-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 8, letterSpacing: '-0.01em' }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, letterSpacing: '-0.01em' }}>
           تم إنشاء حسابك بنجاح
         </h3>
         {createdUsername && (
-          <div style={{ margin: '14px auto', maxWidth: 320, padding: '14px 16px', borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-            <p style={{ fontSize: 12, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>رقم الدخول الخاص بك</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#2563EB', letterSpacing: '0.04em', direction: 'ltr', fontFamily: "'Inter', monospace" }}>
+          <div style={{ margin: '14px auto', maxWidth: 320, padding: '14px 16px', borderRadius: 8, background: 'var(--color-surface-1)', border: '1px solid var(--color-border-interactive)' }}>
+            <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 4 }}>رقم الدخول الخاص بك</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-accent)', letterSpacing: '0.04em', direction: 'ltr', fontFamily: "'Inter', monospace" }}>
               {createdUsername}
             </p>
-            <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>استخدم هذا الرقم لتسجيل الدخول</p>
+            <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 6 }}>استخدم هذا الرقم لتسجيل الدخول</p>
           </div>
         )}
-        <p style={{ fontSize: 13, color: '#94A3B8' }}>جاري تسجيل الدخول…</p>
+        <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>جاري تسجيل الدخول…</p>
       </div>
     );
   }
@@ -156,7 +156,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
           ref={errorRef}
           role="alert"
           aria-live="polite"
-          style={{ marginBottom: 16, padding: '11px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, color: '#B91C1C', fontWeight: 500 }}
+          style={{ marginBottom: 16, padding: '11px 14px', background: 'var(--color-error-bg)', border: '1px solid var(--color-error-border)', borderRadius: 8, fontSize: 13, color: 'var(--color-error-text)', fontWeight: 500 }}
         >
           {error}
         </div>
@@ -207,7 +207,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
             <div style={{ marginTop: 8 }}>
               <div style={{ display: 'flex', gap: 4 }}>
                 {[1,2,3,4].map((i) => (
-                  <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength.score ? strength.color : '#E2E8F0', transition: 'background .25s ease' }} />
+                  <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength.score ? strength.color : 'var(--color-border-interactive)', transition: 'background .25s ease' }} />
                 ))}
               </div>
               {strength.label && (
@@ -244,7 +244,7 @@ export function RegisterForm({ onSuccess, onSwitch }: RegisterFormProps) {
       </button>
 
       {/* Switch to login */}
-      <div style={{ textAlign: 'center', fontSize: 13, color: '#64748B' }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--color-text-secondary)' }}>
         لديك حساب بالفعل؟{' '}
         <button type="button" onClick={onSwitch} className="lg-link">سجّل الدخول</button>
       </div>

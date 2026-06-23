@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- toggle knob and UI patterns use intentional fixed colors */
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { authFetch } from '@/lib/auth-fetch';

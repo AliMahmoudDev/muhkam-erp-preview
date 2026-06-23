@@ -140,7 +140,7 @@ function LoginForm({
         <div
           ref={errorRef} role="alert" aria-live="polite"
           id="lg-error"
-          style={{ marginBottom: 20, padding: '11px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, color: '#B91C1C', fontWeight: 500 }}
+          style={{ marginBottom: 20, padding: '11px 14px', background: 'var(--color-error-bg)', border: '1px solid var(--color-error-border)', borderRadius: 8, fontSize: 13, color: 'var(--color-error-text)', fontWeight: 500 }}
         >
           {error}
         </div>
@@ -330,7 +330,7 @@ export default function Login() {
             <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.7, marginBottom: 28 }}>
               افتح <strong style={{ color: C.text }}>Google Authenticator</strong> وأدخل الرمز المكوّن من ٦ أرقام.
             </p>
-            {error && <div ref={errorRef} role="alert" style={{ marginBottom: 20, padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 13, color: '#B91C1C' }}>{error}</div>}
+            {error && <div ref={errorRef} role="alert" style={{ marginBottom: 20, padding: '10px 14px', background: 'var(--color-error-bg)', border: '1px solid var(--color-error-border)', borderRadius: 8, fontSize: 13, color: 'var(--color-error-text)' }}>{error}</div>}
             <input
               value={totpCode}
               onChange={(e) => { setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
