@@ -15,10 +15,24 @@ concurrency:
 jobs:
   e2e:
     name: Playwright E2E (Chromium)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     # PostgreSQL is required so the backend can start and process login requests.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: e2edb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v6
 
@@ -53,15 +67,17 @@ jobs:
       - name: Build backend
         run: pnpm --filter @workspace/api-server build
 
-      - name: Create E2E database
+      - name: Wait for Postgres
         run: |
-          dropdb --if-exists ci_e2edb 2>/dev/null || true
-          createdb ci_e2edb
+          for i in {1..10}; do
+            pg_isready -h localhost -p 5432 && break
+            sleep 2
+          done
 
       - name: Push database schema
         run: pnpm --filter @workspace/db run push-force
         env:
-          DATABASE_URL: postgresql://deploy@localhost:5432/ci_e2edb
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e2edb
 
       - name: Start backend
         # NODE_ENV=production activates the Express static-file middleware that

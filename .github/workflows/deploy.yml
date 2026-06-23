@@ -24,6 +24,20 @@ jobs:
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -42,19 +56,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create test database
-        run: |
-          dropdb --if-exists ci_testdb 2>/dev/null || true
-          createdb ci_testdb
-
       - name: Push database schema to test DB
         env:
-          DATABASE_URL: postgresql://deploy@localhost:5432/ci_testdb
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
         run: pnpm --filter @workspace/db run push-force
 
       - name: Run multi-tenant isolation tests
         env:
-          DATABASE_URL: postgresql://deploy@localhost:5432/ci_testdb
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
           JWT_SECRET: ci-integration-test-jwt-secret-minimum-32chars!!
           JWT_REFRESH_SECRET: ci-integration-test-jwt-refresh-secret-min-32chars!!
           NODE_ENV: test
