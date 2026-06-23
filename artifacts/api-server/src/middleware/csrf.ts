@@ -151,6 +151,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
 
   /* ── 6. التحقق من رمز CSRF ── */
   const cookieToken = existingToken;
+  // eslint-disable-next-line security/detect-object-injection -- CSRF_HEADER_NAME is a module-level constant
   const headerToken = req.headers[CSRF_HEADER_NAME] as string | undefined;
 
   if (!cookieToken || !headerToken || !tokensMatch(cookieToken, headerToken)) {
