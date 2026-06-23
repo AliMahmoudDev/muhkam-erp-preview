@@ -1,7 +1,6 @@
 /** attendance/holidays.ts */
 import { Router, type IRouter } from 'express';
 import { eq, and } from 'drizzle-orm';
-import { z } from 'zod';
 import { db, publicHolidaysTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
