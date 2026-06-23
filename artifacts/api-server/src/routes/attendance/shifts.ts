@@ -7,6 +7,7 @@ import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { requireFeature } from '../../middleware/feature-guard';
 import { getTenant } from '../../middleware/auth';
+import { fmt } from './_helpers';
 
 /* ── Zod schemas ── */
 const shiftSchema = z.object({
@@ -30,9 +31,6 @@ router.use(
   ['/attendance', '/shifts', '/employee-shifts', '/public-holidays'],
   requireFeature('hr')
 );
-function fmt(v: Date | null | undefined) {
-  return v instanceof Date ? v.toISOString() : (v ?? null);
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    SHIFT SCHEDULES

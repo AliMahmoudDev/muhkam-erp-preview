@@ -6,6 +6,7 @@ import { db, attendanceRecordsTable, overtimeRecordsTable, attendanceSummaryTabl
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { getTenant } from '../../middleware/auth';
+import { fmt } from './_helpers';
 
 /* ── Zod schemas ── */
 const overtimeSchema = z.object({

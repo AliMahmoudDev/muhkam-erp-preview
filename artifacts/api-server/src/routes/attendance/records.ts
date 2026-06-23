@@ -1,11 +1,12 @@
 /** attendance/records.ts */
 import { Router, type IRouter } from 'express';
-import { eq, and, or, desc, gte, lte, sql, isNull } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, sql, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, attendanceRecordsTable, employeesTable, employeeShiftAssignmentsTable, shiftSchedulesTable } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
 import { getTenant } from '../../middleware/auth';
+import { fmt } from './_helpers';
 
 /* ── Zod schemas ── */
 const checkInSchema = z.object({
