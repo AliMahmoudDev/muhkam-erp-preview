@@ -1,5 +1,6 @@
 /** purchases/post.ts */
 import { Router, type IRouter } from 'express';
+import { buildPurchaseJournalLines } from './detail';
 import { eq, and } from 'drizzle-orm';
 import { db, purchasesTable, purchaseItemsTable } from '@workspace/db';
 import { wrap, httpError } from '../../lib/async-handler';

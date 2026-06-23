@@ -1,5 +1,7 @@
 /** purchases/cancel.ts */
 import { Router, type IRouter } from 'express';
+import { type JournalLine } from '../../lib/auto-account';
+import { buildPurchaseJournalLines } from './detail';
 import { eq, and, gt, not, inArray, sql } from 'drizzle-orm';
 import { db, purchasesTable, purchaseItemsTable, productsTable, customersTable, safesTable, transactionsTable, stockMovementsTable, purchaseReturnsTable, journalEntriesTable, journalEntryLinesTable, customerLedgerTable } from '@workspace/db';
 import { wrap, httpError } from '../../lib/async-handler';
@@ -121,7 +123,7 @@ router.post(
       if (purchase.posting_status === 'posted') {
         const lines = await buildPurchaseJournalLines(purchase, cidCancel);
         if (lines.length >= 2) {
-          const reversed = lines.map((l) => ({
+          const reversed = lines.map((l: JournalLine) => ({
             account: l.account,
             debit: l.credit,
             credit: l.debit,
