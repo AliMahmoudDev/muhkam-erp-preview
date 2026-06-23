@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- landing page and modal decorative colors: intentional fixed palette */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { DashboardShot } from './landing/AppScreenshots';

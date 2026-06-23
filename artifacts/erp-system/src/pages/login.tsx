@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- landing page and modal decorative colors: intentional fixed palette */
 /**
  * MUHKAM Login — v7
  * Full-page white background, centered auth card.

@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- landing page and modal decorative colors: intentional fixed palette */
 /**
  * Mini mockup components for the Landing Page bento grid.
  * Extracted from LandingPage.tsx for maintainability.

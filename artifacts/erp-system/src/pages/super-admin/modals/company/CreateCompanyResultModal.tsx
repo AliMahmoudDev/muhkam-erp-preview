@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- landing page and modal decorative colors: intentional fixed palette */
 import { type CreateResult, FONT } from '../../types';
 
 interface Props {

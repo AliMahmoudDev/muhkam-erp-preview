@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- intentional data visualization or decorative colors */
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { authFetch } from '@/lib/auth-fetch';
@@ -158,7 +159,8 @@ export default function SubscriptionExpired() {
                 justifyContent: 'center',
                 gap: '8px',
                 padding: '12px 20px',
-                borderRadius: '10px', -- WhatsApp brand green: intentional third-party brand color
+                borderRadius: '10px',
+                // eslint-disable-next-line erp/no-hardcoded-colors -- WhatsApp brand green: intentional third-party brand color
                 background: '#25D366',
                 color: 'var(--text-1)',
                 textDecoration: 'none',

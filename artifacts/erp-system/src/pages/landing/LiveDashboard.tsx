@@ -1,3 +1,4 @@
+/* eslint-disable erp/no-hardcoded-colors -- landing page and modal decorative colors: intentional fixed palette */
 /**
  * LiveDashboard — animated ERP dashboard mockup for marketing surfaces.
  * Used in: Landing product reveal section + Login left panel.
