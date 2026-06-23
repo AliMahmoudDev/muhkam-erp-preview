@@ -151,6 +151,7 @@ function LoginForm({
         <label htmlFor="lg-username" className="lg-label">رقم الهاتف أو اسم المستخدم</label>
         <input
           ref={usernameRef} id="lg-username" type="text" autoComplete="username"
+          aria-label="رقم الهاتف أو اسم المستخدم"
           value={username} placeholder="admin" disabled={loading}
           className={`lg-input${error && !username.trim() ? ' lg-input-error' : ''}`}
           onChange={(e) => { setUsername(e.target.value); setError(''); }}
@@ -170,6 +171,7 @@ function LoginForm({
           <input
             ref={pinRef} id="lg-pin"
             type={showPin ? 'text' : 'password'} autoComplete="current-password"
+            aria-label="الرقم السري"
             value={pin} placeholder="••••••" disabled={loading}
             className={`lg-input lg-input-pw${error && !pin && username.trim() ? ' lg-input-error' : ''}`}
             onChange={(e) => { setPin(e.target.value); setError(''); }}
