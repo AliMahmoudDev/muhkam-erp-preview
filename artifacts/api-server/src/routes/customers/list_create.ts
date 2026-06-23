@@ -1,5 +1,5 @@
 /** customers/list_create.ts */
-import { eq, and, max, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { db, customersTable, customerLedgerTable } from '@workspace/db';
 import { writeAuditLog } from '../../lib/audit-log';
 import { hasPermission } from '../../lib/permissions';

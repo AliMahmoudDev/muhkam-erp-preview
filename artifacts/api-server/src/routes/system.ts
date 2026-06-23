@@ -757,8 +757,8 @@ router.post(
         ).map((r) => r.id);
 
         const tenantOnly = (col: Parameters<typeof eq>[0]) => eq(col, companyId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle insert values() requires per-table types; any[] is unavoidable for this generic restore helper
         const ins = async <T>(tbl: Parameters<typeof tx.insert>[0], rows: T[]) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle insert values() requires per-table types; any[] is unavoidable for this generic restore helper
           if (rows.length > 0) await tx.insert(tbl).values(rows as any[]);
         };
 
