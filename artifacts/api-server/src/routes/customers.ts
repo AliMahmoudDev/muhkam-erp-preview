@@ -1,0 +1,932 @@
+/**
+ * @module routes/customers
+ * @description Customer management routes for MUHKAM ERP.
+ *
+ * Endpoints:
+ *   GET    /customers                     List all customers with live ledger balances (Redis cached, TTL 60s)
+ *   POST   /customers                     Create a new customer with auto chart-of-accounts linkage
+ *   PUT    /customers/:id                 Update customer name, phone, classification, or account
+ *   DELETE /customers/:id                 Delete a customer (blocked if outstanding ledger balance > 0)
+ *   GET    /customers/:id/receipt-history Paginated payment/receipt history for a customer
+ *   POST   /customers/:id/receipt         Record a cash receipt against customer balance + safe + ledger
+ *
+ * Multi-tenant: all queries are scoped by company_id via getTenant(req).
+ * Cache: GET /customers uses Redis (key: `customers:{companyId}`, TTL 60s).
+ *        POST/PUT/DELETE invalidate via deleteCache.
+ *
+ * @access All endpoints require valid JWT + company_id tenant resolution.
+ */
+import { Router, type IRouter } from 'express';
+import { eq, and, max, asc, sql } from 'drizzle-orm';
+import {
+  db,
+  customersTable,
+  transactionsTable,
+  safesTable,
+  customerLedgerTable,
+  customerClassificationsTable,
+} from '@workspace/db';
+import { writeAuditLog } from '../lib/audit-log';
+import { hasPermission } from '../lib/permissions';
+import { getCustomerLedgerBalance } from '../lib/ledger-balance';
+import {
+  CreateCustomerBody,
+  UpdateCustomerParams,
+  UpdateCustomerBody,
+  UpdateCustomerResponse,
+  DeleteCustomerParams,
+  DeleteCustomerResponse,
+  CreateCustomerReceiptParams,
+  CreateCustomerReceiptBody,
+  CreateCustomerReceiptResponse,
+} from '@workspace/api-zod';
+import { wrap, httpError } from '../lib/async-handler';
+import { getOrCreateCustomerAccount } from '../lib/auto-account';
+import { getTenant } from '../middleware/auth';
+import { getCache, setCache, deleteCache } from '../lib/cache';
+
+const CACHE_TTL = 60;
+
+const router: IRouter = Router();
+
+export function normalizeName(name: string): string {
+  return name
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/أ|إ|آ/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي');
+}
+
+function formatCustomer(c: typeof customersTable.$inferSelect, ledgerBalance?: number) {
+  return {
+    ...c,
+    balance: ledgerBalance !== undefined ? ledgerBalance : Number(c.balance),
+    is_customer: c.is_customer ?? true,
+    is_supplier: c.is_supplier ?? false,
+    created_at: c.created_at.toISOString(),
+  };
+}
+
+export async function getNextCustomerCode(companyId: number): Promise<number> {
+  const result = await db
+    .select({ maxCode: max(customersTable.customer_code) })
+    .from(customersTable)
+    .where(eq(customersTable.company_id, companyId));
+  const currentMax = result[0]?.maxCode ?? 0;
+  return Math.max(currentMax ?? 0, 1000) + 1;
+}
+
+router.get(
+  '/customers',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_view_customers')) {
+      res.status(403).json({ error: 'غير مصرح بعرض العملاء' });
+      return;
+    }
+    // مصدر الحقيقة الوحيد: جدول customer_ledger
+    // الرصيد = SUM(amount) لكل عميل
+    // موجب = العميل مدين لنا (عليه) — سالب = نحن مدينون له (له علينا)
+    const companyId = getTenant(req);
+    const cacheKey = `customers:${companyId}`;
+
+    const cached = await getCache<object[]>(cacheKey);
+    if (cached) {
+      res.json(cached);
+      return;
+    }
+
+    const companyFilter = sql` WHERE c.company_id = ${companyId}`;
+    const rawLimitC = parseInt(String(req.query.limit ?? '500'), 10);
+    const limitC = Math.min(Math.max(isNaN(rawLimitC) ? 500 : rawLimitC, 1), 2000);
+    const rows = await db.execute(sql`
+    SELECT
+      c.id, c.name, c.customer_code, c.phone,
+      c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
+      c.classification_id, c.source, c.price_list_id, c.price_list_markup,
+      COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
+    FROM customers c
+    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id AND cl.company_id = c.company_id
+    ${companyFilter}
+    GROUP BY c.id, c.name, c.customer_code, c.phone,
+             c.is_customer, c.is_supplier, c.account_id, c.normalized_name, c.created_at,
+             c.classification_id, c.source, c.price_list_id, c.price_list_markup
+    ORDER BY c.customer_code
+    LIMIT ${limitC}
+  `);
+    const customers = (rows.rows as Record<string, unknown>[]).map((r) => ({
+      id: r.id,
+      name: r.name,
+      customer_code: r.customer_code,
+      phone: r.phone,
+      balance: Math.round(Number(r.ledger_balance) * 100) / 100,
+      is_customer: r.is_customer ?? true,
+      is_supplier: r.is_supplier ?? false,
+      account_id: r.account_id,
+      classification_id: r.classification_id ?? null,
+      source: r.source ?? null,
+      normalized_name: r.normalized_name,
+      created_at: new Date(String(r.created_at)).toISOString(),
+      price_list_id: r.price_list_id ?? null,
+      price_list_markup: r.price_list_markup != null ? Number(r.price_list_markup) : null,
+    }));
+    await setCache(cacheKey, customers, CACHE_TTL);
+    res.json(customers);
+  })
+);
+
+router.post(
+  '/customers',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_manage_customers')) {
+      res.status(403).json({ error: 'غير مصرح بإضافة عملاء' });
+      return;
+    }
+    const parsed = CreateCustomerBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+
+    const normalized = normalizeName(parsed.data.name);
+    const companyIdPost = getTenant(req);
+
+    const phonePost = String(parsed.data.phone ?? '').trim();
+
+    // تحقق من تكرار الاسم
+    const existingName = await db.execute(
+      sql`SELECT id, name FROM customers WHERE normalized_name = ${normalized} AND company_id = ${companyIdPost} LIMIT 1`
+    );
+    if ((existingName.rows as Record<string, unknown>[]).length > 0) {
+      const dup = (existingName.rows as Record<string, unknown>[])[0];
+      res.status(400).json({ error: `يوجد عميل بنفس الاسم بالفعل: "${dup.name}"` });
+      return;
+    }
+
+    // تحقق من تكرار رقم الهاتف (فقط إذا تم إدخاله)
+    if (phonePost) {
+      const existingPhone = await db.execute(
+        sql`SELECT id, name FROM customers WHERE phone = ${phonePost} AND company_id = ${companyIdPost} LIMIT 1`
+      );
+      if ((existingPhone.rows as Record<string, unknown>[]).length > 0) {
+        const dup = (existingPhone.rows as Record<string, unknown>[])[0];
+        res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` });
+        return;
+      }
+    }
+
+    const newCode = await getNextCustomerCode(companyIdPost);
+
+    const newClassificationId = req.body.classification_id
+      ? parseInt(String(req.body.classification_id), 10) || null
+      : null;
+
+    const sourceVal = req.body.source ? String(req.body.source) : null;
+
+    const [customer] = await db
+      .insert(customersTable)
+      .values({
+        name: parsed.data.name.trim(),
+        customer_code: newCode,
+        normalized_name: normalized,
+        phone: parsed.data.phone ?? null,
+        balance: String(parsed.data.balance ?? 0),
+        is_customer: parsed.data.is_customer ?? true,
+        is_supplier: parsed.data.is_supplier ?? false,
+        classification_id: newClassificationId,
+        source: sourceVal,
+        company_id: companyIdPost,
+      })
+      .returning();
+
+    const acct = await getOrCreateCustomerAccount(newCode, parsed.data.name.trim(), getTenant(req));
+    const [updated] = await db
+      .update(customersTable)
+      .set({ account_id: acct.id })
+      .where(and(eq(customersTable.id, customer.id), eq(customersTable.company_id, companyIdPost)))
+      .returning();
+
+    // الرصيد الافتتاحي → دفتر الأستاذ (مصدر الحقيقة الوحيد)
+    const openingBalance = Number(parsed.data.balance ?? 0);
+    if (openingBalance !== 0) {
+      await db.insert(customerLedgerTable).values({
+        company_id: companyIdPost,
+        customer_id: updated.id,
+        type: 'opening_balance',
+        amount: String(openingBalance),
+        reference_type: null,
+        reference_no: `OPEN-${newCode}`,
+        description: `رصيد افتتاحي — ${parsed.data.name.trim()}`,
+        date: new Date().toISOString().split('T')[0],
+      });
+    }
+
+    void writeAuditLog({
+      action: 'create',
+      record_type: 'customer',
+      record_id: updated.id,
+      new_value: formatCustomer(updated),
+      user: req.user ? { id: req.user.id, username: req.user.username } : null,
+    });
+
+    await deleteCache(`customers:${req.user?.company_id}`);
+    res.status(201).json(formatCustomer(updated));
+  })
+);
+
+router.get(
+  '/customers/:id',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_view_customers')) {
+      res.status(403).json({ error: 'غير مصرح بعرض العملاء' });
+      return;
+    }
+    const id = parseInt(String(req.params.id), 10);
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'معرّف غير صالح' });
+      return;
+    }
+    const companyId = getTenant(req);
+    const rows = await db.execute(sql`
+    SELECT
+      c.id, c.name, c.customer_code, c.phone,
+      c.is_customer, c.is_supplier, c.account_id, c.created_at,
+      COALESCE(SUM(CAST(cl.amount AS FLOAT8)), 0) AS ledger_balance
+    FROM customers c
+    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id AND cl.company_id = c.company_id
+    WHERE c.id = ${id} AND c.company_id = ${companyId}
+    GROUP BY c.id, c.name, c.customer_code, c.phone,
+             c.is_customer, c.is_supplier, c.account_id, c.created_at
+  `);
+    if (!rows.rows.length) {
+      res.status(404).json({ error: 'العميل غير موجود' });
+      return;
+    }
+    const r = rows.rows[0] as Record<string, unknown>;
+    res.json({
+      id: r.id,
+      name: r.name,
+      customer_code: r.customer_code,
+      phone: r.phone,
+      balance: Math.round(Number(r.ledger_balance) * 100) / 100,
+      is_customer: r.is_customer ?? true,
+      is_supplier: r.is_supplier ?? false,
+      created_at: new Date(String(r.created_at)).toISOString(),
+    });
+  })
+);
+
+router.put(
+  '/customers/:id',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_manage_customers')) {
+      res.status(403).json({ error: 'غير مصرح بتعديل العملاء' });
+      return;
+    }
+    const params = UpdateCustomerParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = UpdateCustomerBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+
+    const normalized = normalizeName(parsed.data.name);
+    const companyIdPut = getTenant(req);
+
+    // رقم الهاتف إلزامي
+    const phonePut = String(parsed.data.phone ?? '').trim();
+    if (!phonePut) {
+      res.status(400).json({ error: 'رقم الهاتف مطلوب' });
+      return;
+    }
+
+    // تحقق من تكرار الاسم (باستثناء نفس العميل)
+    const dupNameRows = await db.execute(
+      sql`SELECT id, name FROM customers WHERE normalized_name = ${normalized} AND company_id = ${companyIdPut} AND id != ${params.data.id} LIMIT 1`
+    );
+    if ((dupNameRows.rows as Record<string, unknown>[]).length > 0) {
+      const dup = (dupNameRows.rows as Record<string, unknown>[])[0];
+      res.status(400).json({ error: `يوجد عميل بنفس الاسم بالفعل: "${dup.name}"` });
+      return;
+    }
+
+    // تحقق من تكرار رقم الهاتف (باستثناء نفس العميل)
+    const dupPhoneRows = await db.execute(
+      sql`SELECT id, name FROM customers WHERE phone = ${phonePut} AND company_id = ${companyIdPut} AND id != ${params.data.id} LIMIT 1`
+    );
+    if ((dupPhoneRows.rows as Record<string, unknown>[]).length > 0) {
+      const dup = (dupPhoneRows.rows as Record<string, unknown>[])[0];
+      res.status(400).json({ error: `رقم الهاتف مستخدم بالفعل للعميل: "${dup.name}"` });
+      return;
+    }
+
+    const [before] = await db
+      .select()
+      .from(customersTable)
+      .where(
+        and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req)))
+      );
+    if (!before) {
+      res.status(404).json({ error: 'Customer not found' });
+      return;
+    }
+
+    const classificationId =
+      req.body.classification_id !== undefined
+        ? req.body.classification_id === null
+          ? null
+          : parseInt(String(req.body.classification_id), 10)
+        : undefined;
+
+    const [customer] = await db
+      .update(customersTable)
+      .set({
+        name: parsed.data.name.trim(),
+        normalized_name: normalized,
+        phone: parsed.data.phone ?? null,
+        balance: parsed.data.balance !== undefined ? String(parsed.data.balance) : undefined,
+        is_customer: parsed.data.is_customer !== undefined ? parsed.data.is_customer : undefined,
+        is_supplier: parsed.data.is_supplier !== undefined ? parsed.data.is_supplier : undefined,
+        ...(classificationId !== undefined
+          ? { classification_id: isNaN(classificationId as number) ? null : classificationId }
+          : {}),
+        ...(req.body.price_list_id !== undefined
+          ? {
+              price_list_id:
+                req.body.price_list_id === null ? null : Number(req.body.price_list_id),
+            }
+          : {}),
+        ...(req.body.price_list_markup !== undefined
+          ? {
+              price_list_markup:
+                req.body.price_list_markup === null ? null : String(req.body.price_list_markup),
+            }
+          : {}),
+      })
+      .where(
+        and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req)))
+      )
+      .returning();
+    if (!customer) {
+      res.status(404).json({ error: 'Customer not found' });
+      return;
+    }
+
+    void writeAuditLog({
+      action: 'update',
+      record_type: 'customer',
+      record_id: customer.id,
+      old_value: before ? formatCustomer(before) : null,
+      new_value: formatCustomer(customer),
+      user: req.user ? { id: req.user.id, username: req.user.username } : null,
+    });
+
+    await deleteCache(`customers:${companyIdPut}`);
+    res.json(UpdateCustomerResponse.parse(formatCustomer(customer)));
+  })
+);
+
+router.delete(
+  '/customers/:id',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_manage_customers')) {
+      res.status(403).json({ error: 'غير مصرح بحذف العملاء' });
+      return;
+    }
+    const params = DeleteCustomerParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    // فحص الرصيد — لا يمكن حذف عميل بدين قائم
+    const ledgerRows = await db
+      .select({ amount: customerLedgerTable.amount })
+      .from(customerLedgerTable)
+      .where(eq(customerLedgerTable.customer_id, params.data.id));
+    const ledgerBalance = ledgerRows.reduce((s, r) => s + Number(r.amount), 0);
+    if (Math.abs(ledgerBalance) > 0.001) {
+      const label =
+        ledgerBalance > 0
+          ? `عليه لنا ${ledgerBalance.toFixed(2)}`
+          : `له علينا ${Math.abs(ledgerBalance).toFixed(2)}`;
+      res.status(400).json({ error: `لا يمكن حذف العميل — يوجد رصيد غير مسوّى (${label})` });
+      return;
+    }
+
+    const [before] = await db
+      .select()
+      .from(customersTable)
+      .where(
+        and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req)))
+      );
+    if (!before) {
+      res.status(404).json({ error: 'Customer not found' });
+      return;
+    }
+    await db
+      .delete(customersTable)
+      .where(
+        and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, getTenant(req)))
+      );
+
+    void writeAuditLog({
+      action: 'delete',
+      record_type: 'customer',
+      record_id: params.data.id,
+      old_value: before ? formatCustomer(before) : null,
+      new_value: null,
+      user: req.user ? { id: req.user.id, username: req.user.username } : null,
+    });
+
+    await deleteCache(`customers:${req.user?.company_id}`);
+    res.json(DeleteCustomerResponse.parse({ success: true, message: 'Customer deleted' }));
+  })
+);
+
+router.post(
+  '/customers/:id/receipt',
+  wrap(async (req, res) => {
+    const params = CreateCustomerReceiptParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = CreateCustomerReceiptBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+
+    const cid = getTenant(req);
+    const amt = parsed.data.amount;
+    if (amt <= 0) {
+      res.status(400).json({ error: 'المبلغ يجب أن يكون أكبر من صفر' });
+      return;
+    }
+    const receiptNo = `RCP-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
+    const txDate = new Date().toISOString().split('T')[0];
+
+    /* ── fetch customer first (outside tx so 404 is returned cleanly) ── */
+    const [customer] = await db
+      .select()
+      .from(customersTable)
+      .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, cid)));
+    if (!customer) {
+      res.status(404).json({ error: 'Customer not found' });
+      return;
+    }
+
+    /* ── atomic write: ledger + transaction + balance ─────────────────── */
+    await db.transaction(async (tx) => {
+      /* 1. دفتر الأستاذ — amount سالب يُقلّل الدين على العميل */
+      await tx.insert(customerLedgerTable).values({
+        customer_id: params.data.id,
+        type: 'receipt',
+        amount: String(-amt),
+        reference_type: 'manual_receipt',
+        reference_no: receiptNo,
+        description: parsed.data.description ?? `سند قبض ${receiptNo} — ${customer.name}`,
+        date: txDate,
+        company_id: cid,
+      });
+
+      /* 2. سجل الحركة المالية المركزية — مع company_id للعزل الصحيح */
+      await tx.insert(transactionsTable).values({
+        type: 'receipt',
+        reference_type: 'manual_receipt',
+        customer_id: params.data.id,
+        customer_name: customer.name,
+        amount: String(amt),
+        direction: 'in',
+        description: parsed.data.description ?? `سند قبض ${receiptNo} — ${customer.name}`,
+        date: txDate,
+        company_id: cid,
+      });
+
+      /* 3. تحديث رصيد العميل المحفوظ */
+      const newBalance = Number(customer.balance) - amt;
+      await tx
+        .update(customersTable)
+        .set({ balance: String(newBalance) })
+        .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, cid)));
+    });
+
+    const [updated] = await db
+      .select()
+      .from(customersTable)
+      .where(and(eq(customersTable.id, params.data.id), eq(customersTable.company_id, cid)));
+    const ledgerBal = await getCustomerLedgerBalance((updated ?? customer).account_id, cid);
+    res.json(CreateCustomerReceiptResponse.parse(formatCustomer(updated ?? customer, ledgerBal)));
+  })
+);
+
+/* ── دفتر أستاذ العميل — جلب كل الحركات مع الرصيد المتراكم ──────────────── */
+router.get(
+  '/customers/:id/ledger',
+  wrap(async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) throw httpError(400, 'معرّف غير صحيح');
+
+    const [customer] = await db
+      .select()
+      .from(customersTable)
+      .where(and(eq(customersTable.id, id), eq(customersTable.company_id, getTenant(req))));
+    if (!customer) throw httpError(404, 'العميل غير موجود');
+
+    const entries = await db
+      .select()
+      .from(customerLedgerTable)
+      .where(eq(customerLedgerTable.customer_id, id))
+      .orderBy(asc(customerLedgerTable.date), asc(customerLedgerTable.created_at))
+      .limit(500);
+
+    let running = 0;
+    const rows = entries.map((e) => {
+      const amt = Number(e.amount);
+      running += amt;
+      return {
+        id: e.id,
+        type: e.type,
+        amount: amt,
+        balance_after: Math.round(running * 100) / 100,
+        reference_type: e.reference_type,
+        reference_id: e.reference_id,
+        reference_no: e.reference_no,
+        description: e.description,
+        date: e.date,
+        created_at: e.created_at.toISOString(),
+      };
+    });
+
+    const balance = Math.round(running * 100) / 100;
+
+    res.json({
+      customer_id: id,
+      customer_name: customer.name,
+      balance,
+      entries: rows,
+    });
+  })
+);
+
+/* ── سداد مباشر من العميل (بدون فاتورة) ──────────────────────────────────── */
+router.post(
+  '/customers/:id/payment',
+  wrap(async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) throw httpError(400, 'معرّف غير صحيح');
+
+    const { amount, safe_id, notes, date } = req.body;
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) throw httpError(400, 'أدخل مبلغاً صحيحاً');
+
+    const txDate = date ?? new Date().toISOString().split('T')[0];
+    const paymentNo = `PAY-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
+
+    const cidPay = getTenant(req);
+    await db.transaction(async (tx) => {
+      const [customer] = await tx
+        .select()
+        .from(customersTable)
+        .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
+      if (!customer) throw httpError(404, 'العميل غير موجود');
+
+      // 1. خصم من رصيد الخزينة إن وُجدت
+      if (safe_id) {
+        const safeIdInt = parseInt(safe_id);
+        const [safe] = await tx
+          .select()
+          .from(safesTable)
+          .where(and(eq(safesTable.id, safeIdInt), eq(safesTable.company_id, cidPay)));
+        if (safe) {
+          await tx
+            .update(safesTable)
+            .set({ balance: String(Number(safe.balance) + amt) })
+            .where(and(eq(safesTable.id, safeIdInt), eq(safesTable.company_id, cidPay)));
+
+          // الحركة المالية المركزية
+          await tx.insert(transactionsTable).values({
+            company_id: cidPay,
+            type: 'receipt_voucher',
+            reference_type: 'customer_payment',
+            reference_id: id,
+            safe_id: safeIdInt,
+            safe_name: safe.name,
+            customer_id: id,
+            customer_name: customer.name,
+            amount: String(amt),
+            direction: 'in',
+            description: notes
+              ? `${notes} — ${customer.name}`
+              : `سداد مباشر ${paymentNo} — ${customer.name}`,
+            date: txDate,
+          });
+        }
+      }
+
+      // 2. دفتر الأستاذ — تسجيل السداد (يُقلّل الدين)
+      await tx.insert(customerLedgerTable).values({
+        company_id: cidPay,
+        customer_id: id,
+        type: 'payment',
+        amount: String(-amt),
+        reference_type: 'manual_payment',
+        reference_no: paymentNo,
+        description: notes ? `${notes}` : `سداد مباشر ${paymentNo}`,
+        date: txDate,
+      });
+
+      // 3. تحديث رصيد العميل المحفوظ (يمكن أن يصبح سالباً إذا سدّد أكثر مما عليه)
+      const newBalance = Number(customer.balance) - amt;
+      await tx
+        .update(customersTable)
+        .set({ balance: String(newBalance) })
+        .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
+    });
+
+    // إعادة الرصيد المحدّث
+    const [updated] = await db
+      .select()
+      .from(customersTable)
+      .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidPay)));
+    const ledgerBal = await getCustomerLedgerBalance(updated.account_id, cidPay);
+    res.json({ success: true, customer: formatCustomer(updated, ledgerBal) });
+  })
+);
+
+router.post(
+  '/customers/:id/supplier-payment',
+  wrap(async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) throw httpError(400, 'معرّف غير صحيح');
+
+    const { amount, safe_id, notes, date } = req.body;
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) throw httpError(400, 'أدخل مبلغاً صحيحاً');
+    const safeId = parseInt(safe_id);
+    if (isNaN(safeId)) throw httpError(400, 'اختر الخزينة');
+
+    const txDate = date ?? new Date().toISOString().split('T')[0];
+    const paymentNo = `SPAY-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
+    let resultCustomer: typeof customersTable.$inferSelect | undefined;
+
+    const cidSPay = getTenant(req);
+    await db.transaction(async (tx) => {
+      const [customer] = await tx
+        .select()
+        .from(customersTable)
+        .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidSPay)));
+      if (!customer) throw httpError(404, 'العميل غير موجود');
+      if (!customer.is_supplier) throw httpError(400, 'هذا العميل ليس مورداً');
+
+      const [safe] = await tx
+        .select()
+        .from(safesTable)
+        .where(and(eq(safesTable.id, safeId), eq(safesTable.company_id, cidSPay)));
+      if (!safe) throw httpError(404, 'الخزينة غير موجودة');
+      if (Number(safe.balance) < amt) throw httpError(400, 'رصيد الخزينة غير كافٍ');
+
+      await tx
+        .update(safesTable)
+        .set({ balance: String(Number(safe.balance) - amt) })
+        .where(and(eq(safesTable.id, safe.id), eq(safesTable.company_id, cidSPay)));
+
+      const [updated] = await tx
+        .update(customersTable)
+        .set({ balance: String(Number(customer.balance) + amt) })
+        .where(and(eq(customersTable.id, id), eq(customersTable.company_id, cidSPay)))
+        .returning();
+
+      await tx.insert(transactionsTable).values({
+        type: 'supplier_payment',
+        reference_type: 'supplier_payment',
+        reference_id: id,
+        direction: 'out',
+        customer_id: id,
+        customer_name: customer.name,
+        safe_id: safe.id,
+        safe_name: safe.name,
+        amount: String(amt),
+        description: notes || `تسديد دفعة للمورد - ${customer.name}`,
+        date: txDate,
+        company_id: cidSPay,
+      });
+
+      // دفتر الأستاذ: تسديد للمورد يُقلّل ما يدين به لنا (أو يزيد دينه علينا)
+      // الرصيد السالب = ندين له، التسديد يُقلّل ما علينا → +amt في دفتر الأستاذ
+      await tx.insert(customerLedgerTable).values({
+        customer_id: id,
+        reference_id: id,
+        type: 'supplier_payment',
+        amount: String(amt), // يُزيد رصيده (يُقلّل ما ندين به)
+        reference_type: 'supplier_payment',
+        reference_no: paymentNo,
+        description: notes ? `${notes}` : `تسديد للمورد ${paymentNo} — ${customer.name}`,
+        date: txDate,
+        company_id: cidSPay,
+      });
+
+      resultCustomer = updated;
+    });
+
+    if (!resultCustomer) {
+      throw httpError(500, 'فشل في تحديث بيانات العميل');
+    }
+    res.json({ success: true, customer: formatCustomer(resultCustomer) });
+  })
+);
+
+/* ─── تصنيفات العملاء ─── */
+
+router.get(
+  '/customer-classifications',
+  wrap(async (req, res) => {
+    const companyId = getTenant(req);
+    const rows = await db
+      .select()
+      .from(customerClassificationsTable)
+      .where(eq(customerClassificationsTable.company_id, companyId))
+      .orderBy(asc(customerClassificationsTable.name))
+      .limit(500);
+    res.json(rows);
+  })
+);
+
+router.post(
+  '/customer-classifications',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_manage_customers')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const name = String(req.body.name ?? '').trim();
+    if (!name) {
+      res.status(400).json({ error: 'أدخل اسم التصنيف' });
+      return;
+    }
+    const companyId = getTenant(req);
+    // تحقق من تكرار اسم التصنيف
+    const dupClass = await db.execute(
+      sql`SELECT id FROM customer_classifications WHERE LOWER(name) = LOWER(${name}) AND company_id = ${companyId} LIMIT 1`
+    );
+    if ((dupClass.rows as Record<string, unknown>[]).length > 0) {
+      res.status(400).json({ error: `التصنيف "${name}" موجود بالفعل` });
+      return;
+    }
+    const [created] = await db
+      .insert(customerClassificationsTable)
+      .values({ name, company_id: companyId })
+      .returning();
+    res.status(201).json(created);
+  })
+);
+
+router.put(
+  '/customer-classifications/:id',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_manage_customers')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const id = parseInt(String(req.params.id), 10);
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'معرّف غير صالح' });
+      return;
+    }
+    const name = String(req.body.name ?? '').trim();
+    if (!name) {
+      res.status(400).json({ error: 'أدخل اسم التصنيف' });
+      return;
+    }
+    const companyId = getTenant(req);
+    const [updated] = await db
+      .update(customerClassificationsTable)
+      .set({ name })
+      .where(
+        and(
+          eq(customerClassificationsTable.id, id),
+          eq(customerClassificationsTable.company_id, companyId)
+        )
+      )
+      .returning();
+    if (!updated) {
+      res.status(404).json({ error: 'التصنيف غير موجود' });
+      return;
+    }
+    res.json(updated);
+  })
+);
+
+router.delete(
+  '/customer-classifications/:id',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_manage_customers')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const id = parseInt(String(req.params.id), 10);
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'معرّف غير صالح' });
+      return;
+    }
+    const cidCC = getTenant(req);
+    const [linkedCustomer] = await db
+      .select({ id: customersTable.id })
+      .from(customersTable)
+      .where(and(eq(customersTable.classification_id, id), eq(customersTable.company_id, cidCC)))
+      .limit(1);
+    if (linkedCustomer) {
+      res.status(400).json({ error: 'لا يمكن حذف التصنيف لأنه مرتبط بعملاء' });
+      return;
+    }
+    const result = await db
+      .delete(customerClassificationsTable)
+      .where(
+        and(
+          eq(customerClassificationsTable.id, id),
+          eq(customerClassificationsTable.company_id, cidCC)
+        )
+      )
+      .returning({ id: customerClassificationsTable.id });
+    if (result.length === 0) {
+      res.status(404).json({ error: 'التصنيف غير موجود' });
+      return;
+    }
+    res.json({ success: true });
+  })
+);
+
+router.get(
+  '/customer-reports',
+  wrap(async (req, res) => {
+    if (!hasPermission(req.user, 'can_view_customers')) {
+      res.status(403).json({ error: 'غير مصرح' });
+      return;
+    }
+    const companyId = getTenant(req);
+    const customerId = req.query.customer_id ? parseInt(String(req.query.customer_id), 10) : null;
+    const classId = req.query.classification_id
+      ? parseInt(String(req.query.classification_id), 10)
+      : null;
+    const dateFrom = req.query.date_from ? String(req.query.date_from) : null;
+    const dateTo = req.query.date_to ? String(req.query.date_to) : null;
+
+    const customerFilter = customerId ? sql` AND c.id = ${customerId}` : sql``;
+    const classificationFilter = classId ? sql` AND c.classification_id = ${classId}` : sql``;
+
+    const rows = await db.execute(sql`
+    SELECT
+      c.id,
+      c.name,
+      c.customer_code,
+      cc.name AS classification_name,
+      COALESCE((
+        SELECT SUM(CAST(cl2.amount AS FLOAT8))
+        FROM customer_ledger cl2
+        WHERE cl2.customer_id = c.id
+          AND cl2.company_id = c.company_id
+          AND (${dateFrom}::date IS NULL OR cl2.date::date < ${dateFrom}::date)
+      ), 0) AS opening_balance,
+      COALESCE(SUM(CASE
+        WHEN CAST(cl.amount AS FLOAT8) > 0
+          AND (${dateFrom}::date IS NULL OR cl.date::date >= ${dateFrom}::date)
+          AND (${dateTo}::date   IS NULL OR cl.date::date <= ${dateTo}::date)
+        THEN CAST(cl.amount AS FLOAT8) ELSE 0 END), 0) AS period_debits,
+      COALESCE(SUM(CASE
+        WHEN CAST(cl.amount AS FLOAT8) < 0
+          AND (${dateFrom}::date IS NULL OR cl.date::date >= ${dateFrom}::date)
+          AND (${dateTo}::date   IS NULL OR cl.date::date <= ${dateTo}::date)
+        THEN ABS(CAST(cl.amount AS FLOAT8)) ELSE 0 END), 0) AS period_credits
+    FROM customers c
+    LEFT JOIN customer_classifications cc ON cc.id = c.classification_id AND cc.company_id = c.company_id
+    LEFT JOIN customer_ledger cl ON cl.customer_id = c.id AND cl.company_id = c.company_id
+    WHERE c.company_id = ${companyId} ${customerFilter} ${classificationFilter}
+    GROUP BY c.id, c.name, c.customer_code, cc.name
+    ORDER BY c.customer_code
+  `);
+
+    const result = (rows.rows as Record<string, unknown>[]).map((r) => ({
+      id: r.id,
+      name: r.name,
+      customer_code: r.customer_code,
+      classification_name: r.classification_name ?? null,
+      opening_balance: Math.round(Number(r.opening_balance) * 100) / 100,
+      period_debits: Math.round(Number(r.period_debits) * 100) / 100,
+      period_credits: Math.round(Number(r.period_credits) * 100) / 100,
+      closing_balance:
+        Math.round(
+          (Number(r.opening_balance) + Number(r.period_debits) - Number(r.period_credits)) * 100
+        ) / 100,
+    }));
+
+    res.json(result);
+  })
+);
+
+export default router;
