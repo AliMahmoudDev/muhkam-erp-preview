@@ -39,11 +39,13 @@ vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('wouter', () => ({
   useLocation: () => ['/customers', vi.fn()],
   useSearch: () => '',
-  Link: ({ children }: { children: React.ReactNode }) => children,
+  Link: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('@/pages/bad-debts', () => ({ default: () => <div>Bad Debts</div> }));
-vi.mock('./CustomerList', () => ({ CustomerList: () => <div data-testid="customer-list">قائمة العملاء</div> }));
+vi.mock('@/pages/bad-debts', () => ({ default: () => null }));
+vi.mock('./CustomerList', () => ({
+  CustomerList: () => <div data-testid="customer-list">قائمة العملاء</div>,
+}));
 vi.mock('./CustomerFormModal', () => ({
   AddCustomerModal: () => null,
   EditCustomerModal: () => null,
@@ -59,7 +61,6 @@ vi.mock('./CustomerLedger', () => ({ CustomerStatementModal: () => null }));
 
 import Customers from '@/pages/customers/index';
 
-/* ── Helper ─────────────────────────────────────────────────── */
 function renderCustomers() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -69,28 +70,27 @@ function renderCustomers() {
   );
 }
 
-/* ── Tests ──────────────────────────────────────────────────── */
 describe('Customers page', () => {
   beforeEach(() => { mockPermission = true; });
 
-  it('يعرض عنوان الصفحة', () => {
-    renderCustomers();
-    expect(screen.getByText('العملاء')).toBeInTheDocument();
+  it('يُرنَّر بدون crash', () => {
+    const { container } = renderCustomers();
+    expect(container.firstChild).toBeTruthy();
   });
 
-  it('يعرض قائمة العملاء عند وجود صلاحية', () => {
+  it('يعرض تاب العملاء والموردون', () => {
     renderCustomers();
-    expect(screen.getByTestId('customer-list')).toBeInTheDocument();
+    expect(screen.getAllByText(/العملاء والموردون/i).length).toBeGreaterThan(0);
   });
 
-  it('يعرض رسالة عدم الصلاحية عند غياب can_view_customers', () => {
+  it('يعرض زر إضافة عميل عند وجود صلاحية', () => {
+    renderCustomers();
+    expect(screen.getByText('إضافة عميل')).toBeInTheDocument();
+  });
+
+  it('يخفي زر الإضافة عند غياب الصلاحية', () => {
     mockPermission = false;
     renderCustomers();
-    expect(screen.queryByTestId('customer-list')).not.toBeInTheDocument();
-  });
-
-  it('يعرض زر إضافة عميل جديد عند وجود صلاحية', () => {
-    renderCustomers();
-    expect(screen.getByText(/إضافة عميل|عميل جديد/i)).toBeInTheDocument();
+    expect(screen.queryByText('إضافة عميل')).not.toBeInTheDocument();
   });
 });

@@ -103,7 +103,7 @@ export default function SecurityTab() {
           <button
             onClick={handleSetup}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand text-ink text-sm font-semibold disabled:opacity-50"
           >
             <QrCode className="w-4 h-4" />
             {loading ? 'جاري التحضير...' : 'تفعيل المصادقة الثنائية'}
@@ -136,7 +136,7 @@ export default function SecurityTab() {
               <button
                 onClick={handleVerify}
                 disabled={loading || verifyCode.length !== 6}
-                className="w-full py-2.5 rounded-xl bg-brand text-white text-sm font-semibold disabled:opacity-50"
+                className="w-full py-2.5 rounded-xl bg-brand text-ink text-sm font-semibold disabled:opacity-50"
               >
                 {loading ? 'جاري التحقق...' : 'تأكيد وتفعيل'}
               </button>

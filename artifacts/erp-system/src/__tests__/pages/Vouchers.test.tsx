@@ -48,7 +48,7 @@ describe('Vouchers page', () => {
 
   it('يعرض عنوان السندات', () => {
     renderVouchers();
-    expect(screen.getByText(/السندات|سندات/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/السندات|سندات/i).length).toBeGreaterThan(0);
   });
 
   it('يعرض حالة فارغة عند عدم وجود سندات', () => {

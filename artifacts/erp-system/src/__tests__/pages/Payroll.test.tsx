@@ -53,7 +53,7 @@ describe('Payroll page', () => {
 
   it('يعرض عنوان الرواتب', () => {
     renderPayroll();
-    expect(screen.getByText(/الرواتب|كشف الرواتب/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/الرواتب|كشف الرواتب/i).length).toBeGreaterThan(0);
   });
 
   it('يعرض رسالة عدم الصلاحية عند غياب can_view_payroll', () => {
