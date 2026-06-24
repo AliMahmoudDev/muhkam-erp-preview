@@ -20,7 +20,7 @@ import {
   Archive,
   Trash2,
 } from 'lucide-react';
-import { Link, useSearch } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { safeArray } from '@/lib/safe-data';
 import { useGetSettingsWarehouses } from '@workspace/api-client-react';
@@ -29,12 +29,11 @@ import ConsignmentPage from '@/pages/consignment';
 import ScrapInventory from '@/pages/scrap-inventory';
 
 import { api } from './inventory/_shared';
-import type { AuditSummary, LowStockItem, WarehouseSummaryItem, Tab, TransferPrefill } from './inventory/_shared';
+import type { AuditSummary, LowStockItem, WarehouseSummaryItem, Tab } from './inventory/_shared';
 import { TabBtn, TabBtnBadge } from './inventory/_components';
 import ReviewTab from './inventory/ReviewTab';
 import CountTab from './inventory/count';
 import AlertsTab from './inventory/AlertsTab';
-import TransferTab from './inventory/TransferTab';
 import WarehouseSection from './inventory/WarehouseSection';
 
 import { PageHeader } from '@/components/patterns';
@@ -58,13 +57,13 @@ export default function Inventory() {
   const canAdjustInventory = hasPermission(user, 'can_adjust_inventory') === true;
   const isAdmin = user?.role === 'admin';
 
+  const [, navigate] = useLocation();
   const search = useSearch();
   const tabFromUrl = new URLSearchParams(search).get('tab') as Tab | null;
   const VALID_TABS: Tab[] = [
     'overview',
     'movements',
     'count',
-    'transfer',
     'alerts',
     'reports',
     'consignment',
@@ -79,7 +78,6 @@ export default function Inventory() {
     }
   }, [tabFromUrl]);
   const [movementsFilter, setMovementsFilter] = useState<'all' | 'zero' | 'low'>('all');
-  const [transferPrefill, setTransferPrefill] = useState<TransferPrefill | null>(null);
 
   /* ── warehouse detail modal ── */
   const [warehouseDetailId, setWarehouseDetailId] = useState<number | null>(null);
@@ -265,9 +263,8 @@ export default function Inventory() {
     });
   }
 
-  function handleTransferPrefill(prefill: TransferPrefill) {
-    setTransferPrefill(prefill);
-    setActiveTab('transfer');
+  function handleTransferPrefill() {
+    navigate('/transfers');
   }
 
   /* ── Permission gate ──────────────────────────────────────── */
@@ -307,14 +304,13 @@ export default function Inventory() {
         />
       )}
       {canAdjustInventory && (
-        <TabBtn
-          id="transfer"
-          label="التحويلات بين الفروع"
-          icon={<Truck className="w-4 h-4" />}
-          active={activeTab}
-          onClick={setActiveTab}
-        />
-      )}
+        <Link to="/transfers">
+          <button className="erp-tab">
+            <Truck className="w-4 h-4" />
+              التحويلات بين الفروع
+            </button>
+          </Link>
+        )}
         {canAdjustInventory && (
           <TabBtn
             id="consignment"
@@ -528,15 +524,6 @@ export default function Inventory() {
           currentWarehouseId={currentWarehouseIdNum}
           qc={qc}
           toast={toast}
-        />
-      )}
-      {activeTab === 'transfer' && canAdjustInventory && (
-        <TransferTab
-          warehouses={warehouses}
-          qc={qc}
-          toast={toast}
-          prefill={transferPrefill}
-          onClearPrefill={() => setTransferPrefill(null)}
         />
       )}
       {activeTab === 'alerts' && (

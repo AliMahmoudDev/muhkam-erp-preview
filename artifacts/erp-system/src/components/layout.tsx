@@ -33,7 +33,7 @@ const NAV_SECTIONS = [
   { label: 'المبيعات',           hrefs: ['/pos', '/sales', '/returns'] },
   {
     label: 'المخزون والمنتجات',
-    hrefs: ['/products', '/price-lists', '/inventory'],
+    hrefs: ['/products', '/price-lists', '/inventory', '/transfers'],
   },
   { label: 'الشراء',             hrefs: ['/purchases', '/customers'] },
   { label: 'الأجهزة والصيانة',  hrefs: ['/devices', '/repairs'] },
