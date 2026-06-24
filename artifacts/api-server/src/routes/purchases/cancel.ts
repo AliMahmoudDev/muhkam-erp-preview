@@ -2,7 +2,7 @@
 import { Router, type IRouter } from 'express';
 import { type JournalLine } from '../../lib/auto-account';
 import { buildPurchaseJournalLines } from './detail';
-import { eq, and, gt, not, inArray, sql } from 'drizzle-orm';
+import { eq, and, not, inArray, sql } from 'drizzle-orm';
 import { db, purchasesTable, purchaseItemsTable, productsTable, customersTable, safesTable, transactionsTable, stockMovementsTable, purchaseReturnsTable, journalEntriesTable, journalEntryLinesTable, customerLedgerTable } from '@workspace/db';
 import { wrap, httpError } from '../../lib/async-handler';
 import { assertPeriodOpen } from '../../lib/period-lock';
