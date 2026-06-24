@@ -27,7 +27,6 @@ import VatReport from './VatReport';
 import AgingReport from './AgingReport';
 import CashFlowIndirectReport from './CashFlowIndirectReport';
 import TopReportsTab from './TopReportsTab';
-import Vouchers from '@/pages/vouchers';
 
 interface Warehouse {
   id: number;
@@ -173,8 +172,7 @@ type Tab =
   | 'trial-balance'
   | 'vat'
   | 'aging'
-  | 'top-reports'
-  | 'vouchers';
+  | 'top-reports';
 
 type CategoryId = 'financial' | 'sales' | 'admin';
 
@@ -204,7 +202,6 @@ const GROUPS: GroupDef[] = [
       { id: 'trial-balance',    label: 'ميزان المراجعة' },
       { id: 'vat',              label: 'ضريبة القيمة المضافة', needsWarehouse: true },
       { id: 'aging',            label: 'أعمار الديون' },
-      { id: 'vouchers',         label: 'سجل السندات' },
     ],
   },
   {
@@ -357,7 +354,6 @@ export default function Reports() {
           {tab === 'products'         && <ProductProfitReport warehouseId={warehouseId} />}
           {tab === 'analysis'         && <SalesAnalysisReport warehouseId={warehouseId} />}
           {tab === 'top-reports'      && <TopReportsTab />}
-          {tab === 'vouchers'         && <Vouchers embedded />}
         </motion.div>
       </AnimatePresence>
     </div>
