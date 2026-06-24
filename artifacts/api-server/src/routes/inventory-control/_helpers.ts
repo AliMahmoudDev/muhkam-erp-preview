@@ -1,7 +1,7 @@
 /** inventory-control/_helpers.ts — shared zod schemas */
 import { z } from 'zod/v4';
 
-export const createCountSessionSchema = z.object({
+const createCountSessionSchema = z.object({
   warehouse_id: z.number().int().positive().optional().nullable(),
   notes: z.string().optional().nullable(),
   items: z
@@ -15,7 +15,7 @@ export const createCountSessionSchema = z.object({
     .min(1),
 });
 
-export const createTransferSchema = z.object({
+const createTransferSchema = z.object({
   from_warehouse_id: z.number().int().positive(),
   to_warehouse_id: z.number().int().positive(),
   notes: z.string().optional().nullable(),
