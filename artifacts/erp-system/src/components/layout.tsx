@@ -12,7 +12,18 @@ import { NAV_ITEMS, canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rba
 import { hasPermission } from '@/lib/permissions';
 import { translateRole, Role } from '@/lib/roles';
 import { useWarehouses } from '@/hooks/useWarehouses';
-import { LogOut, Warehouse, Search, X, ChevronDown, LayoutGrid, ShoppingCart, Users, PackageX, TrendingUp } from 'lucide-react';
+import {
+  LogOut,
+  Warehouse,
+  Search,
+  X,
+  ChevronDown,
+  LayoutGrid,
+  ShoppingCart,
+  Users,
+  PackageX,
+  TrendingUp,
+} from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -28,19 +39,19 @@ import { resolveUploadedFileUrl } from '@/lib/file-upload';
    - /my-portal → النظام section
 ────────────────────────────────────────────────────────────── */
 const NAV_SECTIONS = [
-  { label: 'القائمة',            hrefs: ['/'] },
-  { label: 'المبيعات',           hrefs: ['/pos', '/sales', '/returns'] },
+  { label: 'القائمة', hrefs: ['/'] },
+  { label: 'المبيعات', hrefs: ['/pos', '/sales', '/returns'] },
   {
     label: 'المخزون والمنتجات',
     hrefs: ['/products', '/price-lists', '/inventory'],
   },
-  { label: 'الشراء',             hrefs: ['/purchases', '/customers'] },
-  { label: 'الأجهزة والصيانة',  hrefs: ['/devices', '/repairs'] },
+  { label: 'الشراء', hrefs: ['/purchases', '/customers'] },
+  { label: 'الأجهزة والصيانة', hrefs: ['/devices', '/repairs'] },
   {
     label: 'المالية',
     hrefs: ['/treasury', '/expenses', '/income', '/reports'],
   },
-  { label: 'الموارد البشرية',   hrefs: ['/employees', '/attendance', '/payroll'] },
+  { label: 'الموارد البشرية', hrefs: ['/employees', '/attendance', '/payroll'] },
   {
     label: 'المحاسبة',
     hrefs: [
@@ -55,7 +66,7 @@ const NAV_SECTIONS = [
       '/cost-centers',
     ],
   },
-  { label: 'النظام',             hrefs: ['/settings', '/branches', '/my-portal'] },
+  { label: 'النظام', hrefs: ['/settings', '/branches', '/my-portal'] },
 ];
 
 interface LayoutProps {
@@ -81,9 +92,7 @@ function getInitials(name: string) {
 function getSearchGroups(navItems: typeof NAV_ITEMS, query: string) {
   const q = query.trim().toLowerCase();
   const filtered = q
-    ? navItems.filter(
-        (i) => i.name.includes(query.trim()) || i.href.includes(q)
-      )
+    ? navItems.filter((i) => i.name.includes(query.trim()) || i.href.includes(q))
     : navItems.slice(0, 8);
   const groups: { label: string; items: typeof NAV_ITEMS }[] = [];
   NAV_SECTIONS.forEach((section) => {
@@ -107,10 +116,7 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const { groups, flat } = useMemo(
-    () => getSearchGroups(navItems, query),
-    [navItems, query]
-  );
+  const { groups, flat } = useMemo(() => getSearchGroups(navItems, query), [navItems, query]);
 
   const go = useCallback(
     (href: string) => {
@@ -162,8 +168,7 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
   /* Click outside → close */
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
-        setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -239,9 +244,7 @@ function TopbarSearch({ navItems }: { navItems: typeof NAV_ITEMS }) {
                     role="option"
                     aria-selected={fi === idx}
                   >
-                    <item.icon
-                      style={{ width: 14, height: 14, opacity: 0.55, flexShrink: 0 }}
-                    />
+                    <item.icon style={{ width: 14, height: 14, opacity: 0.55, flexShrink: 0 }} />
                     <span style={{ flex: 1 }}>{item.name}</span>
                     <span className="erp-search-route">{item.href}</span>
                   </div>
@@ -291,10 +294,7 @@ function MobileSearchOverlay({
     inputRef.current?.focus();
   }, []);
 
-  const { groups, flat } = useMemo(
-    () => getSearchGroups(navItems, query),
-    [navItems, query]
-  );
+  const { groups, flat } = useMemo(() => getSearchGroups(navItems, query), [navItems, query]);
 
   useEffect(() => setIdx(0), [query]);
 
@@ -304,7 +304,10 @@ function MobileSearchOverlay({
   };
 
   const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') { onClose(); return; }
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setIdx((i) => Math.min(i + 1, flat.length - 1));
@@ -320,15 +323,10 @@ function MobileSearchOverlay({
 
   return (
     <div className="erp-mobile-search-overlay" onClick={onClose}>
-      <div
-        className="erp-mobile-search-panel"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="erp-mobile-search-panel" onClick={(e) => e.stopPropagation()}>
         {/* Input row */}
         <div className="erp-mobile-search-input-row">
-          <Search
-            style={{ width: 16, height: 16, color: 'var(--text-hint)', flexShrink: 0 }}
-          />
+          <Search style={{ width: 16, height: 16, color: 'var(--text-hint)', flexShrink: 0 }} />
           <input
             ref={inputRef}
             value={query}
@@ -385,12 +383,13 @@ function MobileSearchOverlay({
                       key={item.href}
                       className={`erp-search-item${fi === idx ? ' active' : ''}`}
                       onMouseDown={() => go(item.href)}
-                      onTouchEnd={(e) => { e.preventDefault(); go(item.href); }}
+                      onTouchEnd={(e) => {
+                        e.preventDefault();
+                        go(item.href);
+                      }}
                       onMouseEnter={() => setIdx(fi)}
                     >
-                      <item.icon
-                        style={{ width: 16, height: 16, opacity: 0.6, flexShrink: 0 }}
-                      />
+                      <item.icon style={{ width: 16, height: 16, opacity: 0.6, flexShrink: 0 }} />
                       <span style={{ flex: 1, fontSize: '14px' }}>{item.name}</span>
                     </div>
                   );
@@ -407,7 +406,7 @@ function MobileSearchOverlay({
    MAIN LAYOUT
 ───────────────────────────────────────────────── */
 export function AppLayout({ children }: LayoutProps) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user, logout } = useAuth();
   const { hasFeature } = useSubscription();
   const { settings } = useAppSettings();
@@ -687,11 +686,7 @@ export function AppLayout({ children }: LayoutProps) {
                 كل المخازن
               </option>
               {warehouses.map((w) => (
-                <option
-                  key={w.id}
-                  value={String(w.id)}
-                  style={{ background: 'var(--bg-card)' }}
-                >
+                <option key={w.id} value={String(w.id)} style={{ background: 'var(--bg-card)' }}>
                   {w.name}
                 </option>
               ))}
@@ -958,10 +953,7 @@ export function AppLayout({ children }: LayoutProps) {
 
       {/* ── Mobile search overlay ── */}
       {mobileSearchOpen && (
-        <MobileSearchOverlay
-          navItems={visibleNav}
-          onClose={() => setMobileSearchOpen(false)}
-        />
+        <MobileSearchOverlay navItems={visibleNav} onClose={() => setMobileSearchOpen(false)} />
       )}
 
       {/* ── Logout check-out modal ── */}
@@ -979,7 +971,6 @@ export function AppLayout({ children }: LayoutProps) {
         />
       )}
 
-
       {/* ══════════════════════════════════════════
           MOBILE BOTTOM NAVIGATION — lg:hidden
           أهم 5 صفحات في شريط سفلي ثابت
@@ -995,17 +986,17 @@ export function AppLayout({ children }: LayoutProps) {
         aria-label="التنقل الرئيسي"
       >
         {[
-          { href: '/',           icon: LayoutGrid,   label: 'الرئيسية' },
-          { href: '/sales',      icon: ShoppingCart,  label: 'المبيعات' },
-          { href: '/customers',  icon: Users,         label: 'العملاء'  },
-          { href: '/inventory',  icon: PackageX,      label: 'المخزون'  },
-          { href: '/reports',    icon: TrendingUp,    label: 'التقارير' },
+          { href: '/', icon: LayoutGrid, label: 'الرئيسية' },
+          { href: '/sales', icon: ShoppingCart, label: 'المبيعات' },
+          { href: '/customers', icon: Users, label: 'العملاء' },
+          { href: '/inventory', icon: PackageX, label: 'المخزون' },
+          { href: '/reports', icon: TrendingUp, label: 'التقارير' },
         ].map(({ href, icon: Icon, label }) => {
           const isActive = location === href || (href !== '/' && location.startsWith(href));
           return (
             <button
               key={href}
-              onClick={() => go(href)}
+              onClick={() => navigate(href)}
               className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
