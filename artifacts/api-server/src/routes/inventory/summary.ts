@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 import { db } from '@workspace/db';
 import { wrap } from '../../lib/async-handler';
 import { hasPermission } from '../../lib/permissions';
+import { getTenant } from '../../middleware/auth';
 
 const router: IRouter = Router();
 
