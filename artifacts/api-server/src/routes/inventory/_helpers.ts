@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { stockMovementsTable } from '@workspace/db';
 
-export const inventoryAdjustmentSchema = z.object({
+const inventoryAdjustmentSchema = z.object({
   product_id: z
     .number({
       required_error: 'معرّف المنتج مطلوب',
@@ -20,7 +20,7 @@ export const inventoryAdjustmentSchema = z.object({
   warehouse_id: z.number().int().positive().optional().nullable(),
 });
 
-export interface AuditRow {
+interface AuditRow {
   id: unknown;
   name: unknown;
   sku: unknown;

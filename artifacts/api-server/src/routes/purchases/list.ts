@@ -1,6 +1,6 @@
 /** purchases/list.ts */
 import { Router, type IRouter } from 'express';
-import { eq, desc } from 'drizzle-orm';
+import { eq, sql, desc } from 'drizzle-orm';
 import { db, purchasesTable } from '@workspace/db';
 import { GetPurchasesResponse } from '@workspace/api-zod';
 import { wrap } from '../../lib/async-handler';
