@@ -23,7 +23,9 @@ vi.mock('@/lib/permissions', () => ({
 }));
 
 vi.mock('@/lib/auth-fetch', () => ({
-  authFetch: vi.fn().mockResolvedValue(new Response(JSON.stringify([]), { status: 200 })),
+  authFetch: vi.fn().mockResolvedValue(
+    new Response(JSON.stringify([]), { status: 200 })
+  ),
 }));
 
 vi.mock('@/lib/api', () => ({ api: (p: string) => p, BASE: '' }));
@@ -67,10 +69,7 @@ function renderRepairs() {
 
 /* ── Tests ──────────────────────────────────────────────────── */
 describe('Repairs page', () => {
-  beforeEach(() => {
-    mockPermission = true;
-    vi.clearAllMocks();
-  });
+  beforeEach(() => { mockPermission = true; vi.clearAllMocks(); });
 
   it('يعرض عنوان الصيانة', () => {
     renderRepairs();
