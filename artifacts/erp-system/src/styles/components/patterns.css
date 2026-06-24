@@ -88,26 +88,6 @@
   }
 }
 
-/* When the band contains a tab bar:
-   remove bottom padding + border — the tab bar's underline replaces it */
-.erp-page-header--with-tabs {
-  padding-block-end: 0;
-  border-block-end: none;
-}
-
-/* Tabs slot — sits at the bottom of the sticky band */
-.erp-page-header-tabs {
-  margin-block-start: var(--space-2, 0.5rem);
-  /* Bleed to band edges, matching band's inline padding cancellation */
-  margin-inline: calc(-1 * var(--space-4, 1rem));
-}
-
-@media (min-width: 768px) {
-  .erp-page-header-tabs {
-    margin-inline: calc(-1 * var(--space-6, 1.5rem));
-  }
-}
-
 /* Top row: identity + actions */
 .erp-page-header-row {
   display: flex;
