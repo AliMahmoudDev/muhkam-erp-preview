@@ -14,6 +14,7 @@ import {
   Percent,
   TrendingUp,
   AlertTriangle,
+  Shield,
 } from 'lucide-react';
 
 /* ─── Lazy-load each tab ─── */
@@ -25,6 +26,7 @@ const CompanyTab = lazy(() => import('./company-tab'));
 const InvoiceTab = lazy(() => import('./invoice-tab'));
 const BackupTab = lazy(() => import('./backup-tab'));
 const DataTab = lazy(() => import('./data-tab'));
+const SecurityTab = lazy(() => import('./security-tab'));
 const VatTab = lazy(() => import('./vat-tab'));
 const PricingTab = lazy(() => import('./pricing-tab').then((m) => ({ default: m.PricingTab })));
 
@@ -39,7 +41,8 @@ type Tab =
   | 'vat'
   | 'pricing'
   | 'backup'
-  | 'system';
+  | 'system'
+  | 'security';
 
 /* ─── Section config ─────────────────────────────────────────────────────
    Sprint 11 IA refactor:
@@ -81,8 +84,9 @@ const TAB_SECTIONS: {
     subtitle: 'عمليات حساسة — راجع قبل التنفيذ',
     danger: true,
     tabs: [
-      { id: 'backup', label: 'النسخ الاحتياطي', icon: HardDrive },
-      { id: 'system', label: 'إدارة البيانات',  icon: Database },
+      { id: 'backup',    label: 'النسخ الاحتياطي', icon: HardDrive },
+      { id: 'system',    label: 'إدارة البيانات',  icon: Database },
+      { id: 'security',  label: 'أمان الحساب',     icon: Shield },
     ],
   },
 ];
@@ -249,6 +253,7 @@ export default function SettingsPage() {
             {activeTab === 'pricing' && <PricingTab />}
             {activeTab === 'backup' && <BackupTab />}
             {activeTab === 'system' && <DataTab />}
+            {activeTab === 'security' && <Suspense fallback={<TabSkeleton />}><SecurityTab /></Suspense>}
           </Suspense>
         </div>
       </main>

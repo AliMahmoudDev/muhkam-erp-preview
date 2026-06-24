@@ -33,8 +33,9 @@ router.get(
   authenticate,
   wrap(async (req, res) => {
     try {
-      if (req.user?.role !== 'super_admin') {
-        res.status(403).json({ error: 'للمسؤول العام فقط' });
+      const allowedRoles = ['super_admin', 'admin', 'manager'];
+      if (!req.user?.role || !allowedRoles.includes(req.user.role)) {
+        res.status(403).json({ error: 'المصادقة الثنائية متاحة للمسؤولين فقط' });
         return;
       }
       const [user] = await db
@@ -73,8 +74,9 @@ router.post(
   authenticate,
   wrap(async (req, res) => {
     try {
-      if (req.user?.role !== 'super_admin') {
-        res.status(403).json({ error: 'للمسؤول العام فقط' });
+      const allowedRoles = ['super_admin', 'admin', 'manager'];
+      if (!req.user?.role || !allowedRoles.includes(req.user.role)) {
+        res.status(403).json({ error: 'المصادقة الثنائية متاحة للمسؤولين فقط' });
         return;
       }
       const { token } = req.body as { token?: string };
@@ -115,8 +117,9 @@ router.post(
   authenticate,
   wrap(async (req, res) => {
     try {
-      if (req.user?.role !== 'super_admin') {
-        res.status(403).json({ error: 'للمسؤول العام فقط' });
+      const allowedRoles = ['super_admin', 'admin', 'manager'];
+      if (!req.user?.role || !allowedRoles.includes(req.user.role)) {
+        res.status(403).json({ error: 'المصادقة الثنائية متاحة للمسؤولين فقط' });
         return;
       }
       const { token } = req.body as { token?: string };

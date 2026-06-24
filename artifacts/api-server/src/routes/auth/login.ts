@@ -160,7 +160,7 @@ router.post(
 
       await clearLoginLockout(uid);
 
-      if (user.totp_enabled && user.role === Role.SuperAdmin) {
+      if (user.totp_enabled) {
         const tempToken = jwt.sign({ userId: user.id, requires_2fa: true }, JWT_SECRET, {
           expiresIn: '5m',
         });
