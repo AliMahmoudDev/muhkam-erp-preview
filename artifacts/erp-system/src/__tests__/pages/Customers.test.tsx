@@ -85,12 +85,12 @@ describe('Customers page', () => {
 
   it('يعرض زر إضافة عميل عند وجود صلاحية', () => {
     renderCustomers();
-    expect(screen.getByText('إضافة عميل')).toBeInTheDocument();
+    expect(screen.getAllByText('إضافة عميل').length).toBeGreaterThan(0);
   });
 
   it('يخفي زر الإضافة عند غياب الصلاحية', () => {
     mockPermission = false;
     renderCustomers();
-    expect(screen.queryByText('إضافة عميل')).not.toBeInTheDocument();
+    expect(screen.queryAllByText('إضافة عميل').length).toBe(0);
   });
 });
