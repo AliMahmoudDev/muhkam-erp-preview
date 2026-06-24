@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/patterns';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
@@ -99,19 +100,15 @@ export default function CostCentersPage() {
 
   return (
     <div className="erp-page">
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title">مراكز التكلفة</h1>
-          <p className="erp-page-subtitle">
-            تقسيم الإيرادات والمصروفات على مراكز التكلفة وتقارير الربحية
-          </p>
-        </div>
-        <div className="erp-page-actions">
+      <PageHeader
+        title="مراكز التكلفة"
+        subtitle="تقسيم الإيرادات والمصروفات على مراكز التكلفة وتقارير الربحية"
+        actionsSlot={
           <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4" /> إضافة مركز تكلفة
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Centers List */}

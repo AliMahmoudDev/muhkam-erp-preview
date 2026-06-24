@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/patterns';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
@@ -201,20 +202,15 @@ export default function BankReconciliationPage() {
 
   return (
     <div className="erp-page">
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title">المطابقة البنكية</h1>
-          <p className="erp-page-subtitle">مطابقة كشف الحساب البنكي مع القيود المحاسبية</p>
-        </div>
-        <div className="erp-page-actions">
-          <Button
-            onClick={() => setShowAddBank(true)}
-            className="gap-2 bg-blue-600 hover:bg-blue-700"
-          >
+      <PageHeader
+        title="المطابقة البنكية"
+        subtitle="مطابقة كشف الحساب البنكي مع القيود المحاسبية"
+        actionsSlot={
+          <Button onClick={() => setShowAddBank(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4" /> إضافة حساب بنكي
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Banks List */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

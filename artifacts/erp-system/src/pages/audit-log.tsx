@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/patterns';
 /**
  * AuditLog — سجل التدقيق والمراجعة الشامل
  * عرض كامل لجميع العمليات الحساسة بالنظام مع فلترة متقدمة.
@@ -417,26 +418,15 @@ export default function AuditLog() {
 
   return (
     <div className="erp-page" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title flex items-center gap-2">
-            <Shield className="w-5 h-5 text-amber-400" />
-            سجل التدقيق والمراجعة
-          </h1>
-          <p className="erp-page-subtitle">
-            سجل شامل لجميع العمليات الحساسة — {filtered.length} من {logs.length} سجل
-          </p>
-        </div>
-        <div className="erp-page-actions">
-          <button
-            onClick={() => void refetch()}
-            className="erp-btn erp-btn-secondary erp-btn-sm"
-          >
-            <RefreshCw className="w-4 h-4" />
-            تحديث
+      <PageHeader
+        title="سجل التدقيق والمراجعة"
+        subtitle={`سجل شامل لجميع العمليات الحساسة — ${filtered.length} من ${logs.length} سجل`}
+        actionsSlot={
+          <button onClick={() => void refetch()} className="erp-btn erp-btn-secondary erp-btn-sm">
+            <RefreshCw className="w-4 h-4" /> تحديث
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filters Bar */}
       <div className="erp-toolbar">

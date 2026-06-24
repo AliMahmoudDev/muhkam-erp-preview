@@ -946,7 +946,7 @@ export function AppLayout({ children }: LayoutProps) {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4 md:px-6 md:pb-6">
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 md:px-6 md:pt-6 md:pb-6">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>

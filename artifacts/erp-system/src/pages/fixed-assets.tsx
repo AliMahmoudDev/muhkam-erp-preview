@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/patterns';
 import { useState } from 'react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useQuery } from '@tanstack/react-query';
@@ -40,25 +41,15 @@ export default function FixedAssetsPage() {
       )}
 
       {/* Header */}
-      <div className="erp-page-header">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="erp-page-title">الأصول الثابتة</h1>
-            <p className="erp-page-subtitle">إدارة الأصول وحساب الإهلاك</p>
-          </div>
-        </div>
-        <div className="erp-page-actions">
-          <button
-            onClick={() => setShowAdd(true)}
-            className="erp-btn erp-btn-primary erp-btn-sm"
-          >
+      <PageHeader
+        title="الأصول الثابتة"
+        subtitle="إدارة الأصول وحساب الإهلاك"
+        actionsSlot={
+          <button onClick={() => setShowAdd(true)} className="erp-btn erp-btn-primary erp-btn-sm">
             <Plus className="w-4 h-4" /> إضافة أصل
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">

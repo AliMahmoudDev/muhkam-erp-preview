@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/patterns';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
@@ -269,19 +270,15 @@ export default function BudgetsPage() {
   /* ── List View ───────────────────────────────────────────────── */
   return (
     <div className="erp-page">
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title">الميزانية التقديرية</h1>
-          <p className="erp-page-subtitle">
-            مقارنة الميزانية بالأرقام الفعلية من القيود المحاسبية
-          </p>
-        </div>
-        <div className="erp-page-actions">
+      <PageHeader
+        title="الميزانية التقديرية"
+        subtitle="مقارنة الميزانية بالأرقام الفعلية من القيود المحاسبية"
+        actionsSlot={
           <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4" /> إنشاء ميزانية
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {isLoading ? (
         <div className="text-center text-ink/50 py-20">جاري التحميل...</div>

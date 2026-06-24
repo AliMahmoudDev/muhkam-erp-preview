@@ -1,4 +1,5 @@
 import { safeArray } from '@/lib/safe-data';
+import { PageHeader } from '@/components/patterns';
 import { useState, useMemo } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { authFetch } from '@/lib/auth-fetch';
@@ -270,41 +271,41 @@ export default function Expenses() {
       {detailItem && <ExpenseDetailModal item={detailItem} onClose={() => setDetailItem(null)} />}
 
       {/* ─── Header ─── */}
-      <div className="erp-page-header">
-        <h1 className="erp-page-title">
-          {activeTab === 'expenses' ? 'إدارة المصروفات' : 'الديون المعدومة / المتعثرة'}
-        </h1>
-        <div className="erp-page-actions">
-          {activeTab === 'expenses' && (
-            <button
-              onClick={() => setShowReports(true)}
-              className="erp-btn erp-btn-secondary erp-btn-sm"
-            >
-              <BarChart2 className="w-4 h-4" /> تقارير المصروفات
-            </button>
-          )}
-          {canAdd && activeTab === 'expenses' && (
-            <button
-              onClick={() => setShowAdd(true)}
-              className="erp-btn erp-btn-primary erp-btn-sm"
-            >
-              <Plus className="w-4 h-4" /> إضافة مصروف
-            </button>
-          )}
-          {canAdd && activeTab === 'debts' && (
-            <button
-              onClick={() => {
-                const fn = (window as unknown as { __openBadDebtForm?: () => void })
-                  .__openBadDebtForm;
-                if (fn) fn();
-              }}
-              className="erp-btn erp-btn-primary erp-btn-sm"
-            >
-              <Plus className="w-4 h-4" /> إضافة دين
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={activeTab === 'expenses' ? 'إدارة المصروفات' : 'الديون المعدومة / المتعثرة'}
+        actionsSlot={
+          <>
+            {activeTab === 'expenses' && (
+              <button
+                onClick={() => setShowReports(true)}
+                className="erp-btn erp-btn-secondary erp-btn-sm"
+              >
+                <BarChart2 className="w-4 h-4" /> تقارير المصروفات
+              </button>
+            )}
+            {canAdd && activeTab === 'expenses' && (
+              <button
+                onClick={() => setShowAdd(true)}
+                className="erp-btn erp-btn-primary erp-btn-sm"
+              >
+                <Plus className="w-4 h-4" /> إضافة مصروف
+              </button>
+            )}
+            {canAdd && activeTab === 'debts' && (
+              <button
+                onClick={() => {
+                  const fn = (window as unknown as { __openBadDebtForm?: () => void })
+                    .__openBadDebtForm;
+                  if (fn) fn();
+                }}
+                className="erp-btn erp-btn-primary erp-btn-sm"
+              >
+                <Plus className="w-4 h-4" /> إضافة دين
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* ─── Tabs ─── */}
       <div className="erp-tab-bar erp-tab-bar--underline">

@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/patterns';
 import { useState, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
@@ -7,7 +8,6 @@ import { safeArray } from '@/lib/safe-data';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import {
-  Wallet,
   Plus,
   ChevronRight,
   ChevronDown,
@@ -258,22 +258,19 @@ export default function Payroll() {
   return (
     <div className="erp-page" dir="rtl">
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="erp-page-header">
-        <h1 className="erp-page-title flex items-center gap-2">
-          <Wallet size={22} className="text-amber-400" />
-          إدارة الرواتب
-        </h1>
-        {canManage && (
-          <div className="erp-page-actions">
+      <PageHeader
+        title="إدارة الرواتب"
+        actionsSlot={
+          canManage ? (
             <button
               onClick={() => setShowCreate(true)}
               className="erp-btn erp-btn-primary erp-btn-sm"
             >
               <Plus size={14} /> فترة جديدة
             </button>
-          </div>
-        )}
-      </div>
+          ) : undefined
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* ── Left: periods list ───────────────────────────── */}

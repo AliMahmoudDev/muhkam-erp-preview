@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/patterns';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authFetch } from '@/lib/auth-fetch';
@@ -119,19 +120,15 @@ export default function AccrualsPage() {
 
   return (
     <div className="erp-page">
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title">الاستحقاقات والمدفوعات المقدمة</h1>
-          <p className="erp-page-subtitle">
-            إدارة المصروفات/الإيرادات المؤجلة والمستحقة مع القيود التلقائية
-          </p>
-        </div>
-        <div className="erp-page-actions">
+      <PageHeader
+        title="الاستحقاقات والمدفوعات المقدمة"
+        subtitle="إدارة المصروفات/الإيرادات المؤجلة والمستحقة مع القيود التلقائية"
+        actionsSlot={
           <Button onClick={() => setShowAdd(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4" /> إضافة جديد
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {isLoading ? (
         <div className="text-center text-ink/50 py-20">جاري التحميل...</div>

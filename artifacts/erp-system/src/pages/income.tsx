@@ -1,4 +1,5 @@
 import { safeArray } from '@/lib/safe-data';
+import { PageHeader } from '@/components/patterns';
 import { useState, useMemo } from 'react';
 import { authFetch } from '@/lib/auth-fetch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -244,17 +245,14 @@ export default function Income() {
       {detailItem && <IncomeDetailModal item={detailItem} onClose={() => setDetailItem(null)} />}
 
       {/* Header */}
-      <div className="erp-page-header">
-        <h1 className="erp-page-title">إدارة الإيرادات الإضافية</h1>
-        <div className="erp-page-actions">
-          <button
-            onClick={() => setShowAdd(true)}
-            className="erp-btn erp-btn-primary erp-btn-sm"
-          >
+      <PageHeader
+        title="إدارة الإيرادات الإضافية"
+        actionsSlot={
+          <button onClick={() => setShowAdd(true)} className="erp-btn erp-btn-primary erp-btn-sm">
             <Plus className="w-4 h-4" /> إضافة إيراد
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">

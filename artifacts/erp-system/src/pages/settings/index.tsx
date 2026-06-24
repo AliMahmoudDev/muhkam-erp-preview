@@ -10,7 +10,6 @@ import {
   FileText,
   HardDrive,
   Database,
-  Cpu,
   Percent,
   TrendingUp,
   AlertTriangle,
@@ -105,31 +104,6 @@ function TabSkeleton() {
   );
 }
 
-/* ─── System Info Card (sidebar bottom) ─── */
-function SystemInfoCard() {
-  return (
-    <div className="mx-3 mb-4 rounded-xl border border-line bg-surface overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-line">
-        <Cpu className="w-3 h-3 text-ink/20" />
-        <p className="text-ink/20 text-[10px] font-bold uppercase tracking-wider">معلومات النظام</p>
-      </div>
-      <div className="px-3 py-2.5 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-ink/25 text-[10px]">الإصدار</span>
-          <span className="text-ink/50 text-[10px] font-mono font-bold">v2.1.0</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-ink/25 text-[10px]">المنصة</span>
-          <span className="text-ink/50 text-[10px] font-bold">MUHKAM ERP</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-ink/25 text-[10px]">الدعم</span>
-          <span className="text-emerald-400/70 text-[10px] font-bold">نشط</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function SettingsPage() {
   const searchStr = useSearch();
@@ -206,8 +180,6 @@ export default function SettingsPage() {
           ))}
         </nav>
 
-        {/* ─── System info card ─── */}
-        <SystemInfoCard />
       </aside>
 
       {/* ─────────── Mobile Tab Bar ─────────── */}

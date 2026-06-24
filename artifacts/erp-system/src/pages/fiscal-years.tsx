@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/patterns';
 /**
  * FiscalYears — إدارة السنوات المالية
  * إنشاء وتعيين وإقفال السنوات المالية للشركة.
@@ -151,28 +152,17 @@ export default function FiscalYears() {
   return (
     <div className="erp-page" dir="rtl" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
       {/* Header */}
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-amber-400" />
-            إدارة السنوات المالية
-          </h1>
-          <p className="erp-page-subtitle">
-            تحكم في السنوات المالية للشركة، فتح وإقفال الفترات المحاسبية
-          </p>
-        </div>
-        {isAdmin && (
-          <div className="erp-page-actions">
-            <button
-              onClick={() => setShowAdd(true)}
-              className="erp-btn erp-btn-primary erp-btn-sm"
-            >
-              <Plus className="w-4 h-4" />
-              سنة مالية جديدة
+      <PageHeader
+        title="إدارة السنوات المالية"
+        subtitle="تحكم في السنوات المالية للشركة، فتح وإقفال الفترات المحاسبية"
+        actionsSlot={
+          isAdmin ? (
+            <button onClick={() => setShowAdd(true)} className="erp-btn erp-btn-primary erp-btn-sm">
+              <Plus className="w-4 h-4" /> سنة مالية جديدة
             </button>
-          </div>
-        )}
-      </div>
+          ) : undefined
+        }
+      />
 
       {/* Add Form */}
       {showAdd && (

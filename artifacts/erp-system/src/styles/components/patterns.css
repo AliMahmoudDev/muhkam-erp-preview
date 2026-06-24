@@ -168,6 +168,41 @@
   flex-wrap: wrap;
 }
 
+/* ── Legacy class aliases ────────────────────────────────────────
+   Bridge for pages still using the old erp-page-* CSS class pattern.
+   They share the same visual tokens as the PageHeader component so
+   both patterns look identical without requiring a page-by-page rewrite.
+─────────────────────────────────────────────────────────────────── */
+
+/* Title — same weight / size as erp-page-header-title */
+.erp-page-title {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.25;
+  margin: 0;
+}
+html.light .erp-page-title { color: #0f172a; }
+
+/* Subtitle */
+.erp-page-subtitle {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-2);
+  margin: 0;
+  margin-block-start: var(--space-1, 0.25rem);
+  line-height: 1.5;
+}
+html.light .erp-page-subtitle { color: #64748b; }
+
+/* Actions — same flex row as erp-page-header-actions */
+.erp-page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    §3  PageToolbar
 ═══════════════════════════════════════════════════════════════════ */
