@@ -22,7 +22,7 @@ vi.mock('@/lib/auth-fetch', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({ api: (p: string) => p, BASE: '' }));
-vi.mock('@/lib/safe-data', () => ({ safeArray: (v: any) => v ?? [] }));
+vi.mock('@/lib/safe-data', () => ({ safeArray: (v: unknown) => (v as unknown[]) ?? [] }));
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('@/contexts/app-settings', () => ({
   useAppSettings: vi.fn(() => ({

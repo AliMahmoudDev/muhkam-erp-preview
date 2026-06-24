@@ -11,7 +11,7 @@ vi.mock('wouter', () => ({
 }));
 
 vi.mock('@/components/patterns', () => ({
-  PageHeader: ({ title, subtitle }: any) => (
+  PageHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => (
     <div>
       <h1>{title}</h1>
       <p>{subtitle}</p>

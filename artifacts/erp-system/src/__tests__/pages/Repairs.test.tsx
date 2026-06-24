@@ -9,7 +9,7 @@ vi.mock('wouter', () => ({
   useLocation: () => ['/repairs', mockNavigate],
   useSearch: () => '',
   useRoute: () => [false, {}],
-  Link: ({ children }: any) => children,
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('@/contexts/auth', () => ({
@@ -30,7 +30,7 @@ vi.mock('@/lib/auth-fetch', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({ api: (p: string) => p, BASE: '' }));
-vi.mock('@/lib/safe-data', () => ({ safeArray: (v: any) => v ?? [] }));
+vi.mock('@/lib/safe-data', () => ({ safeArray: (v: unknown) => (v as unknown[]) ?? [] }));
 vi.mock('@/lib/format', () => ({ formatCurrency: (v: number) => `${v} ج.م` }));
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('@/contexts/app-settings', () => ({

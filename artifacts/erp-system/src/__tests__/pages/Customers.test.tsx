@@ -39,7 +39,7 @@ vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('wouter', () => ({
   useLocation: () => ['/customers', vi.fn()],
   useSearch: () => '',
-  Link: ({ children }: any) => children,
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('@/pages/bad-debts', () => ({ default: () => <div>Bad Debts</div> }));

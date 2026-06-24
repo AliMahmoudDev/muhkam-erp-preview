@@ -22,7 +22,7 @@ vi.mock('@workspace/api-client-react', () => ({
 
 vi.mock('@/lib/api', () => ({ api: (p: string) => p, BASE: '' }));
 vi.mock('@/lib/format', () => ({ formatCurrency: (v: number) => `${v} ج.م` }));
-vi.mock('@/lib/safe-data', () => ({ safeArray: (v: any) => v ?? [] }));
+vi.mock('@/lib/safe-data', () => ({ safeArray: (v: unknown) => (v as unknown[]) ?? [] }));
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('@/components/skeletons', () => ({ TableSkeleton: () => <div>loading</div> }));
 vi.mock('@/components/confirm-modal', () => ({ ConfirmModal: () => null }));
