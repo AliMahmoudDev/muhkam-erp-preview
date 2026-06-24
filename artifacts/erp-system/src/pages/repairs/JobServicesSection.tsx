@@ -7,7 +7,8 @@
  * لأن تعريفه داخل الدالة الأم يُسبب إعادة إنشاء كامل في كل render
  * مما يفقد التركيز بعد كل ضغطة مفتاح.
  *
- * TODO (Phase 2):
+ * NOTE: Commission is calculated at delivery via lockJobCommissions service.
+ * Service-level discount distribution is deferred.:
  *   - commission_computed يُحسب ويُكتب عند التسليم في delivery route
  *   - معالجة خصومات البطاقة عند تحديد قاعدة الكوميشن
  */

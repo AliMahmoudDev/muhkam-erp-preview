@@ -1,10 +1,10 @@
 /**
  * ServiceTypesTab.tsx — إعدادات أنواع خدمات الصيانة والكوميشن
  *
- * TODO (Phase 2 — Discount Handling):
+ * NOTE: Commission is computed at job-level discount. Service-level discount distribution is deferred.:
  *   - commission_value يُحسب حالياً على amount الخدمة الكامل
  *   - في المرحلة الثانية، قد يحتاج الحساب لأخذ خصومات البطاقة بعين الاعتبار
- *   - انظر TODO في lib/db/src/schema/repairs.ts للتفاصيل
+ *   - انظر NOTE في lib/db/src/schema/repairs.ts للتفاصيل
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

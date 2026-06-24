@@ -55,7 +55,7 @@ async function getFeatures(companyId: number): Promise<CompanyFeatures | null> {
 
     cache.set(companyId, { expiresAt: now + CACHE_TTL_MS, features });
     return features;
-  } catch {
+  } catch (_err) {
     return null; // DB error → fail open
   }
 }

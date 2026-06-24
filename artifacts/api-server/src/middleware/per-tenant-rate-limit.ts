@@ -31,7 +31,7 @@ let redis: import("ioredis").Redis | null = null;
       });
       redis.on("error", () => { redis = null; });
       await redis.ping();
-    } catch {
+    } catch (_err) {
       redis = null;
     }
   }
@@ -69,7 +69,7 @@ function extractCompanyId(req: Request): number | null {
     if (!secret) return null;
     const decoded = jwt.verify(token, secret) as { company_id?: number };
     return decoded.company_id ?? null;
-  } catch {
+  } catch (_err) {
     return null;
   }
 }

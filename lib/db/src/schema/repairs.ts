@@ -270,7 +270,7 @@ export const repairDevicePhotosTable = pgTable("repair_device_photos", {
 /* ══════════════════════════════════════════════════════════════
    PHASE 1 — خدمات الصيانة والكوميشن
    ── جداول البنية التحتية (لا تحسب كوميشن بعد) ──────────────
-   TODO (Phase 2): خصومات الخدمة
+   NOTE (deferred): خصومات على مستوى الخدمة — الخصم حالياً على مستوى البطاقة (final_discount)
      - مبالغ الخدمة لا تعكس بالضرورة قيمة الفاتورة النهائية (final_cost)
      - قد تكون هناك خصومات على مستوى الخدمة أو على مستوى البطاقة ككل
      - يجب في المرحلة الثانية دراسة: amount_before_discount أو
@@ -303,7 +303,7 @@ export const repairJobServicesTable = pgTable("repair_job_services", {
   /* مرجع نوع الخدمة — SET NULL عند الحذف (الـ snapshots تحفظ البيانات) */
   service_type_id:             integer("service_type_id").references(() => repairServiceTypesTable.id, { onDelete: "set null" }),
   service_type_name_snapshot:  text("service_type_name_snapshot").notNull(),
-  /* TODO (Phase 2): يُستخدم للتقارير التاريخية بعد إعادة تسمية الأنواع */
+  /* NOTE: يُستخدم للتقارير التاريخية بعد إعادة تسمية الأنواع */
   service_type_code_snapshot:  text("service_type_code_snapshot"),
 
   technician_id:               integer("technician_id"),
@@ -314,7 +314,7 @@ export const repairJobServicesTable = pgTable("repair_job_services", {
 
   status:                      text("status").notNull().default("pending"),
 
-  /* حقول الكوميشن — تُكتب فقط عند التسليم (Phase 2) */
+  /* حقول الكوميشن — تُكتب عند التسليم عبر lockJobCommissions() */
   commission_source_snapshot:  text("commission_source_snapshot"),
   commission_rate_snapshot:    numeric("commission_rate_snapshot", { precision: 8, scale: 4 }),
   commission_computed:         numeric("commission_computed", { precision: 12, scale: 2 }),

@@ -9,7 +9,8 @@
  *  POST   /api/repair-jobs/:id/services/:serviceId/parts
  *  DELETE /api/repair-jobs/:id/services/:serviceId/parts/:partId
  *
- * TODO (Phase 2 — Discount & Commission):
+ * NOTE: Commission calculation (lockJobCommissions) is implemented in Phase 2.
+ * Discount distribution across services is deferred — final_discount applies at job level only.:
  *   - service.amount لا يرتبط بالضرورة بـ final_cost
  *   - commission_computed يُكتب فقط عند التسليم (delivery route)
  *   - يجب النظر في خصومات البطاقة عند تحديد قاعدة حساب الكوميشن
