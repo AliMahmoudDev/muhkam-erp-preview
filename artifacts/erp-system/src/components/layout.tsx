@@ -12,7 +12,7 @@ import { NAV_ITEMS, canAccess, ROUTE_PERMISSION, type UserRole } from '@/lib/rba
 import { hasPermission } from '@/lib/permissions';
 import { translateRole, Role } from '@/lib/roles';
 import { useWarehouses } from '@/hooks/useWarehouses';
-import { LogOut, Warehouse, Search, X, ChevronDown } from 'lucide-react';
+import { LogOut, Warehouse, Search, X, ChevronDown, LayoutGrid, ShoppingCart, Users, PackageX, TrendingUp } from 'lucide-react';
 import { PageTransition } from '@/components/page-transition';
 import { AlertBell } from '@/components/alert-bell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -979,6 +979,60 @@ export function AppLayout({ children }: LayoutProps) {
           onCancel={() => setShowLogoutModal(false)}
         />
       )}
+
+
+      {/* ══════════════════════════════════════════
+          MOBILE BOTTOM NAVIGATION — lg:hidden
+          أهم 5 صفحات في شريط سفلي ثابت
+      ══════════════════════════════════════════ */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex items-center justify-around"
+        style={{
+          height: '60px',
+          background: 'var(--erp-bg-sidebar)',
+          borderTop: '1px solid var(--erp-border-sidebar)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+        aria-label="التنقل الرئيسي"
+      >
+        {[
+          { href: '/',           icon: LayoutGrid,   label: 'الرئيسية' },
+          { href: '/sales',      icon: ShoppingCart,  label: 'المبيعات' },
+          { href: '/customers',  icon: Users,         label: 'العملاء'  },
+          { href: '/inventory',  icon: PackageX,      label: 'المخزون'  },
+          { href: '/reports',    icon: TrendingUp,    label: 'التقارير' },
+        ].map(({ href, icon: Icon, label }) => {
+          const isActive = location === href || (href !== '/' && location.startsWith(href));
+          return (
+            <button
+              key={href}
+              onClick={() => go(href)}
+              className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <Icon
+                style={{
+                  width: 22,
+                  height: 22,
+                  color: isActive ? 'var(--erp-brand)' : 'var(--erp-text-4)',
+                  transition: 'color 0.15s',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? 'var(--erp-brand)' : 'var(--erp-text-4)',
+                  transition: 'color 0.15s',
+                }}
+              >
+                {label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* ── Idle timeout modal ── */}
       {showIdleModal && (
