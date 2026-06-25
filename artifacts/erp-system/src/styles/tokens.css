@@ -1143,6 +1143,29 @@ html.dark {
 
   /* Old card-shadow alias used in index.css */
   --card-shadow: var(--shadow-card);
+
+  /* ── Previously-missing input/searchable tokens ─────────────── */
+  --erp-input-bg:             var(--form-input-bg);
+  --erp-input-border:         var(--color-border-interactive);
+  --erp-input-focus-border:   var(--color-accent);
+  --erp-input-placeholder:    var(--color-text-placeholder);
+
+  /* ── Previously-missing dropdown tokens ─────────────────────── */
+  --erp-dropdown-bg:          var(--color-surface-2);
+  --erp-dropdown-border:      var(--color-border-interactive);
+  --erp-dropdown-item:        var(--color-text-primary);
+  --erp-dropdown-hover:       var(--color-hover-overlay);
+  --erp-dropdown-active:      var(--color-accent-subtle);
+  --erp-dropdown-active-text: var(--color-accent);
+
+  /* ── Previously-missing misc tokens ─────────────────────────── */
+  --erp-shadow-md: var(--shadow-dropdown);
+  --erp-primary:   var(--color-accent);
+
+  /* ── POS layout tokens ──────────────────────────────────────── */
+  --line:    var(--color-border-structural);
+  --raised:  var(--color-surface-1);
+  --surface: var(--color-surface-0);
 }
 
 html.light {
@@ -1150,6 +1173,20 @@ html.light {
   --bg-deep:     var(--primitive-slate-light-3);
   --sidebar-bg:  rgba(255, 255, 255, 0.95);
   --topbar-bg:   rgba(255, 255, 255, 0.92);
+
+  /* Input/searchable tokens — light mode */
+  --erp-input-bg:           var(--primitive-slate-light-0); /* #FFFFFF */
+  --erp-input-border:       var(--color-border-interactive);
+  --erp-input-focus-border: var(--color-accent);
+  --erp-input-placeholder:  var(--color-text-placeholder);
+
+  /* Dropdown tokens — light mode */
+  --erp-dropdown-bg:          var(--primitive-slate-light-0); /* #FFFFFF */
+  --erp-dropdown-border:      var(--color-border-interactive);
+  --erp-dropdown-item:        var(--color-text-primary);
+  --erp-dropdown-hover:       var(--color-hover-overlay);
+  --erp-dropdown-active:      var(--color-accent-subtle);
+  --erp-dropdown-active-text: var(--color-accent);
 }
 
 
