@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { api } from '@/lib/api';
 import { Combobox } from '@/components/ui/combobox';
+import { PageHeader } from '@/components/patterns';
 
 interface Account {
   id: number;
@@ -222,35 +223,39 @@ export default function Accounts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-3 items-center flex-wrap">
-        <div className="flex bg-surface rounded-2xl p-1 border border-line flex-wrap gap-1">
-          {['', 'asset', 'liability', 'equity', 'revenue', 'expense'].map((t) => (
+      <PageHeader
+        title="شجرة الحسابات"
+        actionsSlot={
+          <>
+            {accounts.length === 0 && (
+              <button
+                onClick={() => seedMutation.mutate()}
+                disabled={seedMutation.isPending}
+                className="btn-secondary px-4 py-2 text-sm"
+              >
+                {seedMutation.isPending ? 'جاري التحميل...' : 'تحميل حسابات افتراضية'}
+              </button>
+            )}
             <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === t ? 'bg-amber-500 text-black' : 'text-ink/50 hover:text-ink'}`}
+              onClick={() => setShowForm(true)}
+              className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
             >
-              {t ? TYPE_LABELS[t] : 'الكل'}
+              <Plus className="w-4 h-4" /> حساب جديد
             </button>
-          ))}
-        </div>
-        <div className="flex gap-2 mr-auto">
-          {accounts.length === 0 && (
-            <button
-              onClick={() => seedMutation.mutate()}
-              disabled={seedMutation.isPending}
-              className="btn-secondary px-4 py-2 text-sm"
-            >
-              {seedMutation.isPending ? 'جاري التحميل...' : 'تحميل حسابات افتراضية'}
-            </button>
-          )}
+          </>
+        }
+      />
+
+      <div className="flex bg-surface rounded-2xl p-1 border border-line flex-wrap gap-1 w-fit">
+        {['', 'asset', 'liability', 'equity', 'revenue', 'expense'].map((t) => (
           <button
-            onClick={() => setShowForm(true)}
-            className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+            key={t}
+            onClick={() => setFilter(t)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === t ? 'bg-amber-500 text-black' : 'text-ink/50 hover:text-ink'}`}
           >
-            <Plus className="w-4 h-4" /> حساب جديد
+            {t ? TYPE_LABELS[t] : 'الكل'}
           </button>
-        </div>
+        ))}
       </div>
 
       {/* بطاقات الملخص */}

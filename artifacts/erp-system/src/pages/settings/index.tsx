@@ -5,7 +5,6 @@ import {
   BookOpen,
   Lock,
   Store,
-  Settings,
   Building2,
   FileText,
   HardDrive,
@@ -14,6 +13,7 @@ import {
   TrendingUp,
   Shield,
 } from 'lucide-react';
+import { SettingsPattern } from '@/components/patterns';
 
 /* ─── Lazy-load each tab ─── */
 const UsersTab = lazy(() => import('./users-tab'));
@@ -45,8 +45,8 @@ type Tab =
 /* ─── Section config ─────────────────────────────────────────────────────
    Sprint 11 IA refactor:
    Old groups: الإدارة / المالية / التخصيص / النظام
-   New groups: إعدادات أساسية / الفواتير والتشغيل / المحاسبة والفترات / النظام والأمان
-   All 10 tabs preserved; NظامAndأمان gets danger flag for risky ops.
+   New groups: إعدادات أساسية / الفواتير والتشغيل / المحاسبة والفترات / النظام
+   All 11 tabs preserved; النظام والأمان gets danger flag for risky ops.
 ───────────────────────────────────────────────────────────────────────── */
 const TAB_SECTIONS: {
   section: string;
@@ -116,100 +116,84 @@ export default function SettingsPage() {
   };
 
   const allTabs = TAB_SECTIONS.flatMap((s) => s.tabs);
-  const activeLabel = allTabs.find((t) => t.id === activeTab)?.label ?? '';
+
+  /* ─────────── Desktop category nav ─────────── */
+  const navSlot = TAB_SECTIONS.map((section) => (
+    <div key={section.section} className="space-y-0.5">
+      {section.tabs.map((tab) => {
+        const active = activeTab === tab.id;
+        const Icon = tab.icon;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => changeTab(tab.id)}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-right ${
+              active
+                ? 'bg-amber-500/15 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                : 'text-ink/40 hover:text-ink hover:bg-surface'
+            }`}
+          >
+            <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-amber-400' : 'text-ink/30'}`} />
+            <span className="truncate">{tab.label}</span>
+            {active && (
+              <div className="mr-auto w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  ));
+
+  /* ─────────── Mobile horizontal tab strip ─────────── */
+  const mobileTabSlot = (
+    <div className="flex gap-1 overflow-x-auto pb-1">
+      {allTabs.map((tab) => {
+        const active = activeTab === tab.id;
+        const Icon = tab.icon;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => changeTab(tab.id)}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
+              active ? 'text-amber-400' : 'text-ink/30 hover:text-ink/60'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            <span className="text-[9px] font-bold">{tab.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  /* ─────────── Active tab content ─────────── */
+  const contentSlot = (
+    <div className="max-w-4xl mx-auto w-full">
+      <Suspense fallback={<TabSkeleton />}>
+        {activeTab === 'users' && <UsersTab />}
+        {activeTab === 'company' && <CompanyTab />}
+        {activeTab === 'opening-balance' && <OpeningBalanceTab />}
+        {activeTab === 'financial-lock' && <FinancialLockTab />}
+        {activeTab === 'currency' && <CurrencyTab />}
+        {activeTab === 'vat' && <VatTab />}
+        {activeTab === 'invoice' && <InvoiceTab />}
+        {activeTab === 'pricing' && <PricingTab />}
+        {activeTab === 'backup' && <BackupTab />}
+        {activeTab === 'system' && <DataTab />}
+        {activeTab === 'security' && (
+          <Suspense fallback={<TabSkeleton />}>
+            <SecurityTab />
+          </Suspense>
+        )}
+      </Suspense>
+    </div>
+  );
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden" dir="rtl">
-      {/* ─────────── Sidebar ─────────── */}
-      <aside className="settings-sidebar hidden lg:flex flex-col w-56 shrink-0 border-l border-line overflow-y-auto">
-        <div className="px-4 pt-6 pb-2 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
-            <Settings className="w-3.5 h-3.5 text-amber-400" />
-          </div>
-          <p className="text-ink/60 text-xs font-black uppercase tracking-widest">الإعدادات</p>
-        </div>
-
-        <nav className="flex-1 px-3 pb-3 space-y-0.5 mt-3 overflow-y-auto">
-          {TAB_SECTIONS.map((section) => (
-            <div key={section.section}>
-              <div className="space-y-0.5">
-                {section.tabs.map((tab) => {
-                  const active = activeTab === tab.id;
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => changeTab(tab.id)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-right ${
-                        active
-                          ? 'bg-amber-500/15 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
-                          : 'text-ink/40 hover:text-ink hover:bg-surface'
-                      }`}
-                    >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${active ? 'text-amber-400' : 'text-ink/30'}`}
-                      />
-                      <span className="truncate">{tab.label}</span>
-                      {active && (
-                        <div className="mr-auto w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-      </aside>
-
-      {/* ─────────── Mobile Tab Bar ─────────── */}
-      <div
-        className="settings-sidebar lg:hidden fixed bottom-14 left-0 right-0 z-40 border-t border-line px-2 py-1 flex gap-1 overflow-x-auto"
-        style={{ background: 'var(--bg-topbar)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
-      >
-        {allTabs.map((tab) => {
-          const active = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => changeTab(tab.id)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
-                active ? 'text-amber-400' : 'text-ink/30 hover:text-ink/60'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="text-[9px] font-bold">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ─────────── Main Content ─────────── */}
-      <main className="flex-1 overflow-y-auto pb-32 lg:pb-8">
-        {/* Mobile header */}
-        <div className="settings-sidebar-main lg:hidden sticky top-0 z-30 px-4 py-3 border-b border-line flex items-center gap-2">
-          <Settings className="w-4 h-4 text-amber-400" />
-          <p className="text-ink font-bold text-sm">{activeLabel}</p>
-        </div>
-
-        <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-          <Suspense fallback={<TabSkeleton />}>
-            {activeTab === 'users' && <UsersTab />}
-            {activeTab === 'company' && <CompanyTab />}
-            {activeTab === 'opening-balance' && <OpeningBalanceTab />}
-            {activeTab === 'financial-lock' && <FinancialLockTab />}
-            {activeTab === 'currency' && <CurrencyTab />}
-            {activeTab === 'vat' && <VatTab />}
-            {activeTab === 'invoice' && <InvoiceTab />}
-            {activeTab === 'pricing' && <PricingTab />}
-            {activeTab === 'backup' && <BackupTab />}
-            {activeTab === 'system' && <DataTab />}
-            {activeTab === 'security' && <Suspense fallback={<TabSkeleton />}><SecurityTab /></Suspense>}
-          </Suspense>
-        </div>
-      </main>
-    </div>
+    <SettingsPattern
+      navSlot={navSlot}
+      mobileTabSlot={mobileTabSlot}
+      contentSlot={contentSlot}
+    />
   );
 }

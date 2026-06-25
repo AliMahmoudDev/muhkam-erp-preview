@@ -21,22 +21,23 @@ export default function Products() {
       <PageHeader
         title="المنتجات"
         subtitle="إدارة المنتجات والتصنيفات"
+        tabsSlot={
+          <div className="erp-tab-bar erp-tab-bar--underline">
+            <button
+              onClick={() => changeTab('products')}
+              className={`erp-tab${activeTab === 'products' ? ' erp-tab--active' : ''}`}
+            >
+              <Package className="w-4 h-4" /> المنتجات
+            </button>
+            <button
+              onClick={() => changeTab('categories')}
+              className={`erp-tab${activeTab === 'categories' ? ' erp-tab--active' : ''}`}
+            >
+              <Tag className="w-4 h-4" /> التصنيفات
+            </button>
+          </div>
+        }
       />
-
-      <div className="erp-tab-bar erp-tab-bar--underline">
-        <button
-          onClick={() => changeTab('products')}
-          className={`erp-tab${activeTab === 'products' ? ' erp-tab--active' : ''}`}
-        >
-          <Package className="w-4 h-4" /> المنتجات
-        </button>
-        <button
-          onClick={() => changeTab('categories')}
-          className={`erp-tab${activeTab === 'categories' ? ' erp-tab--active' : ''}`}
-        >
-          <Tag className="w-4 h-4" /> التصنيفات
-        </button>
-      </div>
 
       {activeTab === 'products' ? <ProductsTab /> : <CategoriesTab />}
     </div>

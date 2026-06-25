@@ -8,6 +8,7 @@ import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { api } from '@/lib/api';
 import { Combobox } from '@/components/ui/combobox';
+import { PageHeader } from '@/components/patterns';
 
 interface Account {
   id: number;
@@ -521,28 +522,32 @@ export default function JournalEntries() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-3 items-center flex-wrap">
-        <div className="flex bg-surface rounded-2xl p-1 border border-line">
-          {[
-            ['all', 'الكل'],
-            ['draft', 'مسودة'],
-            ['posted', 'مرحَّل'],
-          ].map(([v, l]) => (
-            <button
-              key={v}
-              onClick={() => setFilter(v as 'all' | 'draft' | 'posted')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === v ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="btn-primary px-5 py-2.5 flex items-center gap-2 text-sm mr-auto"
-        >
-          <Plus className="w-4 h-4" /> قيد جديد
-        </button>
+      <PageHeader
+        title="القيود اليومية"
+        actionsSlot={
+          <button
+            onClick={() => setShowNew(true)}
+            className="btn-primary px-5 py-2.5 flex items-center gap-2 text-sm"
+          >
+            <Plus className="w-4 h-4" /> قيد جديد
+          </button>
+        }
+      />
+
+      <div className="flex bg-surface rounded-2xl p-1 border border-line w-fit">
+        {[
+          ['all', 'الكل'],
+          ['draft', 'مسودة'],
+          ['posted', 'مرحَّل'],
+        ].map(([v, l]) => (
+          <button
+            key={v}
+            onClick={() => setFilter(v as 'all' | 'draft' | 'posted')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === v ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
+          >
+            {l}
+          </button>
+        ))}
       </div>
 
       {showNew && <NewEntryModal onClose={() => setShowNew(false)} />}
