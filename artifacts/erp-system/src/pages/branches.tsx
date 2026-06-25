@@ -787,7 +787,6 @@ function EmployeesTab({ employees }: { employees: EmployeeRow[] }) {
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-sm"
                   style={{
-                    // eslint-disable-next-line erp/no-hardcoded-colors -- 8-char hex+alpha (amber/10%): rgba() equivalent has no token form
                     background: '#F59E0B1A',
                     color: 'var(--status-warning)',
                   }}
