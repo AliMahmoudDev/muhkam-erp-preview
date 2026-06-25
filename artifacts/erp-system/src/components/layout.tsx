@@ -81,6 +81,40 @@ const ROLE_DOT: Record<string, string> = {
   salesperson: 'var(--status-info)',
 };
 
+/* ── Page subtitles — shown in the topbar below the page title ── */
+const PAGE_SUBTITLES: Record<string, string> = {
+  '/':                    'نظرة عامة على أداء الشركة',
+  '/pos':                 'نقطة بيع سريعة',
+  '/sales':               'تسجيل فواتير البيع ومتابعة المرتجعات',
+  '/returns':             'إدارة مرتجعات المبيعات',
+  '/products':            'إدارة المنتجات والأسعار',
+  '/price-lists':         'قوائم الأسعار المخصصة',
+  '/inventory':           'متابعة المخزون والتحويلات',
+  '/purchases':           'تسجيل فواتير الشراء',
+  '/customers':           'إدارة العملاء والموردين',
+  '/devices':             'سجل الأجهزة المستعملة',
+  '/repairs':             'إدارة طلبات الصيانة',
+  '/treasury':            'السندات والخزينة والمدفوعات',
+  '/expenses':            'تتبع المصروفات والديون المعدومة',
+  '/income':              'تسجيل الإيرادات الإضافية',
+  '/reports':             'تقارير مالية وتشغيلية شاملة',
+  '/employees':           'إدارة الموظفين والصلاحيات',
+  '/attendance':          'تتبع الحضور والانصراف',
+  '/payroll':             'إدارة الرواتب وكشوف المرتبات',
+  '/accounts':            'شجرة الحسابات المحاسبية',
+  '/journal-entries':     'القيود اليومية المحاسبية',
+  '/fiscal-years':        'فتح وإقفال السنوات المالية',
+  '/audit-log':           'سجل شامل للعمليات الحساسة',
+  '/fixed-assets':        'إدارة الأصول وحساب الإهلاك',
+  '/accruals':            'المصروفات والإيرادات المؤجلة',
+  '/bank-reconciliation': 'مطابقة الحسابات البنكية',
+  '/budgets':             'الميزانية التقديرية ومقارنة الأداء',
+  '/cost-centers':        'تقارير الربحية ومراكز التكلفة',
+  '/settings':            'إعدادات النظام والشركة',
+  '/branches':            'إدارة الفروع والمستودعات',
+  '/my-portal':           'بوابتك الشخصية وبيانات العمل',
+};
+
 function getInitials(name: string) {
   const p = name.trim().split(' ');
   return p.length >= 2 ? p[0][0] + p[1][0] : name.slice(0, 2);
@@ -842,7 +876,7 @@ export function AppLayout({ children }: LayoutProps) {
             zIndex: 30,
           }}
         >
-          {/* Left: current page title (auto-derived from route) */}
+          {/* Left: current page title + subtitle (auto-derived from route) */}
           {(() => {
             const match = NAV_ITEMS.find((i) =>
               i.href === '/'
@@ -850,26 +884,48 @@ export function AppLayout({ children }: LayoutProps) {
                 : location === i.href || location.startsWith(i.href + '/'),
             );
             const PageIcon = match?.icon;
+            const subtitle = match ? PAGE_SUBTITLES[match.href] : undefined;
             return (
-              <div className="flex-1 min-w-0 hidden md:flex items-center gap-2 overflow-hidden">
+              <div className="flex-1 min-w-0 hidden md:flex items-center gap-2.5 overflow-hidden">
                 {match && PageIcon && (
                   <>
                     <PageIcon
                       aria-hidden
-                      style={{ width: 15, height: 15, color: 'var(--erp-brand)', flexShrink: 0 }}
+                      style={{ width: 16, height: 16, color: 'var(--erp-brand)', flexShrink: 0 }}
                     />
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: textPrimary,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {match.name}
-                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: textPrimary,
+                          lineHeight: 1.2,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          margin: 0,
+                        }}
+                      >
+                        {match.name}
+                      </p>
+                      {subtitle && (
+                        <p
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 400,
+                            color: textMuted,
+                            lineHeight: 1.3,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            margin: 0,
+                            marginTop: 1,
+                          }}
+                        >
+                          {subtitle}
+                        </p>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
