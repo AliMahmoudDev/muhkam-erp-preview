@@ -21,7 +21,6 @@ import { safeArray } from '@/lib/safe-data';
 import { formatCurrency } from '@/lib/format';
 import { exportCustomersExcel } from '@/lib/export-excel';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
-import BadDebts from '@/pages/bad-debts';
 import { cn } from '@/lib/utils';
 
 import { ListPagePattern, PageHeader, PageToolbar } from '@/components/patterns';
@@ -80,7 +79,6 @@ export default function Customers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [pageView, setPageView] = useState<'customers' | 'bad-debts'>('customers');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<
     'all' | 'customers' | 'suppliers' | 'debtors' | 'creditors' | 'maintenance'
@@ -535,36 +533,7 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      {/* ── Page-view tabs (customers / bad-debts) ─────────── */}
-      <div className="flex items-end gap-1 border-b border-[var(--line)]">
-        {(
-          [
-            { id: 'customers', label: 'العملاء والموردون' },
-            { id: 'bad-debts', label: 'الديون المعدومة' },
-          ] as const
-        ).map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setPageView(t.id)}
-            className={cn(
-              'px-5 py-2.5 text-sm font-bold border-b-2 transition-all',
-              pageView === t.id
-                ? 'border-[var(--brand)] text-[var(--brand)]'
-                : 'border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]'
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Bad-debts sub-page ─────────────────────────────── */}
-      {pageView === 'bad-debts' && <BadDebts embedded />}
-
-      {/* ── Customers main view ────────────────────────────── */}
-      {pageView === 'customers' && (
-        <>
+      <>
           <ListPagePattern
             state={pageState}
             /* 1. Header */
@@ -576,6 +545,11 @@ export default function Customers() {
                 }
                 actionsSlot={
                   <div className="flex items-center gap-2 flex-wrap">
+                    {canManageCustomers && (
+                      <Button size="sm" onClick={() => setShowAdd(true)}>
+                        <Plus /> إضافة عميل
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -593,11 +567,6 @@ export default function Customers() {
                     >
                       <FileDown /> Excel
                     </Button>
-                    {canManageCustomers && (
-                      <Button size="sm" onClick={() => setShowAdd(true)}>
-                        <Plus /> إضافة عميل
-                      </Button>
-                    )}
                   </div>
                 }
               />
@@ -919,7 +888,6 @@ export default function Customers() {
             }
           />
         </>
-      )}
     </div>
   );
 }
