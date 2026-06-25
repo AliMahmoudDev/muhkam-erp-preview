@@ -70,7 +70,7 @@ export default function TopReportsTab() {
     <div className="glass-panel rounded-2xl overflow-hidden border border-line">
       <div className="px-4 py-3 border-b border-line flex items-center gap-2">
         {icon}
-        <h3 className="text-ink font-bold text-sm">{title}</h3>
+        <h3 className="erp-section-title">{title}</h3>
       </div>
       <table className="w-full text-right text-sm">
         <thead className="bg-surface">

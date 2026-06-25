@@ -66,7 +66,7 @@ export function ExpenseReportsModal({
         <div className="px-6 py-4 border-b border-line">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-ink/50 text-xs mb-1">التصنيف</label>
+              <label className="erp-label">التصنيف</label>
               <Combobox
                 options={categories.map((c) => ({ value: c.name, label: c.name }))}
                 value={reportFilters.category}
@@ -77,19 +77,19 @@ export function ExpenseReportsModal({
               />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">من تاريخ</label>
+              <label className="erp-label">من تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateFrom}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateFrom: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">إلى تاريخ</label>
+              <label className="erp-label">إلى تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateTo}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateTo: e.target.value }))}
               />

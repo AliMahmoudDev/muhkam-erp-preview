@@ -20,7 +20,7 @@ export default function AttendanceSummary({
       {stats.map((s) => (
         <div key={s.label} className="erp-card p-4 text-center">
           <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
-          <div className="text-xs text-ink/40 mt-1">{s.label}</div>
+          <div className="erp-kpi-label mt-1">{s.label}</div>
         </div>
       ))}
     </div>

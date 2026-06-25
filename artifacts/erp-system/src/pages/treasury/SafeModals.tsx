@@ -79,16 +79,16 @@ export default function SafeModals({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-ink/50 text-xs font-bold mb-1.5">اسم الخزينة</label>
+                <label className="erp-label">اسم الخزينة</label>
                 <input
                   value={addForm.name}
                   onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="مثال: الخزينة الرئيسية"
-                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm placeholder-white/20 outline-none focus:border-sky-500/50 transition-colors"
+                  className="erp-input w-full text-sm"
                 />
               </div>
               <div>
-                <label className="block text-ink/50 text-xs font-bold mb-1.5">
+                <label className="erp-label">
                   الرصيد الابتدائي
                 </label>
                 <input
@@ -96,12 +96,12 @@ export default function SafeModals({
                   value={addForm.balance}
                   onChange={(e) => setAddForm((f) => ({ ...f, balance: e.target.value }))}
                   placeholder="0"
-                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm placeholder-white/20 outline-none focus:border-sky-500/50 transition-colors"
+                  className="erp-input w-full text-sm"
                 />
               </div>
               {branches.length > 0 && (
                 <div>
-                  <label className="block text-ink/50 text-xs font-bold mb-1.5">
+                  <label className="erp-label">
                     الفرع (اختياري)
                   </label>
                   <Combobox
@@ -253,17 +253,17 @@ export default function SafeModals({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-ink/50 text-xs font-bold mb-1.5">اسم الخزينة</label>
+                <label className="erp-label">اسم الخزينة</label>
                 <input
                   value={editForm.name}
                   onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="اسم الخزينة"
-                  className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-ink text-sm placeholder-white/20 outline-none focus:border-amber-500/50 transition-colors"
+                  className="erp-input w-full text-sm"
                 />
               </div>
               {branches.length > 0 && (
                 <div>
-                  <label className="block text-ink/50 text-xs font-bold mb-1.5">الفرع</label>
+                  <label className="erp-label">الفرع</label>
                   <Combobox
                     options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
                     value={editForm.branch_id}

@@ -335,16 +335,16 @@ export default function Payroll() {
                 {/* Summary stats */}
                 {recordsList.length > 0 && (
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="erp-card p-3 rounded-lg text-center">
-                      <p className="text-xs text-ink/40">عدد الموظفين</p>
+                    <div className="erp-card p-3 text-center">
+                      <p className="erp-kpi-label">عدد الموظفين</p>
                       <p className="text-xl font-bold text-ink">{recordsList.length}</p>
                     </div>
-                    <div className="erp-card p-3 rounded-lg text-center">
-                      <p className="text-xs text-ink/40">إجمالي الرواتب</p>
+                    <div className="erp-card p-3 text-center">
+                      <p className="erp-kpi-label">إجمالي الرواتب</p>
                       <p className="text-base font-bold text-amber-400">{numFmt(totalGross)}</p>
                     </div>
-                    <div className="erp-card p-3 rounded-lg text-center">
-                      <p className="text-xs text-ink/40">صافي الرواتب</p>
+                    <div className="erp-card p-3 text-center">
+                      <p className="erp-kpi-label">صافي الرواتب</p>
                       <p className="text-base font-bold text-emerald-400">{numFmt(totalNet)}</p>
                     </div>
                   </div>
@@ -571,7 +571,7 @@ export default function Payroll() {
               </div>
               {/* Safe selector */}
               <div>
-                <label className="text-xs text-ink/50 block mb-1">
+                <label className="erp-label">
                   الخزانة <span className="text-red-400">*</span>
                 </label>
                 <Combobox
@@ -667,7 +667,7 @@ export default function Payroll() {
 
               {/* Safe picker */}
               <div>
-                <label className="text-xs text-ink/50 block mb-1">
+                <label className="erp-label">
                   الخزانة <span className="text-red-400">*</span>
                 </label>
                 <Combobox
@@ -698,7 +698,7 @@ export default function Payroll() {
 
               {/* Notes */}
               <div>
-                <label className="text-xs text-ink/50 block mb-1">ملاحظات (اختياري)</label>
+                <label className="erp-label">ملاحظات (اختياري)</label>
                 <input
                   className="erp-input w-full"
                   value={payForm.notes}
@@ -750,7 +750,7 @@ export default function Payroll() {
 
             <div className="p-5 space-y-4">
               <div>
-                <label className="text-xs text-ink/50 block mb-1">اسم الفترة</label>
+                <label className="erp-label">اسم الفترة</label>
                 <input
                   className="erp-input w-full"
                   value={form.name}
@@ -760,7 +760,7 @@ export default function Payroll() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-ink/50 block mb-1">من تاريخ</label>
+                  <label className="erp-label">من تاريخ</label>
                   <input
                     type="date"
                     className="erp-input w-full"
@@ -769,7 +769,7 @@ export default function Payroll() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-ink/50 block mb-1">إلى تاريخ</label>
+                  <label className="erp-label">إلى تاريخ</label>
                   <input
                     type="date"
                     className="erp-input w-full"
@@ -779,7 +779,7 @@ export default function Payroll() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-ink/50 block mb-1">ملاحظات (اختياري)</label>
+                <label className="erp-label">ملاحظات (اختياري)</label>
                 <input
                   className="erp-input w-full"
                   value={form.notes}

@@ -1,5 +1,7 @@
 import { PaginationBar } from '@/components/PaginationBar';
-import { Smartphone, Search, X, Battery, LayoutGrid, List } from 'lucide-react';
+import { Smartphone, Battery, LayoutGrid, List } from 'lucide-react';
+import { PageToolbar } from '@/components/patterns';
+import { SearchInput } from '@/components/ui/search-input';
 import {
   type Device,
   type DeviceStatus,
@@ -47,68 +49,59 @@ export function DeviceList({
   return (
     <>
       {/* ── Filters + Search + View toggle ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Status tabs */}
-        <div className="flex gap-1">
-          {filters.map(({ v, l, count }) => (
-            <button
-              key={v}
-              onClick={() => setStatusFilter(v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                statusFilter === v
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'border-line text-ink/40 hover:text-ink/70 hover:border-line'
-              }`}
-            >
-              {l}
-              <span
-                className={`text-[10px] px-1.5 rounded-full ${
-                  statusFilter === v ? 'bg-amber-500/25 text-amber-300' : 'bg-surface text-ink/25'
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Search */}
-        <div className="relative flex-1 min-w-44">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/30" />
-          <input
+      <PageToolbar
+        searchSlot={
+          <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
             placeholder="ابحث بالموديل / IMEI / العميل..."
-            className="erp-input w-full icon-pr text-sm"
+            aria-label="بحث في الأجهزة"
           />
-          {search && (
+        }
+        filtersSlot={
+          <div className="flex gap-1">
+            {filters.map(({ v, l, count }) => (
+              <button
+                key={v}
+                onClick={() => setStatusFilter(v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  statusFilter === v
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                    : 'border-line text-ink/40 hover:text-ink/70 hover:border-line'
+                }`}
+              >
+                {l}
+                <span
+                  className={`text-[10px] px-1.5 rounded-full ${
+                    statusFilter === v ? 'bg-amber-500/25 text-amber-300' : 'bg-surface text-ink/25'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+        }
+        actionsSlot={
+          <div className="flex gap-0.5 bg-surface rounded-xl border border-line p-0.5">
             <button
-              onClick={() => setSearch('')}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
+              onClick={() => setViewMode('list')}
+              title="عرض قائمة"
+              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-400' : 'text-ink/30 hover:text-ink/60'}`}
             >
-              <X className="w-3.5 h-3.5 text-ink/30 hover:text-ink/60" />
+              <List className="w-3.5 h-3.5" />
             </button>
-          )}
-        </div>
-
-        {/* View toggle */}
-        <div className="flex gap-0.5 bg-surface rounded-xl border border-line p-0.5">
-          <button
-            onClick={() => setViewMode('list')}
-            title="عرض قائمة"
-            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-400' : 'text-ink/30 hover:text-ink/60'}`}
-          >
-            <List className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setViewMode('grid')}
-            title="عرض شبكة"
-            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-400' : 'text-ink/30 hover:text-ink/60'}`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={() => setViewMode('grid')}
+              title="عرض شبكة"
+              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-400' : 'text-ink/30 hover:text-ink/60'}`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        }
+      />
 
       {/* ── Device List / Grid ── */}
       {isLoading ? (

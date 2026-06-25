@@ -17,8 +17,8 @@ import { Combobox } from '@/components/ui/combobox';
 /* ── Local helpers ──────────────────────────────────────────── */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <label className="text-xs text-ink/50">{label}</label>
+    <div className="erp-field">
+      <label className="erp-label">{label}</label>
       {children}
     </div>
   );
@@ -927,7 +927,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   </div>
                   <div className="space-y-2">
                     <div>
-                      <label className="text-xs text-ink/60 block mb-1">خزينة الصرف *</label>
+                      <label className="erp-label">خزينة الصرف *</label>
                       <Combobox
                         options={eligibleSafes.map((s) => ({
                           value: String(s['id']),
@@ -940,7 +940,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-ink/60 block mb-1">ملاحظات</label>
+                      <label className="erp-label">ملاحظات</label>
                       <input
                         value={reimburseNotes}
                         onChange={(e) => setReimburseNotes(e.target.value)}

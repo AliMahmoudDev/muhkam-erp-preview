@@ -20,7 +20,7 @@ export function SInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`glass-input w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all ${props.className ?? ''}`}
+      className={`erp-input w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all ${props.className ?? ''}`}
     />
   );
 }

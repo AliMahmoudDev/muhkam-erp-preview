@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { PageHeader } from '@/components/patterns';
+import { PageHeader, PageToolbar } from '@/components/patterns';
 /**
  * AuditLog — سجل التدقيق والمراجعة الشامل
  * عرض كامل لجميع العمليات الحساسة بالنظام مع فلترة متقدمة.
@@ -8,7 +8,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Shield,
-  Search,
   Filter,
   RefreshCw,
   ChevronDown,
@@ -20,6 +19,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
 import { formatDate } from '@/lib/format';
 import { Combobox } from '@/components/ui/combobox';
+import { SearchInput } from '@/components/ui/search-input';
 
 interface AuditLogEntry {
   id: number;
@@ -430,71 +430,75 @@ export default function AuditLog() {
       />
 
       {/* Filters Bar */}
-      <div className="erp-toolbar">
-        {/* Search */}
-        <div className="erp-search-bar flex-1 min-w-44">
-          <Search className="w-4 h-4 text-ink/30 shrink-0" />
-          <input
-            type="text"
+      <PageToolbar
+        searchSlot={
+          <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
             placeholder="بحث في السجل..."
+            aria-label="بحث في سجل التدقيق"
           />
-        </div>
+        }
+        filtersSlot={
+          <>
+            {/* Record Type Filter */}
+            <Combobox
+              options={ALL_RECORD_TYPES.map((t) => ({
+                value: t,
+                label: RECORD_LABELS[t] ?? t,
+              }))}
+              value={filterType}
+              onChange={(v) => setFilterType(v || '')}
+              placeholder="كل السجلات"
+              className="w-44"
+            />
 
-        {/* Record Type Filter */}
-        <Combobox
-          options={ALL_RECORD_TYPES.map((t) => ({
-            value: t,
-            label: RECORD_LABELS[t] ?? t,
-          }))}
-          value={filterType}
-          onChange={(v) => setFilterType(v || '')}
-          placeholder="كل السجلات"
-          className="w-44"
-        />
+            {/* Action Filter */}
+            <Combobox
+              options={uniqueActions.map((a) => ({
+                value: a,
+                label: ACTION_LABELS[a]?.label ?? a,
+              }))}
+              value={filterAction}
+              onChange={(v) => setFilterAction(v || '')}
+              placeholder="كل الإجراءات"
+              className="w-44"
+            />
 
-        {/* Action Filter */}
-        <Combobox
-          options={uniqueActions.map((a) => ({
-            value: a,
-            label: ACTION_LABELS[a]?.label ?? a,
-          }))}
-          value={filterAction}
-          onChange={(v) => setFilterAction(v || '')}
-          placeholder="كل الإجراءات"
-          className="w-44"
-        />
-
-        {/* User Filter */}
-        <Combobox
-          options={uniqueUsers.map((u) => ({
-            value: u!,
-            label: u!,
-          }))}
-          value={filterUser}
-          onChange={(v) => setFilterUser(v || '')}
-          placeholder="كل المستخدمين"
-          className="w-44"
-        />
-
-        {/* Limit */}
-        <Combobox
-          options={[
-            { value: '100', label: 'آخر 100' },
-            { value: '200', label: 'آخر 200' },
-            { value: '500', label: 'آخر 500' },
-          ]}
-          value={String(limit)}
-          onChange={(v) => setLimit(Number(v))}
-          className="w-32"
-        />
-
-        <div className="flex items-center gap-1 text-xs text-ink/30 shrink-0">
-          <Filter className="w-3 h-3" />
-          {filtered.length} نتيجة
-        </div>
-      </div>
+            {/* User Filter */}
+            <Combobox
+              options={uniqueUsers.map((u) => ({
+                value: u!,
+                label: u!,
+              }))}
+              value={filterUser}
+              onChange={(v) => setFilterUser(v || '')}
+              placeholder="كل المستخدمين"
+              className="w-44"
+            />
+          </>
+        }
+        actionsSlot={
+          <>
+            {/* Limit */}
+            <Combobox
+              options={[
+                { value: '100', label: 'آخر 100' },
+                { value: '200', label: 'آخر 200' },
+                { value: '500', label: 'آخر 500' },
+              ]}
+              value={String(limit)}
+              onChange={(v) => setLimit(Number(v))}
+              className="w-32"
+            />
+            <div className="flex items-center gap-1 text-xs text-ink/30 shrink-0">
+              <Filter className="w-3 h-3" />
+              {filtered.length} نتيجة
+            </div>
+          </>
+        }
+      />
 
       {/* Log Table */}
       {isLoading ? (
@@ -600,10 +604,10 @@ export default function AuditLog() {
               return (
                 <div
                   key={action}
-                  className="bg-surface border border-line rounded-2xl p-4 text-center"
+                  className="erp-card p-4 text-center"
                 >
                   <div className={`text-2xl font-bold ${meta.color}`}>{count}</div>
-                  <div className="text-xs text-ink/40 mt-1">{meta.label}</div>
+                  <div className="erp-kpi-label mt-1">{meta.label}</div>
                 </div>
               );
             })}

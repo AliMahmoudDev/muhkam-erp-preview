@@ -87,27 +87,27 @@ export function AddCustomerModal({
         onSubmit={handleAdd}
         className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line"
       >
-        <h3 className="text-2xl font-bold text-ink mb-6">عميل جديد</h3>
+        <h3 className="erp-modal-title mb-5">عميل جديد</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-ink/70 text-sm mb-1">اسم العميل *</label>
+            <label className="erp-label">اسم العميل *</label>
             <input
               required
               type="text"
-              className="glass-input"
+              className="erp-input"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-ink/70 text-sm mb-1">
+            <label className="erp-label">
               رقم الهاتف * <span className="text-ink/30 text-xs">(11 رقم)</span>
             </label>
             <input
               required
               type="text"
               inputMode="numeric"
-              className="glass-input"
+              className="erp-input"
               value={formData.phone}
               onChange={(e) =>
                 setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })
@@ -117,11 +117,11 @@ export function AddCustomerModal({
             />
           </div>
           <div>
-            <label className="block text-ink/70 text-sm mb-1">رصيد ابتدائي (عليه)</label>
+            <label className="erp-label">رصيد ابتدائي (عليه)</label>
             <input
               type="number"
               step="0.01"
-              className="glass-input"
+              className="erp-input"
               value={formData.balance || ''}
               onChange={(e) =>
                 setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })
@@ -130,7 +130,7 @@ export function AddCustomerModal({
           </div>
 
           <div>
-            <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
+            <label className="erp-label">تصنيف العميل</label>
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0">
                 <Combobox
@@ -161,7 +161,7 @@ export function AddCustomerModal({
                   <input
                     type="text"
                     autoFocus
-                    className="glass-input flex-1 text-sm py-1.5"
+                    className="erp-input flex-1 text-sm py-1.5"
                     placeholder="اسم التصنيف الجديد"
                     value={newClassificationName}
                     onChange={(e) => setNewClassificationName(e.target.value)}
@@ -292,27 +292,27 @@ export function EditCustomerModal({
         onSubmit={handleEdit}
         className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line"
       >
-        <h3 className="text-2xl font-bold text-ink mb-6">تعديل بيانات العميل</h3>
+        <h3 className="erp-modal-title mb-5">تعديل بيانات العميل</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-ink/70 text-sm mb-1">اسم العميل *</label>
+            <label className="erp-label">اسم العميل *</label>
             <input
               required
               type="text"
-              className="glass-input"
+              className="erp-input"
               value={editFormData.name}
               onChange={(e) => setEditFormData((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
           <div>
-            <label className="block text-ink/70 text-sm mb-1">
+            <label className="erp-label">
               رقم الهاتف * <span className="text-ink/30 text-xs">(11 رقم)</span>
             </label>
             <input
               required
               type="text"
               inputMode="numeric"
-              className="glass-input"
+              className="erp-input"
               value={editFormData.phone}
               onChange={(e) =>
                 setEditFormData((f) => ({
@@ -326,7 +326,7 @@ export function EditCustomerModal({
           </div>
 
           <div>
-            <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
+            <label className="erp-label">تصنيف العميل</label>
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0">
                 <Combobox
@@ -357,7 +357,7 @@ export function EditCustomerModal({
                   <input
                     type="text"
                     autoFocus
-                    className="glass-input flex-1 text-sm py-1.5"
+                    className="erp-input flex-1 text-sm py-1.5"
                     placeholder="اسم التصنيف الجديد"
                     value={newClassificationName}
                     onChange={(e) => setNewClassificationName(e.target.value)}
@@ -402,7 +402,7 @@ export function EditCustomerModal({
           </div>
 
           <div>
-            <label className="block text-ink/70 text-sm mb-1">قائمة الأسعار</label>
+            <label className="erp-label">قائمة الأسعار</label>
             <Combobox
               options={priceLists.map((pl) => ({ value: String(pl.id), label: pl.name }))}
               value={editFormData.price_list_id ? String(editFormData.price_list_id) : ''}
@@ -429,7 +429,7 @@ export function EditCustomerModal({
                     setEditFormData((f) => ({ ...f, price_list_markup: e.target.value }))
                   }
                   placeholder="مثال: 15"
-                  className="glass-input flex-1 text-sm py-1.5"
+                  className="erp-input flex-1 text-sm py-1.5"
                 />
                 <span className="text-ink/40 text-xs shrink-0">%</span>
               </div>
@@ -544,7 +544,7 @@ export function ReceiptModal({
         )}
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">الخزينة المستلِمة *</label>
+          <label className="erp-label">الخزينة المستلِمة *</label>
           <Combobox
             options={safes.map((s) => ({
               value: String(s.id),
@@ -558,13 +558,13 @@ export function ReceiptModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">المبلغ المستلم *</label>
+          <label className="erp-label">المبلغ المستلم *</label>
           <input
             required
             type="number"
             step="0.01"
             min="0.01"
-            className="glass-input text-xl font-bold"
+            className="erp-input text-xl font-bold"
             value={receiptData.amount}
             onChange={(e) => setReceiptData((d) => ({ ...d, amount: e.target.value }))}
             placeholder="0.00"
@@ -591,10 +591,10 @@ export function ReceiptModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">بيان (اختياري)</label>
+          <label className="erp-label">بيان (اختياري)</label>
           <input
             type="text"
-            className="glass-input"
+            className="erp-input"
             placeholder="دفعة على الحساب..."
             value={receiptData.notes}
             onChange={(e) => setReceiptData((d) => ({ ...d, notes: e.target.value }))}
@@ -677,7 +677,7 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">الخزينة المدفوعة منها *</label>
+          <label className="erp-label">الخزينة المدفوعة منها *</label>
           <Combobox
             options={safes.map((s) => ({
               value: String(s.id),
@@ -691,13 +691,13 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">المبلغ المسدَّد *</label>
+          <label className="erp-label">المبلغ المسدَّد *</label>
           <input
             required
             type="number"
             step="0.01"
             min="0.01"
-            className="glass-input text-xl font-bold"
+            className="erp-input text-xl font-bold"
             value={supplierPaymentData.amount}
             onChange={(e) => setSupplierPaymentData((d) => ({ ...d, amount: e.target.value }))}
             placeholder="0.00"
@@ -730,10 +730,10 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">ملاحظات (اختياري)</label>
+          <label className="erp-label">ملاحظات (اختياري)</label>
           <input
             type="text"
-            className="glass-input"
+            className="erp-input"
             placeholder="دفعة مقابل مشتريات..."
             value={supplierPaymentData.notes}
             onChange={(e) => setSupplierPaymentData((d) => ({ ...d, notes: e.target.value }))}

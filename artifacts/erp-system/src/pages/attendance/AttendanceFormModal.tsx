@@ -5,8 +5,8 @@ type AnyRec = Record<string, unknown>;
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <label className="text-xs text-ink/50">{label}</label>
+    <div className="erp-field">
+      <label className="erp-label">{label}</label>
       {children}
     </div>
   );

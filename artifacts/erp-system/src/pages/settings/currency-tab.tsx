@@ -271,7 +271,7 @@ export default function CurrencyTab() {
             <div className="flex-1 space-y-4 min-w-0">
               {/* Logo upload area */}
               <div>
-                <label className="block text-ink/40 text-xs font-bold mb-2">
+                <label className="erp-label">
                   شعار الشركة / Logo
                 </label>
                 <div className="flex items-start gap-4">
@@ -369,7 +369,7 @@ export default function CurrencyTab() {
 
               {/* Company name */}
               <div>
-                <label className="block text-ink/40 text-xs font-bold mb-1.5">
+                <label className="erp-label">
                   <Building2 className="inline w-3 h-3 ml-1 -mt-0.5" />
                   اسم الشركة / المتجر
                 </label>
@@ -388,7 +388,7 @@ export default function CurrencyTab() {
 
               {/* Slogan */}
               <div>
-                <label className="block text-ink/40 text-xs font-bold mb-1.5">
+                <label className="erp-label">
                   <AlignLeft className="inline w-3 h-3 ml-1 -mt-0.5" />
                   الشعار / التوصيف
                 </label>

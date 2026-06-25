@@ -76,7 +76,7 @@ export function DeliveryPaymentSection({ value, onChange, safes }: DeliveryPayme
       </div>
       {showSafe && (
         <div>
-          <label className="text-[11px] text-ink/40 mb-1 block">الخزنة</label>
+          <label className="erp-label">الخزنة</label>
           <Combobox
             options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
             value={value.safe_id ? String(value.safe_id) : ''}
@@ -110,7 +110,7 @@ export function TechnicianSelector({
 }: TechnicianSelectorProps) {
   return (
     <div className={className}>
-      {label && <label className="text-[11px] text-ink/40 mb-1 block">{label}</label>}
+      {label && <label className="erp-label">{label}</label>}
       <div className="relative">
         <User
           size={12}
@@ -148,7 +148,7 @@ export function QAReportFields({
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] text-ink/40 mb-1 block">تقرير مراقبة الجودة</label>
+        <label className="erp-label">تقرير مراقبة الجودة</label>
         <textarea
           value={qaReport}
           onChange={(e) => onChangeReport(e.target.value)}
@@ -158,7 +158,7 @@ export function QAReportFields({
         />
       </div>
       <div>
-        <label className="text-[11px] text-ink/40 mb-1 block">اسم فاحص الجودة</label>
+        <label className="erp-label">اسم فاحص الجودة</label>
         <input
           type="text"
           value={inspectorName}
@@ -339,7 +339,7 @@ export function RepairLabelSettings({ settings, onSave }: LabelSettingsProps) {
       <h3 className="text-sm font-bold text-ink/80">إعدادات طباعة الصيانة</h3>
 
       <div>
-        <label className="text-[11px] text-ink/40 mb-1 block">حجم الفاتورة</label>
+        <label className="erp-label">حجم الفاتورة</label>
         <Combobox
           options={[
             { value: 'A4', label: 'A4' },
@@ -354,7 +354,7 @@ export function RepairLabelSettings({ settings, onSave }: LabelSettingsProps) {
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] text-ink/40">إظهار / إخفاء الحقول</label>
+        <label className="erp-label">إظهار / إخفاء الحقول</label>
         {[
           { key: 'repair_show_qa', label: 'تقرير الجودة', checked: showQA },
           { key: 'repair_show_photos', label: 'صور الجهاز', checked: showPhotos },

@@ -26,6 +26,7 @@ import {
   Package,
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
+import { EmptyTable } from '@/components/ui/empty-table';
 import { Combobox } from '@/components/ui/combobox';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
@@ -763,20 +764,19 @@ export default function Returns() {
               {isLoading ? (
                 <TableSkeleton cols={8} rows={5} />
               ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-12 text-center">
-                    <RotateCcw className="w-10 h-10 text-ink/10 mx-auto mb-3" />
-                    <div className="text-ink/40">
-                      {isFiltered ? 'لا توجد نتائج تطابق الفلتر' : 'لا توجد مرتجعات'}
-                    </div>
-                    {!isFiltered && (
-                      <div className="text-ink/25 text-sm mt-1 flex items-center justify-center gap-1">
-                        <ExternalLink className="w-3 h-3" />
-                        {tab === 'sales'
-                          ? 'أنشئ مرتجعاً من: المبيعات ← الفاتورة ← مرتجع'
-                          : 'أنشئ مرتجعاً من: المشتريات ← تبويب المرتجعات'}
-                      </div>
-                    )}
+                <tr className="erp-table-row">
+                  <td colSpan={8}>
+                    <EmptyTable
+                      variant={isFiltered ? 'no-results' : 'no-data'}
+                      headline={isFiltered ? 'لا توجد نتائج تطابق الفلتر' : 'لا توجد مرتجعات'}
+                      description={
+                        !isFiltered
+                          ? (tab === 'sales'
+                              ? 'أنشئ مرتجعاً من: المبيعات ← الفاتورة ← مرتجع'
+                              : 'أنشئ مرتجعاً من: المشتريات ← تبويب المرتجعات')
+                          : undefined
+                      }
+                    />
                   </td>
                 </tr>
               ) : (

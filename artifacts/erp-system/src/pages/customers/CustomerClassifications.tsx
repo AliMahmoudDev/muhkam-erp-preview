@@ -212,7 +212,7 @@ export function CustomerReportsModal({
         <div className="px-6 py-4 border-b border-line">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-ink/50 text-xs mb-1">العميل</label>
+              <label className="erp-label">العميل</label>
               <Combobox
                 options={customers.map((c) => ({ value: String(c.id), label: c.name }))}
                 value={reportFilters.customerId}
@@ -223,7 +223,7 @@ export function CustomerReportsModal({
               />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">التصنيف</label>
+              <label className="erp-label">التصنيف</label>
               <Combobox
                 options={classifications.map((c) => ({ value: String(c.id), label: c.name }))}
                 value={reportFilters.classificationId}
@@ -234,19 +234,19 @@ export function CustomerReportsModal({
               />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">من تاريخ</label>
+              <label className="erp-label">من تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateFrom}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateFrom: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">إلى تاريخ</label>
+              <label className="erp-label">إلى تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateTo}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateTo: e.target.value }))}
               />

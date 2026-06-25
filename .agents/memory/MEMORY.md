@@ -5,3 +5,4 @@
 - [Theme token @theme inline bug](theme-attheme-inline-bug.md) — @theme inline inlines values statically; bg-canvas was hardcoded to dark primitive, breaking light mode. Fix: reference switchable CSS vars (--bg-app, --bg-surface, --bg-elevated) not primitives.
 - [glass-input unification](glass-input-unification.md) — legacy glass-* inputs must mirror erp-input & use accent tokens (--focus-edge/--focus-ring), never hardcoded amber; box-model left alone for textareas.
 - [ERP shell page migration](erp-shell-migration.md) — Phase: actions→PageHeader actionsSlot, tabs→tabsSlot, filters as w-fit row below; settings→SettingsPattern; never touch already-consistent tested pages.
+- [Design system adoption state](design-system-adoption.md) — Phases 1-10 complete; token counts and skip decisions recorded.

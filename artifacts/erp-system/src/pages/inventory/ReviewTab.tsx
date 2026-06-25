@@ -615,8 +615,8 @@ function ReviewTab({
                           : 'text-emerald-400',
                     },
                   ].map((c) => (
-                    <div key={c.label} className="bg-[var(--surface)] rounded-xl p-3 text-center">
-                      <div className="text-xs opacity-40">{c.label}</div>
+                    <div key={c.label} className="erp-card p-3 text-center">
+                      <div className="erp-kpi-label">{c.label}</div>
                       <div className={`text-xl font-bold ${c.color}`}>{c.val}</div>
                     </div>
                   ))}

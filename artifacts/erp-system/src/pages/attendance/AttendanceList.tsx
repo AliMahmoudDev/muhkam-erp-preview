@@ -70,7 +70,7 @@ export default function AttendanceList({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-ink/50">من:</label>
+          <label className="erp-label">من:</label>
           <input
             type="date"
             className="erp-input"
@@ -79,7 +79,7 @@ export default function AttendanceList({
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-ink/50">إلى:</label>
+          <label className="erp-label">إلى:</label>
           <input
             type="date"
             className="erp-input"

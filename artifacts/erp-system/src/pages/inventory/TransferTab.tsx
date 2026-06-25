@@ -282,7 +282,7 @@ function TransferTab({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
               <div>
-                <label className="block text-ink/50 text-xs mb-1.5">
+                <label className="erp-label">
                   من مخزن <span className="text-red-400">*</span>
                 </label>
                 <Combobox
@@ -298,7 +298,7 @@ function TransferTab({
                 </div>
               </div>
               <div>
-                <label className="block text-ink/50 text-xs mb-1.5">
+                <label className="erp-label">
                   إلى مخزن <span className="text-red-400">*</span>
                 </label>
                 <Combobox
@@ -313,13 +313,13 @@ function TransferTab({
               </div>
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1.5">ملاحظات (اختياري)</label>
+              <label className="erp-label">ملاحظات (اختياري)</label>
               <input
                 type="text"
                 value={transferNotes}
                 onChange={(e) => setTransferNotes(e.target.value)}
                 placeholder="سبب التحويل..."
-                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                className="erp-input w-full text-sm"
               />
             </div>
           </div>
@@ -338,7 +338,7 @@ function TransferTab({
                   >
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-start">
                       <div>
-                        <label className="block text-ink/50 text-xs mb-1.5">المنتج</label>
+                        <label className="erp-label">المنتج</label>
                         <Combobox
                           options={allProducts.map((p) => ({ value: String(p.id), label: p.name }))}
                           value={line.product_id ? String(line.product_id) : ''}
@@ -363,7 +363,7 @@ function TransferTab({
                         )}
                       </div>
                       <div className="md:w-36">
-                        <label className="block text-ink/50 text-xs mb-1.5">الكمية</label>
+                        <label className="erp-label">الكمية</label>
                         <input
                           type="number"
                           min="0.001"
@@ -474,11 +474,11 @@ function TransferTab({
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-ink font-bold">تحويل #{t.id}</span>
-                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300">
+                      <span className="erp-status erp-status-paid">
                         {t.status === 'completed' ? '✓ مكتمل' : t.status}
                       </span>
                       {t.items_count > 0 && (
-                        <span className="px-2 py-0.5 rounded-lg text-xs bg-surface text-ink/50">
+                        <span className="erp-status erp-status-inactive">
                           {t.items_count} صنف
                         </span>
                       )}

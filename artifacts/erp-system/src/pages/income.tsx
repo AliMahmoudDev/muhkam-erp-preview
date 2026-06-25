@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { Plus, Trash2, Search, X, TrendingUp, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
+import { EmptyTable } from '@/components/ui/empty-table';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { api } from '@/lib/api';
 import { Combobox } from '@/components/ui/combobox';
@@ -298,7 +299,7 @@ export default function Income() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="بحث بالمصدر أو التفاصيل أو الخزينة..."
-            className="glass-input w-full icon-pr text-sm"
+            className="erp-input w-full icon-pr text-sm"
           />
           {search && (
             <button
@@ -347,19 +348,13 @@ export default function Income() {
               {isLoading ? (
                 <TableSkeleton cols={6} rows={5} />
               ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-12 text-center">
-                    <TrendingUp className="w-10 h-10 text-ink/10 mx-auto mb-3" />
-                    <div className="text-ink/40 font-medium">
-                      {search || monthFilter !== 'all'
-                        ? 'لا توجد نتائج للبحث'
-                        : 'لا توجد إيرادات بعد'}
-                    </div>
-                    {!search && monthFilter === 'all' && (
-                      <div className="text-ink/25 text-sm mt-1">
-                        اضغط «إضافة إيراد» لتسجيل أول إيراد
-                      </div>
-                    )}
+                <tr className="erp-table-row">
+                  <td colSpan={6}>
+                    <EmptyTable
+                      variant={search || monthFilter !== 'all' ? 'no-results' : 'no-data'}
+                      headline={search || monthFilter !== 'all' ? 'لا توجد نتائج للبحث' : 'لا توجد إيرادات بعد'}
+                      description={!search && monthFilter === 'all' ? 'اضغط «إضافة إيراد» لتسجيل أول إيراد' : undefined}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -429,7 +424,7 @@ export default function Income() {
               <input
                 required
                 type="text"
-                className="glass-input w-full"
+                className="erp-input w-full"
                 value={formData.source}
                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                 placeholder="عمولة / استثمار / أخرى..."
@@ -442,7 +437,7 @@ export default function Income() {
                 type="number"
                 step="0.01"
                 min="0.01"
-                className="glass-input w-full"
+                className="erp-input w-full"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="0.00"
@@ -463,7 +458,7 @@ export default function Income() {
               <label className="block text-ink/70 text-sm mb-1">التفاصيل (اختياري)</label>
               <input
                 type="text"
-                className="glass-input w-full"
+                className="erp-input w-full"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />

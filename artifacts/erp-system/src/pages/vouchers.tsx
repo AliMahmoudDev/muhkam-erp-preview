@@ -17,10 +17,10 @@ import {
   ArrowLeftRight,
   HandCoins,
   ArrowUpFromLine,
-  ReceiptText,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
+import { EmptyTable } from '@/components/ui/empty-table';
 import { ConfirmModal } from '@/components/confirm-modal';
 
 /* ── interfaces ── */
@@ -172,12 +172,12 @@ function toUnified(
 /* ── badges ── */
 function TypeBadge({ type }: { type: 'قبض' | 'صرف' }) {
   return type === 'قبض' ? (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+    <span className="erp-status erp-status-paid">
       <HandCoins className="w-3 h-3" />
       قبض
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+    <span className="erp-status erp-status-pending">
       <ArrowUpFromLine className="w-3 h-3" />
       صرف
     </span>
@@ -203,22 +203,10 @@ function SubBadge({ sub }: { sub: string }) {
 function StatusBadge({ status }: { status: string | null }) {
   if (!status) return <span className="text-xs text-ink/30">—</span>;
   if (status === 'posted')
-    return (
-      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">
-        مرحَّل
-      </span>
-    );
+    return <span className="erp-status erp-status-posted">مرحَّل</span>;
   if (status === 'cancelled')
-    return (
-      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
-        ملغى
-      </span>
-    );
-  return (
-    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface text-ink/50">
-      مسودة
-    </span>
-  );
+    return <span className="erp-status erp-status-cancelled">ملغى</span>;
+  return <span className="erp-status erp-status-draft">مسودة</span>;
 }
 
 /* ── main component ── */
@@ -509,15 +497,13 @@ export default function Vouchers({ embedded = false }: { embedded?: boolean }) {
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="p-16 text-center">
-                    <ReceiptText className="w-10 h-10 text-ink/15 mx-auto mb-3" />
-                    <p className="text-ink/40 text-sm">لا توجد سندات بعد</p>
-                    {!embedded && (
-                      <p className="mt-2 text-ink/30 text-xs">
-                        أنشئ سنداً جديداً من صفحة الخزينة
-                      </p>
-                    )}
+                <tr className="erp-table-row">
+                  <td colSpan={9}>
+                    <EmptyTable
+                      variant="no-data"
+                      headline="لا توجد سندات بعد"
+                      description={!embedded ? 'أنشئ سنداً جديداً من صفحة الخزينة' : undefined}
+                    />
                   </td>
                 </tr>
               ) : (

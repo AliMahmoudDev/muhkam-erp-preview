@@ -2,6 +2,7 @@ import { Trash2, Eye } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { TableSkeleton } from '@/components/skeletons';
 import type { Expense } from '../types';
+import { EmptyTable } from '@/components/ui/empty-table';
 
 interface ExpensesTableProps {
   filtered: Expense[];
@@ -46,9 +47,12 @@ export function ExpensesTable({
             {isLoading ? (
               <TableSkeleton cols={6} rows={5} />
             ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-ink/50">
-                  {hasFilter ? 'لا توجد نتائج بهذه الفلاتر' : 'لا توجد مصروفات'}
+              <tr className="erp-table-row">
+                <td colSpan={6}>
+                  <EmptyTable
+                    variant={hasFilter ? 'no-results' : 'no-data'}
+                    headline={hasFilter ? 'لا توجد نتائج بهذه الفلاتر' : 'لا توجد مصروفات'}
+                  />
                 </td>
               </tr>
             ) : (

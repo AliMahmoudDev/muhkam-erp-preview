@@ -293,7 +293,7 @@ export default function Accounts() {
                   <input
                     required
                     type="text"
-                    className="glass-input font-mono"
+                    className="erp-input font-mono"
                     value={form.code}
                     onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                     placeholder="مثال: 1110"
@@ -314,7 +314,7 @@ export default function Accounts() {
                 <input
                   required
                   type="text"
-                  className="glass-input"
+                  className="erp-input"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 />
@@ -338,7 +338,7 @@ export default function Accounts() {
                   <input
                     type="number"
                     step="0.01"
-                    className="glass-input"
+                    className="erp-input"
                     value={form.opening_balance}
                     onChange={(e) => setForm((f) => ({ ...f, opening_balance: e.target.value }))}
                   />

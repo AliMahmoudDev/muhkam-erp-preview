@@ -1380,6 +1380,11 @@ html.light .erp-page-subtitle { color: #64748b; }
     max-inline-size: 100%;
   }
 
+  .erp-page-toolbar-end {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .erp-form-page-action-bar {
     padding-inline: var(--space-4, 1rem);
   }

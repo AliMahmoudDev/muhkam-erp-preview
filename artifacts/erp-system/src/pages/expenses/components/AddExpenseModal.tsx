@@ -57,20 +57,23 @@ export function AddExpenseModal({
         onSubmit={handleAdd}
         className="glass-panel rounded-3xl p-8 w-full max-w-md animate-in zoom-in-95 space-y-4"
       >
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="text-2xl font-bold text-ink">مصروف جديد</h3>
+        <div className="erp-modal-header">
+          <div className="erp-modal-title-group">
+            <h2 className="erp-modal-title">مصروف جديد</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-surface text-ink/40 hover:text-ink transition-colors"
+            className="erp-action-btn"
+            aria-label="إغلاق"
           >
-            <X className="w-5 h-5" />
+            <X size={18} />
           </button>
         </div>
 
         {/* Category */}
         <div>
-          <label className="block text-ink/70 text-sm mb-1.5 flex items-center gap-1.5">
+          <label className="erp-label flex items-center gap-1.5">
             <Tag className="w-3.5 h-3.5 text-ink/40" /> تصنيف المصروف *
           </label>
           <div className="flex gap-2">
@@ -106,7 +109,7 @@ export function AddExpenseModal({
                   handleAddCategory();
                 }
               }}
-              className="glass-input flex-1 text-sm py-1.5"
+              className="erp-input flex-1 text-sm py-1.5"
               placeholder="＋ إضافة تصنيف جديد..."
             />
             <button
@@ -122,13 +125,13 @@ export function AddExpenseModal({
 
         {/* Amount */}
         <div>
-          <label className="block text-ink/70 text-sm mb-1">المبلغ (ج.م) *</label>
+          <label className="erp-label">المبلغ (ج.م) *</label>
           <input
             required
             type="number"
             step="0.01"
             min="0.01"
-            className="glass-input w-full"
+            className="erp-input w-full"
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
           />
@@ -137,14 +140,14 @@ export function AddExpenseModal({
         {/* Safe */}
         {isCashier ? (
           <div>
-            <label className="block text-ink/70 text-sm mb-1">الخزينة</label>
-            <div className="glass-input w-full flex items-center gap-2 opacity-70 cursor-not-allowed">
+            <label className="erp-label">الخزينة</label>
+            <div className="erp-input w-full flex items-center gap-2 opacity-70 cursor-not-allowed">
               <span className="text-amber-300 font-bold text-sm">{userSafeName}</span>
             </div>
           </div>
         ) : (
           <div>
-            <label className="block text-ink/70 text-sm mb-1">الخزينة المدفوع منها</label>
+            <label className="erp-label">الخزينة المدفوع منها</label>
             <Combobox
               options={safes.map((s) => ({
                 value: String(s.id),
@@ -161,27 +164,27 @@ export function AddExpenseModal({
 
         {/* Description */}
         <div>
-          <label className="block text-ink/70 text-sm mb-1">التفاصيل (اختياري)</label>
+          <label className="erp-label">التفاصيل (اختياري)</label>
           <input
             type="text"
-            className="glass-input w-full"
+            className="erp-input w-full"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
         </div>
 
-        <div className="flex gap-4 pt-2">
+        <div className="erp-modal-footer">
           <button
             type="submit"
             disabled={createIsPending}
-            className="flex-1 btn-primary py-3 rounded-xl font-bold"
+            className="flex-1 btn-primary"
           >
             {createIsPending ? 'جاري الحفظ...' : 'حفظ'}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-surface text-ink py-3 rounded-xl font-bold hover:bg-raised"
+            className="flex-1 btn-secondary"
           >
             إلغاء
           </button>

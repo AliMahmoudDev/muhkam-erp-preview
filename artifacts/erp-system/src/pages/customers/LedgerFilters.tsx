@@ -214,14 +214,14 @@ export function LedgerFilters({
               type="date"
               value={reportFrom}
               onChange={(e) => setReportFrom(e.target.value)}
-              className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink"
+              className="erp-input rounded-xl px-3 py-1.5 text-sm text-ink"
             />
             <span className="text-ink/40 text-xs font-bold">إلى</span>
             <input
               type="date"
               value={reportTo}
               onChange={(e) => setReportTo(e.target.value)}
-              className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink"
+              className="erp-input rounded-xl px-3 py-1.5 text-sm text-ink"
             />
           </div>
 

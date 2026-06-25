@@ -175,7 +175,7 @@ export default function FiscalYears() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs text-ink/50 block mb-1">اسم السنة *</label>
+              <label className="erp-label">اسم السنة *</label>
               <input
                 type="text"
                 value={form.year_label}
@@ -185,7 +185,7 @@ export default function FiscalYears() {
               />
             </div>
             <div>
-              <label className="text-xs text-ink/50 block mb-1">تاريخ البداية *</label>
+              <label className="erp-label">تاريخ البداية *</label>
               <input
                 type="date"
                 value={form.start_date}
@@ -194,7 +194,7 @@ export default function FiscalYears() {
               />
             </div>
             <div>
-              <label className="text-xs text-ink/50 block mb-1">تاريخ النهاية *</label>
+              <label className="erp-label">تاريخ النهاية *</label>
               <input
                 type="date"
                 value={form.end_date}
@@ -204,7 +204,7 @@ export default function FiscalYears() {
             </div>
           </div>
           <div>
-            <label className="text-xs text-ink/50 block mb-1">ملاحظات</label>
+            <label className="erp-label">ملاحظات</label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}

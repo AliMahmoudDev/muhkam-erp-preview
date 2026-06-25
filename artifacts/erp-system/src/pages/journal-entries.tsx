@@ -43,18 +43,18 @@ interface JournalEntryDetail extends JournalEntry {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'posted')
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1.5">
+      <span className="erp-status erp-status-posted">
         <CheckCircle className="w-3 h-3" /> مرحَّل
       </span>
     );
   if (status === 'reversed')
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-bold border bg-orange-500/20 text-orange-400 border-orange-500/30">
+      <span className="erp-status erp-status-pending">
         ↩ معكوس
       </span>
     );
   return (
-    <span className="px-3 py-1 rounded-full text-xs font-bold border bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+    <span className="erp-status erp-status-draft">
       مسودة
     </span>
   );
@@ -345,7 +345,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
               <label className="text-ink/60 text-xs mb-1 block">التاريخ *</label>
               <input
                 type="date"
-                className="glass-input"
+                className="erp-input"
                 value={form.date}
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
               />
@@ -354,7 +354,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
               <label className="text-ink/60 text-xs mb-1 block">البيان *</label>
               <input
                 type="text"
-                className="glass-input"
+                className="erp-input"
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 placeholder="وصف القيد"
@@ -364,7 +364,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
               <label className="text-ink/60 text-xs mb-1 block">المرجع</label>
               <input
                 type="text"
-                className="glass-input"
+                className="erp-input"
                 value={form.reference}
                 onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
                 placeholder="رقم مرجعي اختياري"
@@ -405,7 +405,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                         step="0.01"
                         min="0"
                         placeholder="0.00"
-                        className="glass-input text-sm text-blue-300 w-full"
+                        className="erp-input text-sm text-blue-300 w-full"
                         value={line.debit}
                         onChange={(e) => {
                           updateLine(i, 'debit', e.target.value);
@@ -419,7 +419,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                         step="0.01"
                         min="0"
                         placeholder="0.00"
-                        className="glass-input text-sm text-amber-300 w-full"
+                        className="erp-input text-sm text-amber-300 w-full"
                         value={line.credit}
                         onChange={(e) => {
                           updateLine(i, 'credit', e.target.value);
@@ -431,7 +431,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                       <input
                         type="text"
                         placeholder="اختياري"
-                        className="glass-input text-sm w-full"
+                        className="erp-input text-sm w-full"
                         value={line.description}
                         onChange={(e) => updateLine(i, 'description', e.target.value)}
                       />

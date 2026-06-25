@@ -31,7 +31,7 @@ export function PartialProductSelector({
         <h3 className="text-sm font-bold text-ink/70 flex items-center gap-2">
           <Filter className="w-4 h-4" /> اختر المنتجات للجرد
           {selectedProductIds.size > 0 && (
-            <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-bold">
+            <span className="erp-status erp-status-partial">
               {selectedProductIds.size} محدد
             </span>
           )}
@@ -60,7 +60,7 @@ export function PartialProductSelector({
             value={partialSearch}
             onChange={(e) => setPartialSearch(e.target.value)}
             placeholder="ابحث عن منتج..."
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 icon-pr text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-violet-400/40"
+            className="erp-input w-full icon-pr text-sm"
           />
           {partialSearch && (
             <button

@@ -34,7 +34,7 @@ export function CountSessionForm({
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
-          <label className="block text-ink/50 text-xs mb-1.5">
+          <label className="erp-label">
             المخزن <span className="text-red-400">*</span>
           </label>
           <Combobox
@@ -46,35 +46,35 @@ export function CountSessionForm({
           />
         </div>
         <div>
-          <label className="block text-ink/50 text-xs mb-1.5">
+          <label className="erp-label">
             تاريخ الجرد <span className="text-red-400">*</span>
           </label>
           <input
             type="date"
             value={countDate}
             onChange={(e) => setCountDate(e.target.value)}
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:border-amber-500/40"
+            className="erp-input w-full text-sm"
           />
         </div>
         <div>
-          <label className="block text-ink/50 text-xs mb-1.5">
+          <label className="erp-label">
             وقت الجرد <span className="text-red-400">*</span>
           </label>
           <input
             type="time"
             value={countTime}
             onChange={(e) => setCountTime(e.target.value)}
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:border-amber-500/40"
+            className="erp-input w-full text-sm"
           />
         </div>
         <div>
-          <label className="block text-ink/50 text-xs mb-1.5">ملاحظات الجلسة (اختياري)</label>
+          <label className="erp-label">ملاحظات الجلسة (اختياري)</label>
           <input
             type="text"
             value={sessionNotes}
             onChange={(e) => setSessionNotes(e.target.value)}
             placeholder="مثال: جرد نهاية الشهر"
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:border-amber-500/40"
+            className="erp-input w-full text-sm"
           />
         </div>
       </div>

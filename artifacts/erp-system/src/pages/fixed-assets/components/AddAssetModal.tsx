@@ -69,25 +69,25 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs text-ink/50 mb-1">اسم الأصل *</label>
+              <label className="erp-label">اسم الأصل *</label>
               <input
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
                 placeholder="مثال: جهاز لحام كهربائي"
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
+                className="w-full erp-input px-4 py-3 rounded-2xl text-ink text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-ink/50 mb-1">الكود (اختياري)</label>
+              <label className="erp-label">الكود (اختياري)</label>
               <input
                 value={form.code}
                 onChange={(e) => set('code', e.target.value)}
                 placeholder="سيُنشأ تلقائياً"
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
+                className="w-full erp-input px-4 py-3 rounded-2xl text-ink text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-ink/50 mb-1">التصنيف</label>
+              <label className="erp-label">التصنيف</label>
               <Combobox
                 options={Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))}
                 value={form.category}
@@ -96,16 +96,16 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
               />
             </div>
             <div>
-              <label className="block text-xs text-ink/50 mb-1">تاريخ الشراء *</label>
+              <label className="erp-label">تاريخ الشراء *</label>
               <input
                 type="date"
                 value={form.purchase_date}
                 onChange={(e) => set('purchase_date', e.target.value)}
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
+                className="w-full erp-input px-4 py-3 rounded-2xl text-ink text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-ink/50 mb-1">طريقة الإهلاك</label>
+              <label className="erp-label">طريقة الإهلاك</label>
               <Combobox
                 options={Object.entries(METHODS).map(([k, v]) => ({ value: k, label: v }))}
                 value={form.depreciation_method}
@@ -114,45 +114,45 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
               />
             </div>
             <div>
-              <label className="block text-xs text-ink/50 mb-1">تكلفة الشراء (ج.م) *</label>
+              <label className="erp-label">تكلفة الشراء (ج.م) *</label>
               <input
                 type="number"
                 min="0"
                 value={form.purchase_cost}
                 onChange={(e) => set('purchase_cost', e.target.value)}
                 placeholder="0.00"
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
+                className="w-full erp-input px-4 py-3 rounded-2xl text-ink text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-ink/50 mb-1">القيمة المتبقية (ج.م)</label>
+              <label className="erp-label">القيمة المتبقية (ج.م)</label>
               <input
                 type="number"
                 min="0"
                 value={form.residual_value}
                 onChange={(e) => set('residual_value', e.target.value)}
                 placeholder="0.00"
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
+                className="w-full erp-input px-4 py-3 rounded-2xl text-ink text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-ink/50 mb-1">العمر الإنتاجي (بالشهور) *</label>
+              <label className="erp-label">العمر الإنتاجي (بالشهور) *</label>
               <input
                 type="number"
                 min="1"
                 value={form.useful_life_months}
                 onChange={(e) => set('useful_life_months', e.target.value)}
                 placeholder="مثال: 60 = 5 سنوات"
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
+                className="w-full erp-input px-4 py-3 rounded-2xl text-ink text-sm"
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-ink/50 mb-1">ملاحظات</label>
+              <label className="erp-label">ملاحظات</label>
               <textarea
                 value={form.description}
                 onChange={(e) => set('description', e.target.value)}
                 rows={2}
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm resize-none"
+                className="w-full erp-input px-4 py-3 rounded-2xl text-ink text-sm resize-none"
               />
             </div>
           </div>

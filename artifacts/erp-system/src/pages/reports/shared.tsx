@@ -264,14 +264,14 @@ export function DateFilterBar({
             type="date"
             value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
-            className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink"
+            className="erp-input rounded-xl px-3 py-1.5 text-sm text-ink"
           />
           <span className="text-ink/30">←</span>
           <input
             type="date"
             value={customTo}
             onChange={(e) => setCustomTo(e.target.value)}
-            className="glass-input rounded-xl px-3 py-1.5 text-sm text-ink"
+            className="erp-input rounded-xl px-3 py-1.5 text-sm text-ink"
           />
         </div>
       )}

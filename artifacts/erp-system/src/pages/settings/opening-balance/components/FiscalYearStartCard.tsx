@@ -61,7 +61,7 @@ export function FiscalYearStartCard() {
             setDate(e.target.value);
             setSaved(false);
           }}
-          className="glass-input rounded-xl px-3 py-2 text-sm outline-none transition-all w-40"
+          className="erp-input rounded-xl px-3 py-2 text-sm outline-none transition-all w-40"
         />
         <button
           onClick={handleSave}
