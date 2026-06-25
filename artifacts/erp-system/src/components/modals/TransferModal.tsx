@@ -159,6 +159,7 @@ export default function TransferModal({ onClose }: Props) {
             value={form.from_safe_id}
             onChange={(v) => setForm((f) => ({ ...f, from_safe_id: v }))}
             className="w-full text-sm"
+            searchable={false}
           />
         </div>
 
@@ -175,6 +176,7 @@ export default function TransferModal({ onClose }: Props) {
             value={form.to_safe_id}
             onChange={(v) => setForm((f) => ({ ...f, to_safe_id: v }))}
             className="w-full text-sm"
+            searchable={false}
           />
         </div>
 
@@ -216,6 +218,7 @@ export default function TransferModal({ onClose }: Props) {
             value={form.fee_type}
             onChange={(v) => setForm((f) => ({ ...f, fee_type: v as FeeType, fee_value: '' }))}
             className="w-full text-sm"
+            searchable={false}
           />
         </div>
 

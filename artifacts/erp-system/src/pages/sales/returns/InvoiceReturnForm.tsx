@@ -224,6 +224,7 @@ export function InvoiceReturnForm({
                     onChange={(v) => setSafeId(v)}
                     placeholder="— اختر خزينة —"
                     className="w-full"
+                    searchable={false}
                   />
                 </div>
               )}

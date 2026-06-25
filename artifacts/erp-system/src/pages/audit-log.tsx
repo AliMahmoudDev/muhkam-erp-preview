@@ -452,6 +452,7 @@ export default function AuditLog() {
               onChange={(v) => setFilterType(v || '')}
               placeholder="كل السجلات"
               className="w-44"
+              searchable={false}
             />
 
             {/* Action Filter */}
@@ -464,6 +465,7 @@ export default function AuditLog() {
               onChange={(v) => setFilterAction(v || '')}
               placeholder="كل الإجراءات"
               className="w-44"
+              searchable={false}
             />
 
             {/* User Filter */}
@@ -476,6 +478,7 @@ export default function AuditLog() {
               onChange={(v) => setFilterUser(v || '')}
               placeholder="كل المستخدمين"
               className="w-44"
+              searchable={false}
             />
           </>
         }
@@ -491,6 +494,7 @@ export default function AuditLog() {
               value={String(limit)}
               onChange={(v) => setLimit(Number(v))}
               className="w-32"
+              searchable={false}
             />
             <div className="flex items-center gap-1 text-xs text-ink/30 shrink-0">
               <Filter className="w-3 h-3" />

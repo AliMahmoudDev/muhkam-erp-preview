@@ -231,6 +231,7 @@ export function CustomerReportsModal({
                 placeholder="كل التصنيفات"
                 clearable
                 className="w-full text-sm"
+                searchable={false}
               />
             </div>
             <div>

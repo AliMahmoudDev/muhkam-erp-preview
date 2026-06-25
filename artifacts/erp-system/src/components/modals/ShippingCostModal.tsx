@@ -165,6 +165,7 @@ export default function ShippingCostModal({ job, onClose, onSaved }: Props) {
                 value={safeId}
                 onChange={(v) => setSafeId(v)}
                 className="w-full text-[11px]"
+                searchable={false}
               />
             </div>
           )}

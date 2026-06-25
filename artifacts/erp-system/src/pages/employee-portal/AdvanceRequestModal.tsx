@@ -169,6 +169,7 @@ export function AdvanceRequestModal({
                 value={form.advance_type}
                 onChange={(v) => setForm((p) => ({ ...p, advance_type: v }))}
                 className="w-full"
+                searchable={false}
               />
             </div>
           </div>
@@ -191,6 +192,7 @@ export function AdvanceRequestModal({
                   }))
                 }
                 className="w-full"
+                searchable={false}
               />
             </div>
           </div>

@@ -102,6 +102,7 @@ export function ReturnModal({
               value={reason}
               onChange={(v) => setReason(v)}
               className="w-full"
+              searchable={false}
             />
             {reason === 'أخرى' && (
               <input

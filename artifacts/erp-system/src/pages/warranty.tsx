@@ -151,6 +151,7 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
               value={form.warranty_months}
               onChange={(v) => field('warranty_months', v)}
               className="w-full"
+              searchable={false}
             />
           </div>
           <div>

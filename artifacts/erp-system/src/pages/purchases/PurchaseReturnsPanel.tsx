@@ -303,6 +303,7 @@ export default function PurchaseReturnsPanel() {
                   onChange={(v) => setSafeId(v)}
                   placeholder="— اختر الخزينة —"
                   className="w-full"
+                  searchable={false}
                 />
               </div>
             )}

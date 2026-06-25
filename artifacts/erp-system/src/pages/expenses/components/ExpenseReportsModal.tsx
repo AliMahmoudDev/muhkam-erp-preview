@@ -74,6 +74,7 @@ export function ExpenseReportsModal({
                 placeholder="كل التصنيفات"
                 clearable
                 className="w-full"
+                searchable={false}
               />
             </div>
             <div>

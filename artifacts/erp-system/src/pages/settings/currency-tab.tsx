@@ -850,6 +850,7 @@ export default function CurrencyTab() {
                   }))}
                   value={fontSize}
                   onChange={(v) => setFontSize(v as FontSize)}
+                  searchable={false}
                 />
               </div>
 
@@ -865,6 +866,7 @@ export default function CurrencyTab() {
                   }))}
                   value={String(fontWeight)}
                   onChange={(v) => setFontWeight(Number(v))}
+                  searchable={false}
                 />
               </div>
 

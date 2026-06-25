@@ -121,6 +121,7 @@ export default function DeviceModelsTab() {
               value={selBrand}
               onChange={(v) => { setSelBrand(v); setSelCat(''); }}
               className="flex-1"
+              searchable={false}
             />
             <Combobox
               options={[
@@ -131,6 +132,7 @@ export default function DeviceModelsTab() {
               onChange={(v) => setSelCat(v)}
               disabled={!selBrand}
               className="flex-1"
+              searchable={false}
             />
           </div>
           <div className="flex gap-2">
@@ -164,6 +166,7 @@ export default function DeviceModelsTab() {
           value={selBrand}
           onChange={(v) => { setSelBrand(v); setSelCat(''); }}
           className="text-xs"
+          searchable={false}
         />
         <Combobox
           options={[
@@ -174,6 +177,7 @@ export default function DeviceModelsTab() {
           onChange={(v) => setSelCat(v)}
           disabled={!selBrand}
           className="text-xs"
+          searchable={false}
         />
         {models.length > 0 && (
           <span className="mr-auto text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200/85 border border-amber-500/25">

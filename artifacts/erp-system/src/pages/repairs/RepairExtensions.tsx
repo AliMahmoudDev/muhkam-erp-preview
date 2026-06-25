@@ -83,6 +83,7 @@ export function DeliveryPaymentSection({ value, onChange, safes }: DeliveryPayme
             onChange={(v) => onChange({ ...value, safe_id: v ? Number(v) : null })}
             placeholder="— اختر خزنة —"
             className="w-full text-sm"
+            searchable={false}
           />
         </div>
       )}
@@ -350,6 +351,7 @@ export function RepairLabelSettings({ settings, onSave }: LabelSettingsProps) {
           value={invoiceSize}
           onChange={(v) => onSave('repair_invoice_size', v)}
           className="text-sm w-full"
+          searchable={false}
         />
       </div>
 

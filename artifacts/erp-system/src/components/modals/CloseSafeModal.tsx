@@ -162,6 +162,7 @@ export default function CloseSafeModal({ onClose }: Props) {
               value={safeId}
               onChange={(v) => setSafeId(v)}
               className="w-full text-sm"
+              searchable={false}
             />
           </div>
           <div>

@@ -290,6 +290,7 @@ function TransferTab({
                   value={String(fromWH)}
                   onChange={(v) => setFromWH(Number(v))}
                   className="w-full"
+                  searchable={false}
                 />
               </div>
               <div className="flex items-center justify-center pb-1">
@@ -306,6 +307,7 @@ function TransferTab({
                   value={String(toWH)}
                   onChange={(v) => setToWH(Number(v))}
                   className="w-full"
+                  searchable={false}
                 />
                 {fromWH === toWH && (
                   <p className="text-red-400 text-xs mt-1">يجب اختيار مخزن مختلف</p>

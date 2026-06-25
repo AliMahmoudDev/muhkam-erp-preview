@@ -122,6 +122,7 @@ export function StandaloneReturnForm({
                 onChange={(v) => setStandalone((f) => ({ ...f, safe_id: v }))}
                 placeholder="-- اختر خزينة --"
                 className="w-full"
+                searchable={false}
               />
             </div>
           )}

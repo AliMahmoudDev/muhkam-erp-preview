@@ -229,6 +229,7 @@ export function CompanyTableRow({
                     body: { edition: v },
                   });
                 }}
+                searchable={false}
               />
             </div>
             <ActionBtn

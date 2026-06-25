@@ -113,6 +113,7 @@ export function TabAuditLog({
             ]}
             value={auditAction}
             onChange={(v) => setAuditAction(v)}
+            searchable={false}
           />
           <Combobox
             options={[25, 50, 100, 200, 500].map((n) => ({
@@ -121,6 +122,7 @@ export function TabAuditLog({
             }))}
             value={String(auditLimit)}
             onChange={(v) => setAuditLimit(Number(v))}
+            searchable={false}
           />
           <button
             onClick={() => void onRefetch()}

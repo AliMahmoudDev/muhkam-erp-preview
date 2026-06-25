@@ -93,6 +93,7 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
                 value={form.category}
                 onChange={(v) => set('category', v)}
                 className="w-full"
+                searchable={false}
               />
             </div>
             <div>
@@ -111,6 +112,7 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
                 value={form.depreciation_method}
                 onChange={(v) => set('depreciation_method', v)}
                 className="w-full"
+                searchable={false}
               />
             </div>
             <div>

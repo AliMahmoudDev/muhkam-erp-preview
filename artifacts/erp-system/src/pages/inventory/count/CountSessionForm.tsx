@@ -43,6 +43,7 @@ export function CountSessionForm({
             onChange={(v) => setSelectedWarehouse(v ? Number(v) : 0)}
             placeholder="— اختر مخزناً —"
             className="w-full"
+            searchable={false}
           />
         </div>
         <div>

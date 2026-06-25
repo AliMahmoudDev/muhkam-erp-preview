@@ -219,6 +219,7 @@ export function ProductsTab() {
               placeholder="كل الأصناف"
               clearable
               className="w-44"
+              searchable={false}
             />
           ) : null
         }

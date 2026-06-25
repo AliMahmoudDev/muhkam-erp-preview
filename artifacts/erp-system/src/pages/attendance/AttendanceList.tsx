@@ -106,6 +106,7 @@ export default function AttendanceList({
           placeholder="كل الحالات"
           clearable
           className="w-44"
+          searchable={false}
         />
       </div>
 

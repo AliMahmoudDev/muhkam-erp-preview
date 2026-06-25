@@ -142,6 +142,7 @@ export function AddCustomerModal({
                   placeholder="-- بدون تصنيف --"
                   clearable
                   className="w-full"
+                  searchable={false}
                 />
               </div>
               {formData.classification_id && (
@@ -338,6 +339,7 @@ export function EditCustomerModal({
                   placeholder="-- بدون تصنيف --"
                   clearable
                   className="w-full"
+                  searchable={false}
                 />
               </div>
               {editFormData.classification_id && (
@@ -416,6 +418,7 @@ export function EditCustomerModal({
               placeholder="-- بدون قائمة أسعار --"
               clearable
               className="w-full"
+              searchable={false}
             />
             {editFormData.price_list_id && (
               <div className="mt-2 flex items-center gap-2">
@@ -554,6 +557,7 @@ export function ReceiptModal({
             onChange={(v) => setReceiptData((d) => ({ ...d, safe_id: v }))}
             placeholder="-- اختر خزينة --"
             className="w-full"
+            searchable={false}
           />
         </div>
 
@@ -687,6 +691,7 @@ export function SupplierPaymentModal({
             onChange={(v) => setSupplierPaymentData((d) => ({ ...d, safe_id: v }))}
             placeholder="-- اختر خزينة --"
             className="w-full"
+            searchable={false}
           />
         </div>
 

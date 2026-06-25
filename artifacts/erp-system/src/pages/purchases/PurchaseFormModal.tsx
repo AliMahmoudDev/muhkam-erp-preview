@@ -527,6 +527,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
               onChange={(v) => setCategoryFilter(v)}
               placeholder="كل الأصناف"
               className="w-40 text-sm"
+              searchable={false}
             />
             <div className="flex gap-1 shrink-0">
               <Button
@@ -655,6 +656,7 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                 onChange={(v) => setWarehouseId(v)}
                 placeholder="-- اختر مخزن --"
                 className="flex-1 text-[10px] font-bold"
+                searchable={false}
               />
               </div>
               <div className="flex items-center gap-1 bg-surface border border-line rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">

@@ -301,6 +301,7 @@ export default function BillingPhase({
                     value={paySafe ? String(paySafe) : ''}
                     onChange={(v) => setPaySafe(v ? parseInt(v) : null)}
                     className="flex-1 min-w-0 text-[11px]"
+                    searchable={false}
                   />
                 ) : (
                   <div className="flex-1 flex items-center justify-end text-[11px] text-blue-300/70 px-2 rounded-lg bg-blue-500/5 border border-blue-500/15">

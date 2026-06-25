@@ -297,6 +297,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                     value={loanForm.advance_type}
                     onChange={(v) => setLoanForm((p) => ({ ...p, advance_type: v }))}
                     className="w-full"
+                    searchable={false}
                   />
                 </Field>
                 <Field label="السبب (اختياري)">
@@ -322,6 +323,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                       }))
                     }
                     className="w-full"
+                    searchable={false}
                   />
                 </Field>
                 {!isSelfService && (
@@ -336,6 +338,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                       placeholder="— بدون خزينة —"
                       className="w-full"
                       clearable
+                      searchable={false}
                     />
                     {selected?.branch_id && safes.length === 0 && (
                       <div className="text-xs text-amber-300/70 mt-1">
@@ -645,6 +648,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                     placeholder="— بدون خزينة —"
                     className="w-full"
                     clearable
+                    searchable={false}
                   />
                   {selected?.branch_id && safes.length === 0 && (
                     <div className="text-xs text-amber-300/70 mt-1">
@@ -765,6 +769,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                             }
                             placeholder="— اختر —"
                             className="w-full"
+                            searchable={false}
                           />
                         </div>
                         <div className="col-span-2">
@@ -937,6 +942,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                         onChange={(v) => setReimburseSafeId(v)}
                         placeholder="— اختر —"
                         className="w-full"
+                        searchable={false}
                       />
                     </div>
                     <div>
@@ -1021,6 +1027,7 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                     onChange={(v) => setApproveForm((p) => ({ ...p, safe_id: v }))}
                     placeholder="— اختر الخزينة —"
                     className="w-full"
+                    searchable={false}
                   />
                   <p className="text-xs text-amber-300/70 mt-1">
                     ⚠️ إلزامي — سيُخصم المبلغ من الخزينة المختارة فور الاعتماد

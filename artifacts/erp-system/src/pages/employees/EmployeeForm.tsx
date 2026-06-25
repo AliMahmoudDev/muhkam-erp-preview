@@ -221,6 +221,7 @@ export function EmployeeForm({
                   }
                   placeholder="— اختر القسم —"
                   className="flex-1"
+                  searchable={false}
                 />
                 <button
                   type="button"
@@ -270,6 +271,7 @@ export function EmployeeForm({
                   }
                   placeholder="— اختر المسمى —"
                   className="flex-1"
+                  searchable={false}
                 />
                 <button
                   type="button"
@@ -329,6 +331,7 @@ export function EmployeeForm({
                 onChange={(v) => set('branch_id', v ? Number(v) : null)}
                 placeholder="— اختر الفرع —"
                 className="w-full"
+                searchable={false}
               />
             </Field>
           </div>
@@ -386,6 +389,7 @@ export function EmployeeForm({
                     value={editEmp.currency ?? 'EGP'}
                     onChange={(v) => set('currency', v)}
                     className="flex-shrink-0 w-[90px]"
+                    searchable={false}
                   />
                 </div>
               </div>
@@ -417,6 +421,7 @@ export function EmployeeForm({
                     value={editEmp.commission_basis ?? 'gross'}
                     onChange={(v) => set('commission_basis', v as 'gross' | 'net')}
                     className="w-full"
+                    searchable={false}
                   />
                   <Combobox
                     options={departments.map((d) => ({ value: String(d.id), label: d.name_ar }))}
@@ -430,6 +435,7 @@ export function EmployeeForm({
                     placeholder="— كل الأقسام —"
                     className="w-full"
                     clearable
+                    searchable={false}
                   />
                 </div>
               </div>

@@ -408,6 +408,7 @@ export function SalePaymentSection({
                   onChange={(v) => setPaySafe(v ? Number(v) : null)}
                   disabled={isRestricted}
                   className="flex-1 min-w-0"
+                  searchable={false}
                 />
               ) : (
                 <div className="sale-pay-credit-ph flex-1 flex items-center justify-end text-xs">

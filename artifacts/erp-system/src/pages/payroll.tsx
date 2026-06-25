@@ -583,6 +583,7 @@ export default function Payroll() {
                   onChange={(v) => setPayRecSafeId(v)}
                   placeholder="— اختر الخزانة —"
                   className="w-full"
+                  searchable={false}
                 />
                 {payRecSafeId &&
                   (() => {
@@ -679,6 +680,7 @@ export default function Payroll() {
                   onChange={(v) => setPayForm((p) => ({ ...p, safe_id: v }))}
                   placeholder="— اختر الخزانة —"
                   className="w-full"
+                  searchable={false}
                 />
                 {payForm.safe_id &&
                   (() => {

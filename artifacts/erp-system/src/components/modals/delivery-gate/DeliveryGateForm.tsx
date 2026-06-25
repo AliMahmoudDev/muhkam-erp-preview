@@ -202,6 +202,7 @@ export default function DeliveryGateForm({
               value={selectedWarehouseId ? String(selectedWarehouseId) : ''}
               onChange={(v) => setSelectedWarehouseId(v ? parseInt(v) : null)}
               className="w-full max-w-xs text-[11px]"
+              searchable={false}
             />
           </div>
         )}
@@ -408,6 +409,7 @@ export default function DeliveryGateForm({
                           value={extVendorSafeId ? String(extVendorSafeId) : ''}
                           onChange={(v) => setExtVendorSafeId(v ? parseInt(v) : null)}
                           className="w-full text-[11px]"
+                          searchable={false}
                         />
                       </div>
                     )}
@@ -615,6 +617,7 @@ export default function DeliveryGateForm({
                   value={paySafe ? String(paySafe) : ''}
                   onChange={(v) => setPaySafe(v ? parseInt(v) : null)}
                   className="flex-1 min-w-0 text-[11px]"
+                  searchable={false}
                 />
               ) : (
                 <div className="flex-1 flex items-center justify-end text-[11px] text-ink/40 px-2 rounded-lg bg-surface border border-line">

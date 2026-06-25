@@ -220,6 +220,7 @@ function AlertsTab({
               onChange={(v) => setFilterWH(v === 'all' ? 'all' : Number(v))}
               placeholder="جميع المخازن"
               className="w-auto"
+              searchable={false}
             />
 
             <Button

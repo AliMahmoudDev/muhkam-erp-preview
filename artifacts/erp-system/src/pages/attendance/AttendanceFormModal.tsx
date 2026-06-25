@@ -251,6 +251,7 @@ export function EditRecordModal({
                 value={form.status}
                 onChange={(v) => setForm((p) => (p ? { ...p, status: v } : p))}
                 className="w-full"
+                searchable={false}
               />
             </Field>
             <Field label="ساعات العمل">

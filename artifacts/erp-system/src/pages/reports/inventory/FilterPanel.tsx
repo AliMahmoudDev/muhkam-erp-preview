@@ -82,6 +82,7 @@ export default function FilterPanel({
             ]}
             value={sortMode}
             onChange={(v) => setSortMode(v as SortMode)}
+            searchable={false}
           />
         </div>
         <button

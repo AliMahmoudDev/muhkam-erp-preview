@@ -470,6 +470,7 @@ export default function ChecklistTab() {
             value={addMfrEmoji}
             onChange={(v) => setAddMfrEmoji(v)}
             className="text-lg w-20"
+            searchable={false}
           />
           <input
             autoFocus
@@ -515,6 +516,7 @@ export default function ChecklistTab() {
             value={addCatEmoji}
             onChange={(v) => setAddCatEmoji(v)}
             className="text-lg w-20"
+            searchable={false}
           />
           <input
             autoFocus

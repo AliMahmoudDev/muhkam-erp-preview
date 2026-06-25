@@ -363,6 +363,7 @@ export function SplitPaymentModal({
                     onChange={(v) => setActiveSafe(v ? parseInt(v) : null)}
                     disabled={isRestricted}
                     className="flex-1 min-w-0 text-sm"
+                    searchable={false}
                   />
                 ) : (
                   <div

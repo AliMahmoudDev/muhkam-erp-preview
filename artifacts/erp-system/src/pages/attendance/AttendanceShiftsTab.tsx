@@ -235,6 +235,7 @@ export function AttendanceShiftsTab({
                   onChange={(v) => setAssignForm((p) => ({ ...p, shift_id: v }))}
                   placeholder="اختر المناوبة"
                   className="w-full"
+                  searchable={false}
                 />
               </Field>
               <Field label="تاريخ البدء">

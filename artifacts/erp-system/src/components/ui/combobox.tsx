@@ -21,6 +21,7 @@ export interface ComboboxProps {
   className?: string
   clearable?: boolean
   id?: string
+  searchable?: boolean
 }
 
 const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
@@ -35,6 +36,7 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
       disabled,
       className,
       clearable = false,
+      searchable = true,
     },
     ref
   ) => {
@@ -48,7 +50,7 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
 
     const selected = options.find((o) => o.value === value)
 
-    const filtered = query
+    const filtered = searchable && query
       ? options.filter((o) =>
           o.label.toLowerCase().includes(query.toLowerCase())
         )
@@ -69,10 +71,10 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
     }
 
     React.useEffect(() => {
-      if (open) {
+      if (open && searchable) {
         setTimeout(() => searchRef.current?.focus(), 10)
       }
-    }, [open])
+    }, [open, searchable])
 
     React.useEffect(() => {
       if (!open) return
@@ -137,17 +139,23 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
         </button>
 
         {open && (
-          <div ref={panelRef} className="erp-combobox-panel" role="listbox">
-            <div className="erp-combobox-search-wrap">
-              <input
-                ref={searchRef}
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={searchPlaceholder}
-                className="erp-combobox-search"
-              />
-            </div>
+          <div
+            ref={panelRef}
+            className={cn("erp-combobox-panel", !searchable && "erp-combobox-panel--compact")}
+            role="listbox"
+          >
+            {searchable && (
+              <div className="erp-combobox-search-wrap">
+                <input
+                  ref={searchRef}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  className="erp-combobox-search"
+                />
+              </div>
+            )}
             <div className="erp-combobox-list">
               {filtered.length === 0 ? (
                 <div className="erp-combobox-empty">{emptyText}</div>

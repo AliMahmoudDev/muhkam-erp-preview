@@ -185,6 +185,7 @@ export function SellModal({
                   setDiscountVal(0);
                 }}
                 className="w-full"
+                searchable={false}
               />
             </div>
             <div>
@@ -270,6 +271,7 @@ export function SellModal({
                 value={String(warrantyMonths)}
                 onChange={(v) => setWarrantyMonths(parseInt(v))}
                 className="w-full"
+                searchable={false}
               />
             </div>
             <div>

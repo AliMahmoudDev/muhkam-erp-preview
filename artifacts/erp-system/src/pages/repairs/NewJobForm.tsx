@@ -374,6 +374,7 @@ export function NewJobForm({
               placeholder="— بدون تحديد فرع —"
               className="w-full text-sm"
               clearable
+              searchable={false}
             />
           </div>
         )}
@@ -397,6 +398,7 @@ export function NewJobForm({
               }}
               placeholder="— اختر الماركة —"
               className="w-full text-sm"
+              searchable={false}
             />
           </div>
 
@@ -413,6 +415,7 @@ export function NewJobForm({
                 }}
                 placeholder="— اختر التصنيف —"
                 className="w-full text-sm"
+                searchable={false}
               />
             </div>
           )}
@@ -460,6 +463,7 @@ export function NewJobForm({
                     onChange={(v) => setModel(v)}
                     placeholder="— اختر الموديل —"
                     className="flex-1 text-sm"
+                    searchable={false}
                   />
                   <button
                     type="button"

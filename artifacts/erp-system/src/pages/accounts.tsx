@@ -306,6 +306,7 @@ export default function Accounts() {
                     value={form.type}
                     onChange={(v) => setForm((f) => ({ ...f, type: v }))}
                     className="w-full"
+                    searchable={false}
                   />
                 </div>
               </div>

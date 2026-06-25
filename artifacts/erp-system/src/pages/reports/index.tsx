@@ -56,6 +56,7 @@ function WarehouseFilter({
       onChange={(v) => onChange(v ? Number(v) : null)}
       placeholder="🏪 كل الفروع"
       clearable
+      searchable={false}
     />
   );
 }

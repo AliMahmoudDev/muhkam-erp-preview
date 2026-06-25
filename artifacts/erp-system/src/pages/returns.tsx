@@ -702,6 +702,7 @@ export default function Returns() {
           onChange={(v) => setFilterRefund(v || 'all')}
           placeholder="نوع الاسترداد"
           className="w-44"
+          searchable={false}
         />
         {/* مسح الفلاتر */}
         {isFiltered && (

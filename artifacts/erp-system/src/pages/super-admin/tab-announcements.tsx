@@ -99,6 +99,7 @@ export function TabAnnouncements({
                 ]}
                 value={annType}
                 onChange={(v) => setAnnType(v)}
+                searchable={false}
               />
             </div>
             <div>
@@ -120,6 +121,7 @@ export function TabAnnouncements({
                 ]}
                 value={annTarget}
                 onChange={(v) => setAnnTarget(v)}
+                searchable={false}
               />
             </div>
             {annTarget === 'specific' && (

@@ -78,6 +78,7 @@ export function LedgerTable({
                 onChange={(v) => setDirectPayForm((f) => ({ ...f, safe_id: v }))}
                 placeholder="— بدون خزينة —"
                 className="w-full"
+                searchable={false}
               />
             </div>
           </div>

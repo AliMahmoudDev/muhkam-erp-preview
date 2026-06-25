@@ -349,6 +349,7 @@ export default function Treasury() {
                       placeholder="— بدون فرع —"
                       clearable
                       className="mb-2 w-full"
+                      searchable={false}
                     />
                   ) : s.branch_id ? (
                     <p className="text-amber-400/60 text-[10px] mb-2">

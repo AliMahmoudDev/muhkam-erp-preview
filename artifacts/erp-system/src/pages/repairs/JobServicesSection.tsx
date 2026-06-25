@@ -318,6 +318,7 @@ function ServiceForm({
             value={value.status}
             onChange={(v) => onChange({ ...value, status: v as JobService['status'] })}
             className="w-full text-xs"
+            searchable={false}
           />
         </div>
 

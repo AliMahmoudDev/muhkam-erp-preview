@@ -319,6 +319,7 @@ export default function Income() {
           onChange={(v) => setMonthFilter(v || 'all')}
           placeholder="كل الأشهر"
           className="w-44"
+          searchable={false}
         />
       </div>
 
@@ -452,6 +453,7 @@ export default function Income() {
                 placeholder="-- بدون خزينة --"
                 clearable
                 className="w-full"
+                searchable={false}
               />
             </div>
             <div>

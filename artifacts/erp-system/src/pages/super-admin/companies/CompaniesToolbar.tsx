@@ -103,6 +103,7 @@ export function CompaniesToolbar({
           options={[10, 25, 50, 100].map((n) => ({ value: String(n), label: String(n) }))}
           value={String(perPage)}
           onChange={(v) => setPerPage(Number(v))}
+          searchable={false}
         />
       </div>
       <div

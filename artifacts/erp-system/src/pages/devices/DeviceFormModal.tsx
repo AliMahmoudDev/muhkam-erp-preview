@@ -372,6 +372,7 @@ export function DeviceFormModal({
                     onChange={(v) => handleBrandChange(v)}
                     placeholder="— اختر —"
                     className={sCls('brand')}
+                    searchable={false}
                   />
                   {isOtherBrand && (
                     <input
@@ -399,6 +400,7 @@ export function DeviceFormModal({
                       placeholder="— اختر —"
                       className={brandSel ? sCls('cat') : dCls}
                       disabled={!brandSel}
+                      searchable={false}
                     />
                   )}
                 </div>
@@ -420,6 +422,7 @@ export function DeviceFormModal({
                         placeholder="— اختر —"
                         className={catSel ? sCls('model') : dCls}
                         disabled={!catSel}
+                        searchable={false}
                       />
                       {isOtherModel && (
                         <input
@@ -445,6 +448,7 @@ export function DeviceFormModal({
                     placeholder="— اللون —"
                     className={modelSel || isOtherBrand ? sCls('color') : dCls}
                     disabled={!modelSel && !isOtherBrand}
+                    searchable={false}
                   />
                   {isOtherColor && (
                     <input
@@ -464,6 +468,7 @@ export function DeviceFormModal({
                     placeholder="— السعة —"
                     className={modelSel || isOtherBrand ? sCls('storage') : dCls}
                     disabled={!modelSel && !isOtherBrand}
+                    searchable={false}
                   />
                   {isOtherStorage && (
                     <input
@@ -481,6 +486,7 @@ export function DeviceFormModal({
                     value={form.grade}
                     onChange={(v) => f('grade', v)}
                     className={iCls()}
+                    searchable={false}
                   />
                 </div>
               </div>
@@ -771,6 +777,7 @@ export function DeviceFormModal({
                   onChange={(v) => fp('warehouse_id', v)}
                   placeholder="— اختر المخزن —"
                   className={sCls('warehouse_id')}
+                  searchable={false}
                 />
                 {warehouses.length === 0 && (
                   <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
@@ -823,6 +830,7 @@ export function DeviceFormModal({
                     onChange={(v) => fp('safe_id', v)}
                     placeholder="— اختر الخزينة —"
                     className={sCls('safe_id')}
+                    searchable={false}
                   />
                   {safes.length === 0 && (
                     <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">

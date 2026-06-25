@@ -261,6 +261,7 @@ export default function RepairReturnModal({
                     value={safeId}
                     onChange={(v) => setSafeId(v)}
                     className="w-full text-xs"
+                    searchable={false}
                   />
                   {safes.length === 0 && (
                     <p className="text-[10px] text-amber-400/80 mt-1">⚠ لا توجد خزن متاحة لحسابك</p>

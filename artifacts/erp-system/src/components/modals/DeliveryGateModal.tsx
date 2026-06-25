@@ -378,6 +378,7 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                         value={g.safeId}
                         onChange={(v) => g.setSafeId(v)}
                         className="w-full mt-1.5 text-[11px]"
+                        searchable={false}
                       />
                     )}
                   </div>

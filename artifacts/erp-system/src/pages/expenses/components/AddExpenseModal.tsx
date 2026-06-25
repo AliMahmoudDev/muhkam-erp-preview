@@ -83,6 +83,7 @@ export function AddExpenseModal({
               onChange={(v) => setFormData({ ...formData, category: v })}
               placeholder="-- اختر التصنيف --"
               className="flex-1"
+              searchable={false}
             />
             {formData.category && categories.find((c) => c.name === formData.category) && (
               <button
@@ -158,6 +159,7 @@ export function AddExpenseModal({
               placeholder="-- بدون خزينة --"
               clearable
               className="w-full"
+              searchable={false}
             />
           </div>
         )}

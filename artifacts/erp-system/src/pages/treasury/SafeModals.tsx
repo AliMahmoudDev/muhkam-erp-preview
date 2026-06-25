@@ -110,6 +110,7 @@ export default function SafeModals({
                     onChange={(v) => setAddForm((f) => ({ ...f, branch_id: v }))}
                     placeholder="— بدون فرع —"
                     clearable
+                    searchable={false}
                   />
                 </div>
               )}
@@ -270,6 +271,7 @@ export default function SafeModals({
                     onChange={(v) => setEditForm((f) => ({ ...f, branch_id: v }))}
                     placeholder="— بدون فرع —"
                     clearable
+                    searchable={false}
                   />
                 </div>
               )}

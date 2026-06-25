@@ -102,6 +102,7 @@ export function CreateCompanyForm({
             ]}
             value={newPlan}
             onChange={(v) => setNewPlan(v)}
+            searchable={false}
           />
         </div>
         <div style={{ flex: '1 1 150px' }}>
@@ -123,6 +124,7 @@ export function CreateCompanyForm({
             ]}
             value={newEdition}
             onChange={(v) => setNewEdition(v as 'advanced' | 'ultimate')}
+            searchable={false}
           />
         </div>
         <div style={{ flex: '1 1 110px' }}>
@@ -144,6 +146,7 @@ export function CreateCompanyForm({
             }))}
             value={String(newDays)}
             onChange={(v) => setNewDays(Number(v))}
+            searchable={false}
           />
         </div>
         <div style={{ flex: '1 1 160px' }}>

@@ -208,6 +208,7 @@ function RequestModal({
                 onChange={(v) => setForm((f) => ({ ...f, from_branch_id: v }))}
                 placeholder="— اختر —"
                 className="w-full"
+                searchable={false}
               />
             </div>
             <div>
@@ -226,6 +227,7 @@ function RequestModal({
                     ? 'border-red-500/40'
                     : ''
                 }`}
+                searchable={false}
               />
               {form.from_branch_id &&
                 form.to_branch_id &&

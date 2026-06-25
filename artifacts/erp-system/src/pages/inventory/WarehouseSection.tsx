@@ -240,6 +240,7 @@ export default function WarehouseSection({
                         placeholder="— بدون فرع —"
                         clearable
                         className="w-full !text-[10px]"
+                        searchable={false}
                       />
                     </div>
                   ) : w.branch_id ? (
@@ -363,6 +364,7 @@ export default function WarehouseSection({
                     placeholder="— بدون فرع —"
                     clearable
                     className="w-full"
+                    searchable={false}
                   />
                 </div>
               )}

@@ -142,6 +142,7 @@ export function SaleCartItems({
                 value={warehouseId}
                 onChange={(v) => setWarehouseId(v)}
                 className="w-full text-xs sale-text-primary"
+                searchable={false}
               />
             </div>
           )}

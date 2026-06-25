@@ -104,6 +104,7 @@ export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: num
               ]}
               value={topLimit}
               onChange={(v) => setTopLimit(v as 'all' | '5' | '10')}
+              searchable={false}
             />
           </div>
 

@@ -51,6 +51,7 @@ export function ExpensesFilterToolbar({
             placeholder="كل التصنيفات"
             clearable
             className="w-36"
+            searchable={false}
           />
           <input
             type="date"

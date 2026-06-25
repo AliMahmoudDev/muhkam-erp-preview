@@ -42,6 +42,7 @@ export function EmployeeFilters({
         placeholder="كل الأقسام"
         className="ml-[250px] mr-[250px]"
         clearable
+        searchable={false}
       />
       {canManage && (
         <button

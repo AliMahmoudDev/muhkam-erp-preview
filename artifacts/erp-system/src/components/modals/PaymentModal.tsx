@@ -168,6 +168,7 @@ export default function PaymentModal({ onClose }: Props) {
             value={form.safe_id}
             onChange={(v) => setForm((f) => ({ ...f, safe_id: v }))}
             className="w-full text-sm"
+            searchable={false}
           />
         </div>
 

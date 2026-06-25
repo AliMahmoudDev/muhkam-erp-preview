@@ -676,6 +676,7 @@ export function AppLayout({ children }: LayoutProps) {
               value={currentWarehouseId}
               onChange={(v) => setWarehouseId(v)}
               className="w-full text-sm"
+              searchable={false}
             />
           </div>
         )}

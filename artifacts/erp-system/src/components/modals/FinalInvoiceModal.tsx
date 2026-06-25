@@ -567,6 +567,7 @@ ${
                   value={safeId}
                   onChange={(v) => setSafeId(v)}
                   className="w-full text-[11px]"
+                  searchable={false}
                 />
               </div>
             )}
