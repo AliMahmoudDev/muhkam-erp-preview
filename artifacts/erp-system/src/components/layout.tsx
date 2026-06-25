@@ -842,8 +842,39 @@ export function AppLayout({ children }: LayoutProps) {
             zIndex: 30,
           }}
         >
-          {/* Left: spacer so search stays centred */}
-          <div className="flex-1 min-w-0" />
+          {/* Left: current page title (auto-derived from route) */}
+          {(() => {
+            const match = NAV_ITEMS.find((i) =>
+              i.href === '/'
+                ? location === '/'
+                : location === i.href || location.startsWith(i.href + '/'),
+            );
+            const PageIcon = match?.icon;
+            return (
+              <div className="flex-1 min-w-0 hidden md:flex items-center gap-2 overflow-hidden">
+                {match && PageIcon && (
+                  <>
+                    <PageIcon
+                      aria-hidden
+                      style={{ width: 15, height: 15, color: 'var(--erp-brand)', flexShrink: 0 }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: textPrimary,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {match.name}
+                    </span>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Center: Search */}
           <div className="hidden md:flex justify-center" style={{ flexShrink: 0 }}>
