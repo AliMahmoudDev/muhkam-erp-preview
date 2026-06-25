@@ -34,10 +34,11 @@
 
   /* ── ERP semantic token aliases → Tailwind utility classes ──────── */
   /* bg-app  bg-canvas  bg-surface  bg-raised  text-ink  border-line  text-brand  */
+  /* NOTE: must reference switchable CSS vars (not primitives) so html.light overrides work */
   --color-app: var(--bg-app);
-  --color-canvas: var(--primitive-slate-dark-3, #14141F);
-  --color-surface: var(--surface);
-  --color-raised: var(--surface-raised);
+  --color-canvas: var(--bg-app);
+  --color-surface: var(--bg-surface);
+  --color-raised: var(--bg-elevated);
   --color-ink: var(--text-1);
   --color-ink-2: var(--text-2);
   --color-ink-3: var(--text-3);
@@ -992,9 +993,35 @@ html.dark .text-gray-500 {
   color: rgba(255, 255, 255, 0.55) !important;
 }
 
+/* ── Safety-net: bg-canvas / bg-surface in light mode ─────────────── */
+/* Even if @theme inline chain fails, these overrides guarantee correct theme */
+html.light .bg-canvas {
+  background-color: #F8F9FC !important;
+}
+html.light .bg-app {
+  background-color: #F8F9FC !important;
+}
+html.light .bg-surface {
+  background-color: #ffffff !important;
+}
+html.light .bg-raised {
+  background-color: #F0F2F7 !important;
+}
+
+/* ── <option> elements — force light bg in every select ─────────────── */
+html.light option,
+html.light select option {
+  background-color: #ffffff !important;
+  color: #141A24 !important;
+}
+
 /* ── bg-gray-* fix in LIGHT mode: gray-900 on options renders white ── */
 html.light .bg-gray-900,
 html.light .bg-gray-800,
+html.light .bg-zinc-900,
+html.light .bg-zinc-800,
+html.light .bg-neutral-900,
+html.light .bg-neutral-800,
 html.light .bg-slate-900,
 html.light .bg-slate-800 {
   background-color: #ffffff !important;
@@ -1042,6 +1069,47 @@ html.light .text-violet-300 {
 }
 html.light .text-violet-500 {
   color: #4c1d95 !important;
+}
+
+/* ── Light gray/zinc/slate text — darken for readability ─────────── */
+html.light .text-gray-100,
+html.light .text-gray-200,
+html.light .text-gray-300 {
+  color: #374151 !important;
+}
+html.light .text-gray-400 {
+  color: #6b7280 !important;
+}
+html.light .text-gray-500 {
+  color: #4b5563 !important;
+}
+html.light .text-zinc-100,
+html.light .text-zinc-200,
+html.light .text-zinc-300 {
+  color: #374151 !important;
+}
+html.light .text-zinc-400 {
+  color: #6b7280 !important;
+}
+html.light .text-slate-100,
+html.light .text-slate-200,
+html.light .text-slate-300 {
+  color: #374151 !important;
+}
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+html.light .text-neutral-300,
+html.light .text-neutral-400 {
+  color: #6b7280 !important;
+}
+
+/* ── text-white on neutral/card surfaces — adapt to light mode ──── */
+/* Only applies to elements NOT on a colored (amber/blue/green/red) bg */
+html.light .glass-panel .text-white,
+html.light .bg-canvas .text-white,
+html.light .bg-surface .text-white {
+  color: var(--color-text-primary) !important;
 }
 
 /* ── Light mode typography ─────────────────────────────── */
