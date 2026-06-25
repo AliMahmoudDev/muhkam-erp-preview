@@ -12,7 +12,6 @@ import {
   Database,
   Percent,
   TrendingUp,
-  AlertTriangle,
   Shield,
 } from 'lucide-react';
 
@@ -130,27 +129,9 @@ export default function SettingsPage() {
           <p className="text-ink/60 text-xs font-black uppercase tracking-widest">الإعدادات</p>
         </div>
 
-        <nav className="flex-1 px-3 pb-3 space-y-5 mt-3 overflow-y-auto">
+        <nav className="flex-1 px-3 pb-3 space-y-0.5 mt-3 overflow-y-auto">
           {TAB_SECTIONS.map((section) => (
             <div key={section.section}>
-              <div className="flex items-center gap-1.5 px-2 mb-0.5">
-                {section.danger && (
-                  <AlertTriangle className="w-2.5 h-2.5 shrink-0 text-red-400/50" />
-                )}
-                <p
-                  className={`text-[10px] font-black uppercase tracking-widest ${
-                    section.danger ? 'text-red-400/50' : 'text-ink/25'
-                  }`}
-                >
-                  {section.section}
-                </p>
-              </div>
-              {section.subtitle && (
-                <p className="text-[9px] text-red-400/40 font-medium px-2 mb-1.5">
-                  {section.subtitle}
-                </p>
-              )}
-              {!section.subtitle && <div className="mb-1.5" />}
               <div className="space-y-0.5">
                 {section.tabs.map((tab) => {
                   const active = activeTab === tab.id;
