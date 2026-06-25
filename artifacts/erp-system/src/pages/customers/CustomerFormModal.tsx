@@ -1,5 +1,6 @@
 import { Plus, Trash2, X, Vault, CreditCard } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Classification {
   id: number;
@@ -131,25 +132,18 @@ export function AddCustomerModal({
           <div>
             <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
             <div className="flex items-center gap-2">
-              <select
-                className="glass-input flex-1 appearance-none"
-                value={formData.classification_id ?? ''}
-                onChange={(e) =>
-                  setFormData((f) => ({
-                    ...f,
-                    classification_id: e.target.value ? parseInt(e.target.value) : null,
-                  }))
-                }
-              >
-                <option value="" className="bg-gray-900">
-                  -- بدون تصنيف --
-                </option>
-                {classifications.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1 min-w-0">
+                <Combobox
+                  options={classifications.map((c) => ({ value: String(c.id), label: c.name }))}
+                  value={formData.classification_id ? String(formData.classification_id) : ''}
+                  onChange={(v) =>
+                    setFormData((f) => ({ ...f, classification_id: v ? parseInt(v) : null }))
+                  }
+                  placeholder="-- بدون تصنيف --"
+                  clearable
+                  className="w-full"
+                />
+              </div>
               {formData.classification_id && (
                 <button
                   type="button"
@@ -334,25 +328,18 @@ export function EditCustomerModal({
           <div>
             <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
             <div className="flex items-center gap-2">
-              <select
-                className="glass-input flex-1 appearance-none"
-                value={editFormData.classification_id ?? ''}
-                onChange={(e) =>
-                  setEditFormData((f) => ({
-                    ...f,
-                    classification_id: e.target.value ? parseInt(e.target.value) : null,
-                  }))
-                }
-              >
-                <option value="" className="bg-gray-900">
-                  -- بدون تصنيف --
-                </option>
-                {classifications.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1 min-w-0">
+                <Combobox
+                  options={classifications.map((c) => ({ value: String(c.id), label: c.name }))}
+                  value={editFormData.classification_id ? String(editFormData.classification_id) : ''}
+                  onChange={(v) =>
+                    setEditFormData((f) => ({ ...f, classification_id: v ? parseInt(v) : null }))
+                  }
+                  placeholder="-- بدون تصنيف --"
+                  clearable
+                  className="w-full"
+                />
+              </div>
               {editFormData.classification_id && (
                 <button
                   type="button"
@@ -416,26 +403,20 @@ export function EditCustomerModal({
 
           <div>
             <label className="block text-ink/70 text-sm mb-1">قائمة الأسعار</label>
-            <select
-              className="glass-input w-full appearance-none"
-              value={editFormData.price_list_id ?? ''}
-              onChange={(e) =>
+            <Combobox
+              options={priceLists.map((pl) => ({ value: String(pl.id), label: pl.name }))}
+              value={editFormData.price_list_id ? String(editFormData.price_list_id) : ''}
+              onChange={(v) =>
                 setEditFormData((f) => ({
                   ...f,
-                  price_list_id: e.target.value ? parseInt(e.target.value) : null,
-                  price_list_markup: e.target.value ? f.price_list_markup : '',
+                  price_list_id: v ? parseInt(v) : null,
+                  price_list_markup: v ? f.price_list_markup : '',
                 }))
               }
-            >
-              <option value="" className="bg-gray-900">
-                -- بدون قائمة أسعار --
-              </option>
-              {priceLists.map((pl) => (
-                <option key={pl.id} value={pl.id} className="bg-gray-900">
-                  {pl.name}
-                </option>
-              ))}
-            </select>
+              placeholder="-- بدون قائمة أسعار --"
+              clearable
+              className="w-full"
+            />
             {editFormData.price_list_id && (
               <div className="mt-2 flex items-center gap-2">
                 <label className="text-ink/50 text-xs shrink-0">هامش الربح الخاص %</label>
@@ -564,21 +545,16 @@ export function ReceiptModal({
 
         <div>
           <label className="block text-ink/70 text-sm mb-1">الخزينة المستلِمة *</label>
-          <select
-            required
-            className="glass-input w-full appearance-none"
+          <Combobox
+            options={safes.map((s) => ({
+              value: String(s.id),
+              label: `${s.name} (${formatCurrency(Number(s.balance))})`,
+            }))}
             value={receiptData.safe_id}
-            onChange={(e) => setReceiptData((d) => ({ ...d, safe_id: e.target.value }))}
-          >
-            <option value="" className="bg-gray-900">
-              -- اختر خزينة --
-            </option>
-            {safes.map((s) => (
-              <option key={s.id} value={s.id} className="bg-gray-900">
-                {s.name} ({formatCurrency(Number(s.balance))})
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setReceiptData((d) => ({ ...d, safe_id: v }))}
+            placeholder="-- اختر خزينة --"
+            className="w-full"
+          />
         </div>
 
         <div>
@@ -702,21 +678,16 @@ export function SupplierPaymentModal({
 
         <div>
           <label className="block text-ink/70 text-sm mb-1">الخزينة المدفوعة منها *</label>
-          <select
-            required
-            className="glass-input w-full appearance-none"
+          <Combobox
+            options={safes.map((s) => ({
+              value: String(s.id),
+              label: `${s.name} (${formatCurrency(Number(s.balance))})`,
+            }))}
             value={supplierPaymentData.safe_id}
-            onChange={(e) => setSupplierPaymentData((d) => ({ ...d, safe_id: e.target.value }))}
-          >
-            <option value="" className="bg-gray-900">
-              -- اختر خزينة --
-            </option>
-            {safes.map((s) => (
-              <option key={s.id} value={s.id} className="bg-gray-900">
-                {s.name} ({formatCurrency(Number(s.balance))})
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setSupplierPaymentData((d) => ({ ...d, safe_id: v }))}
+            placeholder="-- اختر خزينة --"
+            className="w-full"
+          />
         </div>
 
         <div>

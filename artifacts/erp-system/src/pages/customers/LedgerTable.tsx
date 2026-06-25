@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { formatCurrency } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 import { LEDGER_TYPE_LABELS, type CustomerLedgerData } from './hooks/useCustomerLedger';
 
 interface DirectPayForm {
@@ -71,18 +72,13 @@ export function LedgerTable({
             </div>
             <div>
               <label className="text-xs text-ink/60 mb-1 block">الخزينة (اختياري)</label>
-              <select
+              <Combobox
+                options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
                 value={directPayForm.safe_id}
-                onChange={(e) => setDirectPayForm((f) => ({ ...f, safe_id: e.target.value }))}
-                className="erp-input w-full"
-              >
-                <option value="">— بدون خزينة —</option>
-                {safes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setDirectPayForm((f) => ({ ...f, safe_id: v }))}
+                placeholder="— بدون خزينة —"
+                className="w-full"
+              />
             </div>
           </div>
           <div>
