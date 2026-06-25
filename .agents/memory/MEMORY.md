@@ -3,3 +3,4 @@
 - [TopReportsTab any retention](toprepor-any-retention.md) — generic table renderer accessing row[c.key] as ReactNode+formatCurrency args; Record<string,unknown> breaks downstream — keep any[] with eslint-disable.
 - [Token Design System](token-design-system.md) — 4-layer design token system; critical naming & cascade decisions.
 - [Theme token @theme inline bug](theme-attheme-inline-bug.md) — @theme inline inlines values statically; bg-canvas was hardcoded to dark primitive, breaking light mode. Fix: reference switchable CSS vars (--bg-app, --bg-surface, --bg-elevated) not primitives.
+- [glass-input unification](glass-input-unification.md) — legacy glass-* inputs must mirror erp-input & use accent tokens (--focus-edge/--focus-ring), never hardcoded amber; box-model left alone for textareas.
