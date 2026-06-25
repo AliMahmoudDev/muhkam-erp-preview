@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, X, Settings, Calculator, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
+import { Combobox } from '@/components/ui/combobox';
 
 type AnyRec = Record<string, unknown>;
 
@@ -371,18 +372,16 @@ export function DeductionCalcModal({
             />
           </Field>
           <Field label="الموظف (اختياري)">
-            <select
-              className="erp-input w-full"
+            <Combobox
+              options={employees.map((e) => ({
+                value: String(e['id']),
+                label: `${String(e['first_name_ar'] ?? '')} ${String(e['last_name_ar'] ?? '')}`,
+              }))}
               value={empId}
-              onChange={(e) => setEmpId(e.target.value)}
-            >
-              <option value="">— كل الموظفين —</option>
-              {employees.map((e) => (
-                <option key={String(e['id'])} value={String(e['id'])}>
-                  {String(e['first_name_ar'] ?? '')} {String(e['last_name_ar'] ?? '')}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setEmpId(v)}
+              placeholder="— كل الموظفين —"
+              className="w-full"
+            />
           </Field>
           <button
             onClick={() => {

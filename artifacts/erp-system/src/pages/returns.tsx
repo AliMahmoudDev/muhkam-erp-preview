@@ -26,6 +26,7 @@ import {
   Package,
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 interface SaleReturn {
@@ -689,16 +690,18 @@ export default function Returns() {
           />
         </div>
         {/* نوع الاسترداد */}
-        <select
+        <Combobox
+          options={[
+            { value: 'all', label: 'كل أنواع الاسترداد' },
+            { value: 'cash', label: 'نقدي' },
+            { value: 'credit', label: 'ذمة' },
+            { value: 'exchange', label: 'استبدال' },
+          ]}
           value={filterRefund}
-          onChange={(e) => setFilterRefund(e.target.value)}
-          className="erp-input text-sm"
-        >
-          <option value="all">كل أنواع الاسترداد</option>
-          <option value="cash">نقدي</option>
-          <option value="credit">ذمة</option>
-          <option value="exchange">استبدال</option>
-        </select>
+          onChange={(v) => setFilterRefund(v || 'all')}
+          placeholder="نوع الاسترداد"
+          className="w-44"
+        />
         {/* مسح الفلاتر */}
         {isFiltered && (
           <button

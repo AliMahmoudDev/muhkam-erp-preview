@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Trash2, X, Tag } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import type { ExpenseCategory } from '../types';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Safe {
   id: number;
@@ -73,21 +74,13 @@ export function AddExpenseModal({
             <Tag className="w-3.5 h-3.5 text-ink/40" /> تصنيف المصروف *
           </label>
           <div className="flex gap-2">
-            <select
-              className="glass-input flex-1 appearance-none"
+            <Combobox
+              options={categories.map((c) => ({ value: c.name, label: c.name }))}
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              required
-            >
-              <option value="" className="bg-gray-900">
-                -- اختر التصنيف --
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.name} className="bg-gray-900">
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setFormData({ ...formData, category: v })}
+              placeholder="-- اختر التصنيف --"
+              className="flex-1"
+            />
             {formData.category && categories.find((c) => c.name === formData.category) && (
               <button
                 type="button"
@@ -152,20 +145,17 @@ export function AddExpenseModal({
         ) : (
           <div>
             <label className="block text-ink/70 text-sm mb-1">الخزينة المدفوع منها</label>
-            <select
-              className="glass-input w-full"
+            <Combobox
+              options={safes.map((s) => ({
+                value: String(s.id),
+                label: `${s.name} (${formatCurrency(Number(s.balance))})`,
+              }))}
               value={formData.safe_id}
-              onChange={(e) => setFormData({ ...formData, safe_id: e.target.value })}
-            >
-              <option value="" className="bg-gray-900">
-                -- بدون خزينة --
-              </option>
-              {safes.map((s) => (
-                <option key={s.id} value={s.id} className="bg-gray-900">
-                  {s.name} ({formatCurrency(Number(s.balance))})
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setFormData({ ...formData, safe_id: v })}
+              placeholder="-- بدون خزينة --"
+              clearable
+              className="w-full"
+            />
           </div>
         )}
 

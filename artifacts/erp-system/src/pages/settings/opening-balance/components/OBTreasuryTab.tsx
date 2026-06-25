@@ -61,16 +61,16 @@ export function OBTreasuryTab() {
           <div>
             <FieldLabel>الخزينة</FieldLabel>
             <SSelect
+              options={[
+                { value: '', label: '— اختر الخزينة —' },
+                ...safeArray<SafeItem>(safes).map((s) => ({
+                  value: String(s.id),
+                  label: `${s.name} (رصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')} ج.م)`,
+                })),
+              ]}
               value={form.safe_id}
-              onChange={(e) => setForm((f) => ({ ...f, safe_id: e.target.value }))}
-            >
-              <option value="">— اختر الخزينة —</option>
-              {safeArray<SafeItem>(safes).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} (رصيد: {Number(s.balance).toLocaleString('ar-EG-u-nu-latn')} ج.م)
-                </option>
-              ))}
-            </SSelect>
+              onChange={(v) => setForm((f) => ({ ...f, safe_id: v }))}
+            />
           </div>
           <div>
             <FieldLabel>المبلغ الافتتاحي (ج.م)</FieldLabel>

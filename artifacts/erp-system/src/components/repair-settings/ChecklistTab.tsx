@@ -19,6 +19,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import type { ChecklistRow, DeviceType, DeviceCategory, Manufacturer } from './shared';
 import { DEVICE_TYPE_LABEL, loadManufacturers, saveManufacturers } from './shared';
+import { Combobox } from '@/components/ui/combobox';
 
 export default function ChecklistTab() {
   const { toast } = useToast();
@@ -464,17 +465,12 @@ export default function ChecklistTab() {
           className="flex items-center gap-2 px-4 py-2.5 shrink-0"
           style={{ borderBottom: '1px solid var(--edge)', background: 'var(--surface)' }}
         >
-          <select
+          <Combobox
+            options={['📱', '💻', '⌚', '🎧', '🖥️', '🤖', '🔧', '🎮', '📷', '🖨️'].map((e) => ({ value: e, label: e }))}
             value={addMfrEmoji}
-            onChange={(e) => setAddMfrEmoji(e.target.value)}
-            className="text-lg bg-transparent outline-none cursor-pointer"
-          >
-            {['📱', '💻', '⌚', '🎧', '🖥️', '🤖', '🔧', '🎮', '📷', '🖨️'].map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setAddMfrEmoji(v)}
+            className="text-lg w-20"
+          />
           <input
             autoFocus
             value={addMfrLabel}
@@ -514,17 +510,12 @@ export default function ChecklistTab() {
           className="flex items-center gap-2 px-4 py-2.5 shrink-0"
           style={{ borderBottom: '1px solid var(--edge)', background: 'var(--surface)' }}
         >
-          <select
+          <Combobox
+            options={['📱', '💻', '⌚', '🎧', '🔧', '🤖', '📷', '🖥️', '🎮', '🖨️'].map((e) => ({ value: e, label: e }))}
             value={addCatEmoji}
-            onChange={(e) => setAddCatEmoji(e.target.value)}
-            className="text-lg bg-transparent outline-none cursor-pointer"
-          >
-            {['📱', '💻', '⌚', '🎧', '🔧', '🤖', '📷', '🖥️', '🎮', '🖨️'].map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setAddCatEmoji(v)}
+            className="text-lg w-20"
+          />
           <input
             autoFocus
             value={addCatLabel}

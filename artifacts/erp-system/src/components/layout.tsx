@@ -32,6 +32,7 @@ import LogoutCheckoutModal from '@/components/logout-checkout-modal';
 import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
 import { resolveUploadedFileUrl } from '@/lib/file-upload';
+import { Combobox } from '@/components/ui/combobox';
 /* ── Nav sections ───────────────────────────────────────────
    IA: parent modules only. Child pages live inside their parent tabs.
    - /transfers → embedded in /inventory (التحويلات بين الفروع tab)
@@ -667,31 +668,15 @@ export function AppLayout({ children }: LayoutProps) {
                 المخزن
               </span>
             </div>
-            <select
+            <Combobox
+              options={[
+                { value: '', label: 'كل المخازن' },
+                ...warehouses.map((w) => ({ value: String(w.id), label: w.name })),
+              ]}
               value={currentWarehouseId}
-              onChange={(e) => setWarehouseId(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: textPrimary,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                appearance: 'none',
-              }}
-            >
-              <option value="" style={{ background: 'var(--bg-card)' }}>
-                كل المخازن
-              </option>
-              {warehouses.map((w) => (
-                <option key={w.id} value={String(w.id)} style={{ background: 'var(--bg-card)' }}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setWarehouseId(v)}
+              className="w-full text-sm"
+            />
           </div>
         )}
 

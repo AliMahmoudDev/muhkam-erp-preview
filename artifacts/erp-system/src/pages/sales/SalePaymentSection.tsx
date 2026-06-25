@@ -8,6 +8,7 @@ import { X, User, UserPlus, Percent, FileText, Coins, Clock, Banknote } from 'lu
 import { SearchableSelect } from '@/components/searchable-select';
 import { formatCurrency } from '@/lib/format';
 import { CartItem, PayRow } from './salesTypes';
+import { Combobox } from '@/components/ui/combobox';
 
 interface SaleCustomer {
   id: number;
@@ -401,19 +402,13 @@ export function SalePaymentSection({
 
             <div className="flex gap-1.5 items-stretch mb-1.5">
               {payType === 'cash' ? (
-                <select
-                  value={paySafe ?? ''}
-                  onChange={(e) => setPaySafe(parseInt(e.target.value) || null)}
+                <Combobox
+                  options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
+                  value={paySafe ? String(paySafe) : ''}
+                  onChange={(v) => setPaySafe(v ? Number(v) : null)}
                   disabled={isRestricted}
-                  className="sale-pay-safe flex-1 min-w-0"
-                  style={{ cursor: isRestricted ? 'not-allowed' : 'pointer' }}
-                >
-                  {safes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                  className="flex-1 min-w-0"
+                />
               ) : (
                 <div className="sale-pay-credit-ph flex-1 flex items-center justify-end text-xs">
                   ائتمان العميل

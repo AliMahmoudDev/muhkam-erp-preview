@@ -6,6 +6,7 @@ import { safeArray } from '@/lib/safe-data';
 import { Search, Plus, Shield, ShieldCheck, ShieldX, Clock, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 interface WarrantyRecord {
@@ -136,17 +137,18 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <label className="text-ink/50 text-xs mb-1 block">مدة الضمان (شهر) *</label>
-            <select
-              className="glass-input w-full text-sm"
+            <Combobox
+              options={[
+                { value: '1', label: 'شهر' },
+                { value: '3', label: '3 أشهر' },
+                { value: '6', label: '6 أشهر' },
+                { value: '12', label: 'سنة' },
+                { value: '24', label: 'سنتان' },
+              ]}
               value={form.warranty_months}
-              onChange={(e) => field('warranty_months', e.target.value)}
-            >
-              <option value="1">شهر</option>
-              <option value="3">3 أشهر</option>
-              <option value="6">6 أشهر</option>
-              <option value="12">سنة</option>
-              <option value="24">سنتان</option>
-            </select>
+              onChange={(v) => field('warranty_months', v)}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="text-ink/50 text-xs mb-1 block">تاريخ البدء *</label>

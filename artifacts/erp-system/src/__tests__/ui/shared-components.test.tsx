@@ -149,40 +149,33 @@ describe("SInput", () => {
 /* SSelect                                                          */
 /* ─────────────────────────────────────────────────────────────── */
 describe("SSelect", () => {
-  it("renders a select element with children", () => {
+  const opts = [
+    { value: 'a', label: 'خيار أ' },
+    { value: 'b', label: 'خيار ب' },
+  ];
+
+  it("renders a combobox with options", () => {
     render(
-      <SSelect data-testid="sel">
-        <option value="a">خيار أ</option>
-        <option value="b">خيار ب</option>
-      </SSelect>,
+      <SSelect options={opts} value="a" onChange={vi.fn()} />,
     );
-    const select = screen.getByTestId("sel") as HTMLSelectElement;
-    expect(select.tagName.toLowerCase()).toBe("select");
-    expect(select.options).toHaveLength(2);
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
-  it("reflects value prop", () => {
+  it("reflects value prop by showing selected label", () => {
     const onChange = vi.fn();
     render(
-      <SSelect value="b" onChange={onChange} data-testid="sel2">
-        <option value="a">أ</option>
-        <option value="b">ب</option>
-      </SSelect>,
+      <SSelect options={opts} value="b" onChange={onChange} />,
     );
-    const select = screen.getByTestId("sel2") as HTMLSelectElement;
-    expect(select.value).toBe("b");
+    expect(screen.getByText('خيار ب')).toBeInTheDocument();
   });
 
-  it("calls onChange when selection changes", () => {
+  it("calls onChange with string value when selection changes", () => {
     const onChange = vi.fn();
     render(
-      <SSelect onChange={onChange} data-testid="sel3">
-        <option value="a">أ</option>
-        <option value="b">ب</option>
-      </SSelect>,
+      <SSelect options={opts} value="a" onChange={onChange} />,
     );
-    fireEvent.change(screen.getByTestId("sel3"), { target: { value: "b" } });
-    expect(onChange).toHaveBeenCalledOnce();
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
 

@@ -7,6 +7,7 @@ import { safeArray } from '@/lib/safe-data';
 import { SearchableSelect } from '@/components/searchable-select';
 import type { Device, PaymentMethod, PaymentStatus } from './types';
 import { apiPost, WARRANTY_OPTS, PAY_METHODS } from './index';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ════════════════════════════════════════════════════════
    SELL DEVICE MODAL
@@ -172,18 +173,19 @@ export function SellModal({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={lCls}>نوع الخصم</label>
-              <select
+              <Combobox
+                options={[
+                  { value: 'none', label: 'بدون خصم' },
+                  { value: 'percent', label: 'نسبة %' },
+                  { value: 'fixed', label: 'مبلغ ثابت' },
+                ]}
                 value={discountType}
-                onChange={(e) => {
-                  setDiscountType(e.target.value as 'none' | 'percent' | 'fixed');
+                onChange={(v) => {
+                  setDiscountType(v as 'none' | 'percent' | 'fixed');
                   setDiscountVal(0);
                 }}
-                className="erp-input w-full text-sm"
-              >
-                <option value="none">بدون خصم</option>
-                <option value="percent">نسبة %</option>
-                <option value="fixed">مبلغ ثابت</option>
-              </select>
+                className="w-full"
+              />
             </div>
             <div>
               <label className={lCls}>قيمة الخصم</label>
@@ -263,17 +265,12 @@ export function SellModal({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={lCls}>فترة الضمان</label>
-              <select
-                value={warrantyMonths}
-                onChange={(e) => setWarrantyMonths(parseInt(e.target.value))}
-                className="erp-input w-full text-sm"
-              >
-                {WARRANTY_OPTS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+              <Combobox
+                options={WARRANTY_OPTS.map((o) => ({ value: String(o.value), label: o.label }))}
+                value={String(warrantyMonths)}
+                onChange={(v) => setWarrantyMonths(parseInt(v))}
+                className="w-full"
+              />
             </div>
             <div>
               <label className={lCls}>البائع</label>

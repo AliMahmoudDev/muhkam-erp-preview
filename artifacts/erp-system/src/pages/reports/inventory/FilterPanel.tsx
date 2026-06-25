@@ -4,7 +4,8 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, AlertTriangle, ArrowUpDown, FileDown } from 'lucide-react';
+import { Search, AlertTriangle, FileDown } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 import { exportTableToPDF } from '@/lib/pdf-export';
 import { formatCurrency } from '../shared';
 
@@ -72,17 +73,16 @@ export default function FilterPanel({
           <AlertTriangle className="w-3.5 h-3.5" /> نافدة فقط
         </button>
         <div className="relative">
-          <select
+          <Combobox
+            options={[
+              { value: 'default', label: 'الترتيب الافتراضي' },
+              { value: 'value', label: 'الأعلى قيمة' },
+              { value: 'profit', label: 'الأعلى ربحاً' },
+              { value: 'lowStock', label: 'الأقل مخزوناً' },
+            ]}
             value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="glass-input rounded-xl px-3 py-2 text-xs font-bold text-ink/70 appearance-none pl-8 cursor-pointer"
-          >
-            <option value="default">الترتيب الافتراضي</option>
-            <option value="value">الأعلى قيمة</option>
-            <option value="profit">الأعلى ربحاً</option>
-            <option value="lowStock">الأقل مخزوناً</option>
-          </select>
-          <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-ink/30 pointer-events-none" />
+            onChange={(v) => setSortMode(v as SortMode)}
+          />
         </div>
         <button
           onClick={() =>

@@ -1,3 +1,4 @@
+import { Combobox } from '@/components/ui/combobox';
 import { C, FONT } from './types';
 
 interface AnnounceItem {
@@ -89,25 +90,16 @@ export function TabAnnouncements({
               >
                 نوع الإشعار
               </label>
-              <select
+              <Combobox
+                options={[
+                  { value: 'info', label: 'ℹ️ معلوماتي' },
+                  { value: 'success', label: '✅ إيجابي' },
+                  { value: 'warning', label: '⚠️ تحذير' },
+                  { value: 'danger', label: '🚨 عاجل' },
+                ]}
                 value={annType}
-                onChange={(e) => setAnnType(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  border: `1px solid ${C.border}`,
-                  background: C.bg,
-                  color: C.text,
-                  fontSize: '13px',
-                  fontFamily: FONT,
-                }}
-              >
-                <option value="info">ℹ️ معلوماتي</option>
-                <option value="success">✅ إيجابي</option>
-                <option value="warning">⚠️ تحذير</option>
-                <option value="danger">🚨 عاجل</option>
-              </select>
+                onChange={(v) => setAnnType(v)}
+              />
             </div>
             <div>
               <label
@@ -121,23 +113,14 @@ export function TabAnnouncements({
               >
                 الجمهور المستهدف
               </label>
-              <select
+              <Combobox
+                options={[
+                  { value: 'all', label: '🌐 جميع الشركات' },
+                  { value: 'specific', label: '🏢 شركة محددة' },
+                ]}
                 value={annTarget}
-                onChange={(e) => setAnnTarget(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  border: `1px solid ${C.border}`,
-                  background: C.bg,
-                  color: C.text,
-                  fontSize: '13px',
-                  fontFamily: FONT,
-                }}
-              >
-                <option value="all">🌐 جميع الشركات</option>
-                <option value="specific">🏢 شركة محددة</option>
-              </select>
+                onChange={(v) => setAnnTarget(v)}
+              />
             </div>
             {annTarget === 'specific' && (
               <div>

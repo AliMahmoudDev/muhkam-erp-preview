@@ -7,6 +7,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { safeArray } from '@/lib/safe-data';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
+import { Combobox } from '@/components/ui/combobox';
 import {
   Plus,
   ChevronRight,
@@ -573,19 +574,16 @@ export default function Payroll() {
                 <label className="text-xs text-ink/50 block mb-1">
                   الخزانة <span className="text-red-400">*</span>
                 </label>
-                <select
-                  className="erp-input w-full"
+                <Combobox
+                  options={safesList.map((s) => ({
+                    value: String(s.id),
+                    label: `${String(s.name ?? '')} — رصيد: ${numFmt(s.balance, String(s.currency ?? 'EGP'))}`,
+                  }))}
                   value={payRecSafeId}
-                  onChange={(e) => setPayRecSafeId(e.target.value)}
-                >
-                  <option value="">— اختر الخزانة —</option>
-                  {safesList.map((s) => (
-                    <option key={String(s.id)} value={String(s.id)}>
-                      {String(s.name ?? '')} — رصيد:{' '}
-                      {numFmt(s.balance, String(s.currency ?? 'EGP'))}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setPayRecSafeId(v)}
+                  placeholder="— اختر الخزانة —"
+                  className="w-full"
+                />
                 {payRecSafeId &&
                   (() => {
                     const safe = safesList.find((s) => String(s.id) === payRecSafeId);
@@ -672,19 +670,16 @@ export default function Payroll() {
                 <label className="text-xs text-ink/50 block mb-1">
                   الخزانة <span className="text-red-400">*</span>
                 </label>
-                <select
-                  className="erp-input w-full"
+                <Combobox
+                  options={safesList.map((s) => ({
+                    value: String(s.id),
+                    label: `${String(s.name ?? '')} — رصيد: ${numFmt(s.balance, String(s.currency ?? 'EGP'))}`,
+                  }))}
                   value={payForm.safe_id}
-                  onChange={(e) => setPayForm((p) => ({ ...p, safe_id: e.target.value }))}
-                >
-                  <option value="">— اختر الخزانة —</option>
-                  {safesList.map((s) => (
-                    <option key={String(s.id)} value={String(s.id)}>
-                      {String(s.name ?? '')} — رصيد:{' '}
-                      {numFmt(s.balance, String(s.currency ?? 'EGP'))}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setPayForm((p) => ({ ...p, safe_id: v }))}
+                  placeholder="— اختر الخزانة —"
+                  className="w-full"
+                />
                 {payForm.safe_id &&
                   (() => {
                     const safe = safesList.find((s) => String(s.id) === payForm.safe_id);

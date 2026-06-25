@@ -18,6 +18,7 @@ import { deriveDeviceType } from '@/lib/repairConstants';
 import { REPAIR_CATALOG as DEVICE_CATALOG } from '@/lib/device-catalog';
 import { RepairJob, ChecklistItem, DEFAULT_CHECKLIST, useAccessoriesList } from './repairConstants';
 import { ChecklistWizard } from './ChecklistComponents';
+import { Combobox } from '@/components/ui/combobox';
 
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
@@ -366,18 +367,14 @@ export function NewJobForm({
             <p className="text-[10px] text-ink/40 font-bold flex items-center gap-1">
               <GitBranch className="w-3 h-3" /> الفرع
             </p>
-            <select
+            <Combobox
+              options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
               value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
-              className="erp-input w-full text-sm"
-            >
-              <option value="">— بدون تحديد فرع —</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setBranchId(v)}
+              placeholder="— بدون تحديد فرع —"
+              className="w-full text-sm"
+              clearable
+            />
           </div>
         )}
 
@@ -389,44 +386,34 @@ export function NewJobForm({
 
           <div>
             <label className="text-[10px] text-ink/40 mb-1 block">الماركة *</label>
-            <select
+            <Combobox
+              options={brandNames.map((b) => ({ value: b, label: b }))}
               value={brand}
-              onChange={(e) => {
-                setBrand(e.target.value);
+              onChange={(v) => {
+                setBrand(v);
                 setCategory('');
                 setModel('');
                 setCustomModel('');
               }}
-              className="erp-input w-full text-sm"
-            >
-              <option value="">— اختر الماركة —</option>
-              {brandNames.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
+              placeholder="— اختر الماركة —"
+              className="w-full text-sm"
+            />
           </div>
 
           {brand && !isOtherBrand && categories.length > 0 && (
             <div>
               <label className="text-[10px] text-ink/40 mb-1 block">التصنيف *</label>
-              <select
+              <Combobox
+                options={categories.map((c) => ({ value: c, label: c }))}
                 value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
+                onChange={(v) => {
+                  setCategory(v);
                   setModel('');
                   setCustomModel('');
                 }}
-                className="erp-input w-full text-sm"
-              >
-                <option value="">— اختر التصنيف —</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                placeholder="— اختر التصنيف —"
+                className="w-full text-sm"
+              />
             </div>
           )}
 
@@ -467,18 +454,13 @@ export function NewJobForm({
                 </div>
               ) : (
                 <div className="flex gap-1.5">
-                  <select
+                  <Combobox
+                    options={models.map((m) => ({ value: m, label: m }))}
                     value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="erp-input flex-1 text-sm"
-                  >
-                    <option value="">— اختر الموديل —</option>
-                    {models.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setModel(v)}
+                    placeholder="— اختر الموديل —"
+                    className="flex-1 text-sm"
+                  />
                   <button
                     type="button"
                     title="إضافة موديل جديد"
@@ -534,18 +516,14 @@ export function NewJobForm({
 
           <div>
             <label className="text-[10px] text-ink/40 mb-1 block">الفني المسؤول</label>
-            <select
+            <Combobox
+              options={users.map((u) => ({ value: String(u.id), label: u.name }))}
               value={techId}
-              onChange={(e) => setTechId(e.target.value)}
-              className="erp-input w-full text-sm"
-            >
-              <option value="">— اختر الفني —</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setTechId(v)}
+              placeholder="— اختر الفني —"
+              className="w-full text-sm"
+              clearable
+            />
           </div>
 
           <div>

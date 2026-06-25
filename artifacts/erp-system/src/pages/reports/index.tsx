@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, AlertTriangle, TrendingUp, ShoppingCart, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
+import { Combobox } from '@/components/ui/combobox';
 import { api, authFetch, formatCurrency } from './shared';
 import { safeArray } from '@/lib/safe-data';
 
@@ -49,20 +50,13 @@ function WarehouseFilter({
   });
   if (!warehouses.length) return null;
   return (
-    <select
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-      className="bg-surface border border-line rounded-xl px-3 py-2 text-sm font-bold text-ink/70 focus:outline-none focus:ring-1 focus:ring-amber-400/40"
-    >
-      <option value="" className="bg-surface">
-        🏪 كل الفروع
-      </option>
-      {warehouses.map((w) => (
-        <option key={w.id} value={w.id} className="bg-surface">
-          {w.name}
-        </option>
-      ))}
-    </select>
+    <Combobox
+      options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+      value={value ? String(value) : ''}
+      onChange={(v) => onChange(v ? Number(v) : null)}
+      placeholder="🏪 كل الفروع"
+      clearable
+    />
   );
 }
 

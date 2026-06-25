@@ -1,5 +1,6 @@
 import { Search, X, Filter } from 'lucide-react';
 import type { AuditProduct } from '../_shared';
+import { Combobox } from '@/components/ui/combobox';
 
 export function PartialProductSelector({
   allProducts,
@@ -71,20 +72,13 @@ export function PartialProductSelector({
           )}
         </div>
         {categories.length > 0 && (
-          <select
+          <Combobox
+            options={categories.map((c) => ({ value: c, label: c }))}
             value={partialCategory}
-            onChange={(e) => setPartialCategory(e.target.value)}
-            className="bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-1 focus:ring-violet-400/40"
-          >
-            <option value="all" className="bg-surface">
-              جميع الفئات
-            </option>
-            {categories.map((c) => (
-              <option key={c} value={c} className="bg-surface">
-                {c}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setPartialCategory(v)}
+            placeholder="جميع الفئات"
+            className="w-full"
+          />
         )}
       </div>
 

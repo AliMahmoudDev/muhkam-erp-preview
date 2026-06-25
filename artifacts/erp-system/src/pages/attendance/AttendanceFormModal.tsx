@@ -1,4 +1,5 @@
 import { LogIn, LogOut, Pencil, X } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 
 type AnyRec = Record<string, unknown>;
 
@@ -63,18 +64,16 @@ export function CheckInModal({
         </div>
         <div className="p-5 space-y-3">
           <Field label="الموظف *">
-            <select
-              className="erp-input w-full"
+            <Combobox
+              options={empList.map((e) => ({
+                value: String(e.id),
+                label: `${String(e.first_name_ar)} ${String(e.last_name_ar)} — ${String(e.employee_code)}`,
+              }))}
               value={form.employee_id}
-              onChange={(e) => setForm((p) => ({ ...p, employee_id: e.target.value }))}
-            >
-              <option value="">اختر الموظف</option>
-              {empList.map((e) => (
-                <option key={String(e.id)} value={String(e.id)}>
-                  {String(e.first_name_ar)} {String(e.last_name_ar)} — {String(e.employee_code)}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm((p) => ({ ...p, employee_id: v }))}
+              placeholder="اختر الموظف"
+              className="w-full"
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="التاريخ">
@@ -148,18 +147,16 @@ export function CheckOutModal({
         </div>
         <div className="p-5 space-y-3">
           <Field label="الموظف *">
-            <select
-              className="erp-input w-full"
+            <Combobox
+              options={empList.map((e) => ({
+                value: String(e.id),
+                label: `${String(e.first_name_ar)} ${String(e.last_name_ar)} — ${String(e.employee_code)}`,
+              }))}
               value={form.employee_id}
-              onChange={(e) => setForm((p) => ({ ...p, employee_id: e.target.value }))}
-            >
-              <option value="">اختر الموظف</option>
-              {empList.map((e) => (
-                <option key={String(e.id)} value={String(e.id)}>
-                  {String(e.first_name_ar)} {String(e.last_name_ar)} — {String(e.employee_code)}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm((p) => ({ ...p, employee_id: v }))}
+              placeholder="اختر الموظف"
+              className="w-full"
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="التاريخ">
@@ -242,18 +239,19 @@ export function EditRecordModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="الحالة">
-              <select
-                className="erp-input w-full"
+              <Combobox
+                options={[
+                  { value: 'present', label: 'حاضر' },
+                  { value: 'late', label: 'متأخر' },
+                  { value: 'absent', label: 'غائب' },
+                  { value: 'excused', label: 'استأذن (بدون خصم)' },
+                  { value: 'on_leave', label: 'إجازة' },
+                  { value: 'holiday', label: 'إجازة رسمية' },
+                ]}
                 value={form.status}
-                onChange={(e) => setForm((p) => (p ? { ...p, status: e.target.value } : p))}
-              >
-                <option value="present">حاضر</option>
-                <option value="late">متأخر</option>
-                <option value="absent">غائب</option>
-                <option value="excused">استأذن (بدون خصم)</option>
-                <option value="on_leave">إجازة</option>
-                <option value="holiday">إجازة رسمية</option>
-              </select>
+                onChange={(v) => setForm((p) => (p ? { ...p, status: v } : p))}
+                className="w-full"
+              />
             </Field>
             <Field label="ساعات العمل">
               <input

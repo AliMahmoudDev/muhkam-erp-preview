@@ -1,6 +1,7 @@
 import { UserCheck, X, IdCard, Plus, Wallet, Percent } from 'lucide-react';
 import type { Employee, Department, JobTitle, Branch } from './types';
 import { uploadFileToR2, resolveUploadedFileUrl } from '@/lib/file-upload';
+import { Combobox } from '@/components/ui/combobox';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -212,20 +213,15 @@ export function EmployeeForm({
           <div className="grid grid-cols-2 gap-3">
             <Field label="القسم">
               <div className="flex gap-2">
-                <select
-                  value={editEmp.department_id ?? ''}
-                  onChange={(e) =>
-                    set('department_id', e.target.value ? Number(e.target.value) : null)
+                <Combobox
+                  options={departments.map((d) => ({ value: String(d.id), label: d.name_ar }))}
+                  value={editEmp.department_id ? String(editEmp.department_id) : ''}
+                  onChange={(v) =>
+                    set('department_id', v ? Number(v) : null)
                   }
-                  className="erp-input flex-1"
-                >
-                  <option value="">— اختر القسم —</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name_ar}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="— اختر القسم —"
+                  className="flex-1"
+                />
                 <button
                   type="button"
                   onClick={() => setShowInlineDept((v) => !v)}
@@ -266,20 +262,15 @@ export function EmployeeForm({
 
             <Field label="المسمى الوظيفي">
               <div className="flex gap-2">
-                <select
-                  value={editEmp.job_title_id ?? ''}
-                  onChange={(e) =>
-                    set('job_title_id', e.target.value ? Number(e.target.value) : null)
+                <Combobox
+                  options={jobTitles.map((jt) => ({ value: String(jt.id), label: jt.name_ar }))}
+                  value={editEmp.job_title_id ? String(editEmp.job_title_id) : ''}
+                  onChange={(v) =>
+                    set('job_title_id', v ? Number(v) : null)
                   }
-                  className="erp-input flex-1"
-                >
-                  <option value="">— اختر المسمى —</option>
-                  {jobTitles.map((jt) => (
-                    <option key={jt.id} value={jt.id}>
-                      {jt.name_ar}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="— اختر المسمى —"
+                  className="flex-1"
+                />
                 <button
                   type="button"
                   onClick={() => setShowInlineJt((v) => !v)}
@@ -330,20 +321,15 @@ export function EmployeeForm({
               />
             </Field>
             <Field label="الفرع">
-              <select
-                value={editEmp.branch_id ?? ''}
-                onChange={(e) => set('branch_id', e.target.value ? Number(e.target.value) : null)}
-                className="erp-input w-full"
-              >
-                <option value="">— اختر الفرع —</option>
-                {branches
+              <Combobox
+                options={branches
                   .filter((b) => b.is_active)
-                  .map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-              </select>
+                  .map((b) => ({ value: String(b.id), label: b.name }))}
+                value={editEmp.branch_id ? String(editEmp.branch_id) : ''}
+                onChange={(v) => set('branch_id', v ? Number(v) : null)}
+                placeholder="— اختر الفرع —"
+                className="w-full"
+              />
             </Field>
           </div>
 
@@ -395,18 +381,12 @@ export function EmployeeForm({
                     placeholder="0.00"
                     style={{ minWidth: 0 }}
                   />
-                  <select
+                  <Combobox
+                    options={['EGP', 'USD', 'CNY'].map((c) => ({ value: c, label: c }))}
                     value={editEmp.currency ?? 'EGP'}
-                    onChange={(e) => set('currency', e.target.value)}
-                    className="erp-input"
-                    style={{ width: '90px', flexShrink: 0 }}
-                  >
-                    {['EGP', 'USD', 'CNY'].map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => set('currency', v)}
+                    className="flex-shrink-0 w-[90px]"
+                  />
                 </div>
               </div>
             )}
@@ -429,33 +409,28 @@ export function EmployeeForm({
                     />
                     <span className="text-ink/50 text-xs shrink-0">%</span>
                   </div>
-                  <select
+                  <Combobox
+                    options={[
+                      { value: 'gross', label: 'من إجمالي الدخل' },
+                      { value: 'net', label: 'من صافي الربح' },
+                    ]}
                     value={editEmp.commission_basis ?? 'gross'}
-                    onChange={(e) => set('commission_basis', e.target.value as 'gross' | 'net')}
-                    className="erp-input"
-                    title="أساس حساب العمولة"
-                  >
-                    <option value="gross">من إجمالي الدخل</option>
-                    <option value="net">من صافي الربح</option>
-                  </select>
-                  <select
-                    value={editEmp.commission_scope_dept_id ?? ''}
-                    onChange={(e) =>
+                    onChange={(v) => set('commission_basis', v as 'gross' | 'net')}
+                    className="w-full"
+                  />
+                  <Combobox
+                    options={departments.map((d) => ({ value: String(d.id), label: d.name_ar }))}
+                    value={editEmp.commission_scope_dept_id ? String(editEmp.commission_scope_dept_id) : ''}
+                    onChange={(v) =>
                       set(
                         'commission_scope_dept_id',
-                        e.target.value ? Number(e.target.value) : null
+                        v ? Number(v) : null
                       )
                     }
-                    className="erp-input"
-                    title="نطاق العمولة (قسم)"
-                  >
-                    <option value="">— كل الأقسام —</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name_ar}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="— كل الأقسام —"
+                    className="w-full"
+                    clearable
+                  />
                 </div>
               </div>
             )}

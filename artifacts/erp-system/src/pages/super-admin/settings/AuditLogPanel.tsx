@@ -1,4 +1,5 @@
 import React from 'react';
+import { Combobox } from '@/components/ui/combobox';
 import { C, FONT } from '../types';
 import { formatAuditNote, getAuditActionMeta, getRecordLabel } from '../audit-actions';
 
@@ -50,60 +51,39 @@ export function AuditLogPanel({
           سجل كامل لجميع الإجراءات التي نفّذها المديرون العامون على المنصة
         </p>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <select
+          <Combobox
+            options={[
+              { value: '', label: 'كل الإجراءات' },
+              { value: 'create', label: 'إنشاء' },
+              { value: 'update', label: 'تعديل' },
+              { value: 'delete', label: 'حذف' },
+              { value: 'login', label: 'دخول' },
+              { value: 'COMPANY_CREATED', label: 'إنشاء شركة' },
+              { value: 'COMPANY_UPDATED', label: 'تحديث شركة' },
+              { value: 'COMPANY_ACTIVATED', label: 'تفعيل شركة' },
+              { value: 'COMPANY_SUSPENDED', label: 'إيقاف شركة' },
+              { value: 'COMPANY_EXTENDED', label: 'تمديد اشتراك' },
+              { value: 'ADMIN_PASSWORD_RESET', label: 'إعادة كلمة المرور' },
+              { value: 'MANAGER_CREATED', label: 'إنشاء مدير' },
+              { value: 'MANAGER_UPDATED', label: 'تحديث مدير' },
+              { value: 'MANAGER_TOGGLED', label: 'تغيير حالة مدير' },
+              { value: 'MANAGER_DELETED', label: 'حذف مدير' },
+              { value: 'PLAN_SETTINGS_UPDATED', label: 'تحديث إعدادات الخطة' },
+              { value: 'BACKUP_CREATED', label: 'نسخة احتياطية' },
+              { value: 'RESTORE_STARTED', label: 'استعادة' },
+              { value: 'SUPER_ADMIN_LIST_VIEW', label: 'عرض الشركات' },
+            ]}
             value={auditAction}
-            onChange={(e) => setAuditAction(e.target.value)}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '10px',
-              border: `1px solid ${C.border}`,
-              background: C.card,
-              color: C.text,
-              fontSize: '13px',
-              fontFamily: FONT,
-              cursor: 'pointer',
-            }}
-          >
-            <option value="">كل الإجراءات</option>
-            <option value="create">إنشاء</option>
-            <option value="update">تعديل</option>
-            <option value="delete">حذف</option>
-            <option value="login">دخول</option>
-            <option value="COMPANY_CREATED">إنشاء شركة</option>
-            <option value="COMPANY_UPDATED">تحديث شركة</option>
-            <option value="COMPANY_ACTIVATED">تفعيل شركة</option>
-            <option value="COMPANY_SUSPENDED">إيقاف شركة</option>
-            <option value="COMPANY_EXTENDED">تمديد اشتراك</option>
-            <option value="ADMIN_PASSWORD_RESET">إعادة كلمة المرور</option>
-            <option value="MANAGER_CREATED">إنشاء مدير</option>
-            <option value="MANAGER_UPDATED">تحديث مدير</option>
-            <option value="MANAGER_TOGGLED">تغيير حالة مدير</option>
-            <option value="MANAGER_DELETED">حذف مدير</option>
-            <option value="PLAN_SETTINGS_UPDATED">تحديث إعدادات الخطة</option>
-            <option value="BACKUP_CREATED">نسخة احتياطية</option>
-            <option value="RESTORE_STARTED">استعادة</option>
-            <option value="SUPER_ADMIN_LIST_VIEW">عرض الشركات</option>
-          </select>
-          <select
-            value={auditLimit}
-            onChange={(e) => setAuditLimit(Number(e.target.value))}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '10px',
-              border: `1px solid ${C.border}`,
-              background: C.card,
-              color: C.text,
-              fontSize: '13px',
-              fontFamily: FONT,
-              cursor: 'pointer',
-            }}
-          >
-            {[25, 50, 100, 200, 500].map((n) => (
-              <option key={n} value={n}>
-                {n} سجل
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setAuditAction(v)}
+          />
+          <Combobox
+            options={[25, 50, 100, 200, 500].map((n) => ({
+              value: String(n),
+              label: `${n} سجل`,
+            }))}
+            value={String(auditLimit)}
+            onChange={(v) => setAuditLimit(Number(v))}
+          />
           <button
             onClick={() => void refetchAudit()}
             style={{

@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { BRAND_CATEGORIES } from './DashboardCardsTab';
+import { Combobox } from '@/components/ui/combobox';
 
 interface DeviceModel {
   id: number;
@@ -93,8 +94,6 @@ export default function DeviceModelsTab() {
 
   const inputCls =
     'w-full px-3 py-2 rounded-lg border border-line bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/60';
-  const selectCls =
-    'px-3 py-2 rounded-lg border border-line bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/60';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -114,34 +113,25 @@ export default function DeviceModelsTab() {
         <p className="text-xs font-medium mb-3 text-ink/60">إضافة موديل جديد</p>
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
-            <select
+            <Combobox
+              options={[
+                { value: '', label: '— الماركة —' },
+                ...Object.keys(BRAND_CATEGORIES).map((b) => ({ value: b, label: b })),
+              ]}
               value={selBrand}
-              onChange={(e) => {
-                setSelBrand(e.target.value);
-                setSelCat('');
-              }}
-              className={`flex-1 ${selectCls}`}
-            >
-              <option value="">— الماركة —</option>
-              {Object.keys(BRAND_CATEGORIES).map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={(v) => { setSelBrand(v); setSelCat(''); }}
+              className="flex-1"
+            />
+            <Combobox
+              options={[
+                { value: '', label: '— الفئة —' },
+                ...cats.map((c) => ({ value: c, label: c })),
+              ]}
               value={selCat}
-              onChange={(e) => setSelCat(e.target.value)}
+              onChange={(v) => setSelCat(v)}
               disabled={!selBrand}
-              className={`flex-1 ${selectCls} disabled:opacity-40`}
-            >
-              <option value="">— الفئة —</option>
-              {cats.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              className="flex-1"
+            />
           </div>
           <div className="flex gap-2">
             <input
@@ -166,34 +156,25 @@ export default function DeviceModelsTab() {
       {/* Filter bar */}
       <div className="px-6 py-2.5 border-b border-line flex gap-2 items-center">
         <span className="text-xs text-ink/40">تصفية:</span>
-        <select
+        <Combobox
+          options={[
+            { value: '', label: 'الكل' },
+            ...Object.keys(BRAND_CATEGORIES).map((b) => ({ value: b, label: b })),
+          ]}
           value={selBrand}
-          onChange={(e) => {
-            setSelBrand(e.target.value);
-            setSelCat('');
-          }}
-          className={`text-xs ${selectCls} py-1`}
-        >
-          <option value="">الكل</option>
-          {Object.keys(BRAND_CATEGORIES).map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={(v) => { setSelBrand(v); setSelCat(''); }}
+          className="text-xs"
+        />
+        <Combobox
+          options={[
+            { value: '', label: 'كل الفئات' },
+            ...cats.map((c) => ({ value: c, label: c })),
+          ]}
           value={selCat}
-          onChange={(e) => setSelCat(e.target.value)}
+          onChange={(v) => setSelCat(v)}
           disabled={!selBrand}
-          className={`text-xs ${selectCls} py-1 disabled:opacity-40`}
-        >
-          <option value="">كل الفئات</option>
-          {cats.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+          className="text-xs"
+        />
         {models.length > 0 && (
           <span className="mr-auto text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200/85 border border-amber-500/25">
             {filtered.length} موديل

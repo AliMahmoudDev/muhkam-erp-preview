@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
 import { api } from '@/lib/api';
 import { readSheetRows, writeXlsxBlob, downloadBlob } from '@/pages/settings/data/data-utils';
+import { Combobox } from '@/components/ui/combobox';
 
 type PurchaseCurrency = 'EGP' | 'USD' | 'CNY';
 
@@ -520,18 +521,13 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <select
-              className="erp-input text-sm"
+            <Combobox
+              options={categories.map((cat) => ({ value: cat.name, label: cat.name }))}
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="">كل الأصناف</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name} className="bg-gray-900">
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setCategoryFilter(v)}
+              placeholder="كل الأصناف"
+              className="w-40 text-sm"
+            />
             <div className="flex gap-1 shrink-0">
               <Button
                 type="button"
@@ -653,17 +649,13 @@ export default function PurchaseFormModal({ onDone }: { onDone: () => void }) {
             <div className="grid grid-cols-2 gap-1.5">
               <div className="flex items-center gap-1.5 bg-surface border border-line rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
                 <Vault className="w-3 h-3 text-ink/35 shrink-0" />
-                <select
-                  className="bg-transparent text-ink/80 outline-none text-[10px] w-full appearance-none font-bold truncate"
-                  value={warehouseId}
-                  onChange={(e) => setWarehouseId(e.target.value)}
-                >
-                  {filteredWarehouses.map((w) => (
-                    <option key={w.id} value={String(w.id)} className="bg-slate-900">
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+              <Combobox
+                options={filteredWarehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+                value={warehouseId}
+                onChange={(v) => setWarehouseId(v)}
+                placeholder="-- اختر مخزن --"
+                className="flex-1 text-[10px] font-bold"
+              />
               </div>
               <div className="flex items-center gap-1 bg-surface border border-line rounded-xl px-2.5 py-1.5 focus-within:border-amber-500/40 transition-all">
                 <span className="text-[11px] shrink-0">🚢</span>

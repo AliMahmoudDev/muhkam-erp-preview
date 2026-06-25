@@ -17,6 +17,7 @@ import {
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
 import { api } from './_shared';
 import type { AuditProduct, TransferEnriched, TransferPrefill } from './_shared';
+import { Combobox } from '@/components/ui/combobox';
 
 interface TransferLine {
   product_id: number;
@@ -284,17 +285,12 @@ function TransferTab({
                 <label className="block text-ink/50 text-xs mb-1.5">
                   من مخزن <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={fromWH}
-                  onChange={(e) => setFromWH(Number(e.target.value))}
-                  className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:border-amber-500/40"
-                >
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id} className="bg-surface">
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+                <Combobox
+                  options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+                  value={String(fromWH)}
+                  onChange={(v) => setFromWH(Number(v))}
+                  className="w-full"
+                />
               </div>
               <div className="flex items-center justify-center pb-1">
                 <div className="w-10 h-10 rounded-full bg-surface border border-line flex items-center justify-center">
@@ -305,19 +301,12 @@ function TransferTab({
                 <label className="block text-ink/50 text-xs mb-1.5">
                   إلى مخزن <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={toWH}
-                  onChange={(e) => setToWH(Number(e.target.value))}
-                  className={`w-full bg-surface border rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 ${
-                    fromWH === toWH ? 'border-red-500/40' : 'border-line'
-                  }`}
-                >
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id} className="bg-surface">
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+                <Combobox
+                  options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+                  value={String(toWH)}
+                  onChange={(v) => setToWH(Number(v))}
+                  className="w-full"
+                />
                 {fromWH === toWH && (
                   <p className="text-red-400 text-xs mt-1">يجب اختيار مخزن مختلف</p>
                 )}
@@ -350,20 +339,13 @@ function TransferTab({
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-start">
                       <div>
                         <label className="block text-ink/50 text-xs mb-1.5">المنتج</label>
-                        <select
-                          value={line.product_id}
-                          onChange={(e) => updateLine(idx, 'product_id', e.target.value)}
-                          className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
-                        >
-                          <option value={0} className="bg-surface">
-                            — اختر منتجاً —
-                          </option>
-                          {allProducts.map((p) => (
-                            <option key={p.id} value={p.id} className="bg-surface">
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
+                        <Combobox
+                          options={allProducts.map((p) => ({ value: String(p.id), label: p.name }))}
+                          value={line.product_id ? String(line.product_id) : ''}
+                          onChange={(v) => updateLine(idx, 'product_id', v ? Number(v) : 0)}
+                          placeholder="— اختر منتجاً —"
+                          className="w-full"
+                        />
                         {line.product_id > 0 && (
                           <div
                             className={`mt-1 text-xs flex items-center gap-1 ${availableQty > 0 ? 'text-ink/40' : 'text-red-400/70'}`}

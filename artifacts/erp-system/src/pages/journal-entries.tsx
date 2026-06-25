@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { api } from '@/lib/api';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Account {
   id: number;
@@ -386,20 +387,16 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                 {lines.map((line, i) => (
                   <tr key={`form-line-${i}`} className="border-b border-line">
                     <td className="p-2">
-                      <select
-                        className="glass-input text-sm appearance-none w-full"
+                      <Combobox
+                        options={postingAccounts.map((a) => ({
+                          value: String(a.id),
+                          label: `[${a.code}] ${a.name}`,
+                        }))}
                         value={line.account_id}
-                        onChange={(e) => updateLine(i, 'account_id', e.target.value)}
-                      >
-                        <option value="" className="bg-gray-900">
-                          اختر الحساب
-                        </option>
-                        {postingAccounts.map((a) => (
-                          <option key={a.id} value={a.id} className="bg-gray-900">
-                            [{a.code}] {a.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => updateLine(i, 'account_id', v)}
+                        placeholder="اختر الحساب"
+                        className="w-full"
+                      />
                     </td>
                     <td className="p-2">
                       <input

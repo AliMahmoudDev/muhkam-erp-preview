@@ -19,6 +19,7 @@ import {
 import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/contexts/auth';
 import { formatDate } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 
 interface AuditLogEntry {
   id: number;
@@ -442,57 +443,52 @@ export default function AuditLog() {
         </div>
 
         {/* Record Type Filter */}
-        <select
+        <Combobox
+          options={ALL_RECORD_TYPES.map((t) => ({
+            value: t,
+            label: RECORD_LABELS[t] ?? t,
+          }))}
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="erp-filter-select"
-        >
-          <option value="">كل السجلات</option>
-          {ALL_RECORD_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {RECORD_LABELS[t] ?? t}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setFilterType(v || '')}
+          placeholder="كل السجلات"
+          className="w-44"
+        />
 
         {/* Action Filter */}
-        <select
+        <Combobox
+          options={uniqueActions.map((a) => ({
+            value: a,
+            label: ACTION_LABELS[a]?.label ?? a,
+          }))}
           value={filterAction}
-          onChange={(e) => setFilterAction(e.target.value)}
-          className="erp-filter-select"
-        >
-          <option value="">كل الإجراءات</option>
-          {uniqueActions.map((a) => (
-            <option key={a} value={a}>
-              {ACTION_LABELS[a]?.label ?? a}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setFilterAction(v || '')}
+          placeholder="كل الإجراءات"
+          className="w-44"
+        />
 
         {/* User Filter */}
-        <select
+        <Combobox
+          options={uniqueUsers.map((u) => ({
+            value: u!,
+            label: u!,
+          }))}
           value={filterUser}
-          onChange={(e) => setFilterUser(e.target.value)}
-          className="erp-filter-select"
-        >
-          <option value="">كل المستخدمين</option>
-          {uniqueUsers.map((u) => (
-            <option key={u!} value={u!}>
-              {u}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setFilterUser(v || '')}
+          placeholder="كل المستخدمين"
+          className="w-44"
+        />
 
         {/* Limit */}
-        <select
-          value={limit}
-          onChange={(e) => setLimit(Number(e.target.value))}
-          className="erp-filter-select"
-        >
-          <option value={100}>آخر 100</option>
-          <option value={200}>آخر 200</option>
-          <option value={500}>آخر 500</option>
-        </select>
+        <Combobox
+          options={[
+            { value: '100', label: 'آخر 100' },
+            { value: '200', label: 'آخر 200' },
+            { value: '500', label: 'آخر 500' },
+          ]}
+          value={String(limit)}
+          onChange={(v) => setLimit(Number(v))}
+          className="w-32"
+        />
 
         <div className="flex items-center gap-1 text-xs text-ink/30 shrink-0">
           <Filter className="w-3 h-3" />

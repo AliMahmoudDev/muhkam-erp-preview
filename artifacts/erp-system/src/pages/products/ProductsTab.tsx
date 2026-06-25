@@ -32,6 +32,7 @@ import { PageToolbar } from '@/components/patterns';
 import { SearchInput } from '@/components/ui/search-input';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
+import { Combobox } from '@/components/ui/combobox';
 import {
   Table,
   TableHead,
@@ -208,19 +209,17 @@ export function ProductsTab() {
         }
         filtersSlot={
           categories.length > 0 ? (
-            <select
-              className="erp-input h-10 w-44 cursor-pointer"
+            <Combobox
+              options={categories.map((cat) => ({
+                value: cat.name,
+                label: `${cat.name} (${cat.product_count})`,
+              }))}
               value={catFilter}
-              onChange={(e) => setCatFilter(e.target.value)}
-              aria-label="تصفية حسب التصنيف"
-            >
-              <option value="">كل الأصناف</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name} ({cat.product_count})
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setCatFilter(v)}
+              placeholder="كل الأصناف"
+              clearable
+              className="w-44"
+            />
           ) : null
         }
         actionsSlot={

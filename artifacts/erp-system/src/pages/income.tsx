@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { api } from '@/lib/api';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Income {
   id: number;
@@ -308,18 +309,16 @@ export default function Income() {
             </button>
           )}
         </div>
-        <select
+        <Combobox
+          options={monthOptions.map((m) => ({
+            value: m,
+            label: formatMonthLabel(m),
+          }))}
           value={monthFilter}
-          onChange={(e) => setMonthFilter(e.target.value)}
-          className="erp-filter-select w-44"
-        >
-          <option value="all">كل الأشهر</option>
-          {monthOptions.map((m) => (
-            <option key={m} value={m}>
-              {formatMonthLabel(m)}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setMonthFilter(v || 'all')}
+          placeholder="كل الأشهر"
+          className="w-44"
+        />
       </div>
 
       {/* Table */}
@@ -451,18 +450,14 @@ export default function Income() {
             </div>
             <div>
               <label className="block text-ink/70 text-sm mb-1">الخزينة المستلِمة</label>
-              <select
-                className="glass-input w-full"
+              <Combobox
+                options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
                 value={formData.safe_id}
-                onChange={(e) => setFormData({ ...formData, safe_id: e.target.value })}
-              >
-                <option value="">-- بدون خزينة --</option>
-                {safes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, safe_id: v })}
+                placeholder="-- بدون خزينة --"
+                clearable
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-ink/70 text-sm mb-1">التفاصيل (اختياري)</label>

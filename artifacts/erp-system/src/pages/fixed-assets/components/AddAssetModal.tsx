@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Building2, X, TrendingDown } from 'lucide-react';
 import { CATEGORIES, METHODS } from '../constants';
+import { Combobox } from '@/components/ui/combobox';
 
 export function AddAssetModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -87,17 +88,12 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <label className="block text-xs text-ink/50 mb-1">التصنيف</label>
-              <select
+              <Combobox
+                options={Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))}
                 value={form.category}
-                onChange={(e) => set('category', e.target.value)}
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
-              >
-                {Object.entries(CATEGORIES).map(([k, v]) => (
-                  <option key={k} value={k} className="bg-gray-900">
-                    {v}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => set('category', v)}
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-xs text-ink/50 mb-1">تاريخ الشراء *</label>
@@ -110,17 +106,12 @@ export function AddAssetModal({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <label className="block text-xs text-ink/50 mb-1">طريقة الإهلاك</label>
-              <select
+              <Combobox
+                options={Object.entries(METHODS).map(([k, v]) => ({ value: k, label: v }))}
                 value={form.depreciation_method}
-                onChange={(e) => set('depreciation_method', e.target.value)}
-                className="w-full glass-input px-4 py-3 rounded-2xl text-ink text-sm"
-              >
-                {Object.entries(METHODS).map(([k, v]) => (
-                  <option key={k} value={k} className="bg-gray-900">
-                    {v}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => set('depreciation_method', v)}
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-xs text-ink/50 mb-1">تكلفة الشراء (ج.م) *</label>

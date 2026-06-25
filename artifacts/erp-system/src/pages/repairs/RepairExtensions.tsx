@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, Upload, User, DollarSign, CreditCard, Banknote } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
+import { Combobox } from '@/components/ui/combobox';
 
 async function readResponseError(res: Response, fallback: string): Promise<string> {
   const body = (await res
@@ -76,20 +77,13 @@ export function DeliveryPaymentSection({ value, onChange, safes }: DeliveryPayme
       {showSafe && (
         <div>
           <label className="text-[11px] text-ink/40 mb-1 block">الخزنة</label>
-          <select
-            value={value.safe_id ?? ''}
-            onChange={(e) =>
-              onChange({ ...value, safe_id: e.target.value ? Number(e.target.value) : null })
-            }
-            className="erp-input w-full text-sm"
-          >
-            <option value="">— اختر خزنة —</option>
-            {safes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <Combobox
+            options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
+            value={value.safe_id ? String(value.safe_id) : ''}
+            onChange={(v) => onChange({ ...value, safe_id: v ? Number(v) : null })}
+            placeholder="— اختر خزنة —"
+            className="w-full text-sm"
+          />
         </div>
       )}
     </div>
@@ -120,20 +114,16 @@ export function TechnicianSelector({
       <div className="relative">
         <User
           size={12}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none z-10"
         />
-        <select
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-          className="erp-input w-full pr-8 text-sm"
-        >
-          <option value="">— بدون تعيين —</option>
-          {technicians.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
+        <Combobox
+          options={technicians.map((t) => ({ value: String(t.id), label: t.name }))}
+          value={value ? String(value) : ''}
+          onChange={(v) => onChange(v ? Number(v) : null)}
+          placeholder="— بدون تعيين —"
+          className="w-full pr-8 text-sm"
+          clearable
+        />
       </div>
     </div>
   );
@@ -319,18 +309,14 @@ export function TechnicianReceiptLine({
   technicians,
 }: TechReceiptLineProps) {
   return (
-    <select
-      value={technicianId ?? ''}
-      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-      className="erp-input text-[10px] py-0.5 px-1.5 w-24"
-    >
-      <option value="">— فني —</option>
-      {technicians.map((t) => (
-        <option key={t.id} value={t.id}>
-          {t.name}
-        </option>
-      ))}
-    </select>
+    <Combobox
+      options={technicians.map((t) => ({ value: String(t.id), label: t.name }))}
+      value={technicianId ? String(technicianId) : ''}
+      onChange={(v) => onChange(v ? Number(v) : null)}
+      placeholder="— فني —"
+      className="text-[10px] py-0.5 px-1.5 w-24"
+      clearable
+    />
   );
 }
 
@@ -354,16 +340,17 @@ export function RepairLabelSettings({ settings, onSave }: LabelSettingsProps) {
 
       <div>
         <label className="text-[11px] text-ink/40 mb-1 block">حجم الفاتورة</label>
-        <select
+        <Combobox
+          options={[
+            { value: 'A4', label: 'A4' },
+            { value: 'A5', label: 'A5' },
+            { value: 'thermal', label: 'حراري (80mm)' },
+            { value: 'thermal_58', label: 'حراري (58mm)' },
+          ]}
           value={invoiceSize}
-          onChange={(e) => onSave('repair_invoice_size', e.target.value)}
-          className="erp-input text-sm w-full"
-        >
-          <option value="A4">A4</option>
-          <option value="A5">A5</option>
-          <option value="thermal">حراري (80mm)</option>
-          <option value="thermal_58">حراري (58mm)</option>
-        </select>
+          onChange={(v) => onSave('repair_invoice_size', v)}
+          className="text-sm w-full"
+        />
       </div>
 
       <div className="space-y-2">

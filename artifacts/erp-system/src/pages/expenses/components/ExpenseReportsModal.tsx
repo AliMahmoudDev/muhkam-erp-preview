@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { ExpenseCategory, ExpenseReportRow } from '../types';
 import { printExpenseReport } from '../utils/printExpenseReport';
+import { Combobox } from '@/components/ui/combobox';
 
 interface ExpenseReportsModalProps {
   show: boolean;
@@ -66,20 +67,14 @@ export function ExpenseReportsModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-ink/50 text-xs mb-1">التصنيف</label>
-              <select
-                className="glass-input w-full text-sm appearance-none"
+              <Combobox
+                options={categories.map((c) => ({ value: c.name, label: c.name }))}
                 value={reportFilters.category}
-                onChange={(e) => setReportFilters((f) => ({ ...f, category: e.target.value }))}
-              >
-                <option value="" className="bg-gray-900">
-                  كل التصنيفات
-                </option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.name} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setReportFilters((f) => ({ ...f, category: v }))}
+                placeholder="كل التصنيفات"
+                clearable
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-ink/50 text-xs mb-1">من تاريخ</label>

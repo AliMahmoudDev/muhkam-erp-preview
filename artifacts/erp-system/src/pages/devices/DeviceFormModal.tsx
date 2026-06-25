@@ -22,6 +22,7 @@ import {
   User,
 } from 'lucide-react';
 import { apiPost, GRADES, maskImei } from './index';
+import { Combobox } from '@/components/ui/combobox';
 
 export function DeviceFormModal({
   onClose,
@@ -365,18 +366,13 @@ export function DeviceFormModal({
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className={lReq}>الشركة المصنعة *</label>
-                  <select
+                  <Combobox
+                    options={BRANDS.map((b) => ({ value: b, label: b }))}
                     value={brandSel}
-                    onChange={(e) => handleBrandChange(e.target.value)}
+                    onChange={(v) => handleBrandChange(v)}
+                    placeholder="— اختر —"
                     className={sCls('brand')}
-                  >
-                    <option value="">— اختر —</option>
-                    {BRANDS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {isOtherBrand && (
                     <input
                       value={brandCustom}
@@ -396,19 +392,14 @@ export function DeviceFormModal({
                       className={iCls('cat')}
                     />
                   ) : (
-                    <select
+                    <Combobox
+                      options={categories.map((c) => ({ value: c, label: c }))}
                       value={catSel}
-                      onChange={(e) => handleCatChange(e.target.value)}
+                      onChange={(v) => handleCatChange(v)}
+                      placeholder="— اختر —"
                       className={brandSel ? sCls('cat') : dCls}
                       disabled={!brandSel}
-                    >
-                      <option value="">— اختر —</option>
-                      {categories.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   )}
                 </div>
                 <div>
@@ -422,19 +413,14 @@ export function DeviceFormModal({
                     />
                   ) : (
                     <>
-                      <select
+                      <Combobox
+                        options={modelNames.map((m) => ({ value: m, label: m }))}
                         value={modelSel}
-                        onChange={(e) => handleModelChange(e.target.value)}
+                        onChange={(v) => handleModelChange(v)}
+                        placeholder="— اختر —"
                         className={catSel ? sCls('model') : dCls}
                         disabled={!catSel}
-                      >
-                        <option value="">— اختر —</option>
-                        {modelNames.map((m) => (
-                          <option key={m} value={m}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
+                      />
                       {isOtherModel && (
                         <input
                           value={modelCustom}
@@ -452,19 +438,14 @@ export function DeviceFormModal({
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className={lReq}>اللون *</label>
-                  <select
+                  <Combobox
+                    options={availColors.map((c) => ({ value: c, label: c }))}
                     value={colorSel}
-                    onChange={(e) => setColorSel(e.target.value)}
+                    onChange={(v) => setColorSel(v)}
+                    placeholder="— اللون —"
                     className={modelSel || isOtherBrand ? sCls('color') : dCls}
                     disabled={!modelSel && !isOtherBrand}
-                  >
-                    <option value="">— اللون —</option>
-                    {availColors.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {isOtherColor && (
                     <input
                       value={colorCustom}
@@ -476,19 +457,14 @@ export function DeviceFormModal({
                 </div>
                 <div>
                   <label className={lReq}>السعة *</label>
-                  <select
+                  <Combobox
+                    options={availStorages.map((s) => ({ value: s, label: s }))}
                     value={isOtherStorage ? OTHER : form.storage}
-                    onChange={(e) => handleStorageChange(e.target.value)}
+                    onChange={(v) => handleStorageChange(v)}
+                    placeholder="— السعة —"
                     className={modelSel || isOtherBrand ? sCls('storage') : dCls}
                     disabled={!modelSel && !isOtherBrand}
-                  >
-                    <option value="">— السعة —</option>
-                    {availStorages.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {isOtherStorage && (
                     <input
                       value={storageCustom}
@@ -500,17 +476,12 @@ export function DeviceFormModal({
                 </div>
                 <div>
                   <label className={lCls}>الدرجة</label>
-                  <select
+                  <Combobox
+                    options={GRADES.map((g) => ({ value: g, label: g }))}
                     value={form.grade}
-                    onChange={(e) => f('grade', e.target.value)}
+                    onChange={(v) => f('grade', v)}
                     className={iCls()}
-                  >
-                    {GRADES.map((g) => (
-                      <option key={g} value={g}>
-                        {g}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               </div>
 
@@ -794,18 +765,13 @@ export function DeviceFormModal({
               {/* Warehouse */}
               <div>
                 <label className={lReq}>المخزن *</label>
-                <select
+                <Combobox
+                  options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
                   value={fin.warehouse_id}
-                  onChange={(e) => fp('warehouse_id', e.target.value)}
+                  onChange={(v) => fp('warehouse_id', v)}
+                  placeholder="— اختر المخزن —"
                   className={sCls('warehouse_id')}
-                >
-                  <option value="">— اختر المخزن —</option>
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+                />
                 {warehouses.length === 0 && (
                   <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
                     <Info className="w-3 h-3" /> لا يوجد مخزن — أضف مخزناً من إعدادات النظام
@@ -848,18 +814,16 @@ export function DeviceFormModal({
               {fin.payment_type !== 'credit' && (
                 <div>
                   <label className={lReq}>الخزينة *</label>
-                  <select
+                  <Combobox
+                    options={safes.map((s) => ({
+                      value: String(s.id),
+                      label: `${s.name} — ${parseFloat(s.balance).toLocaleString('ar-EG')} ج`,
+                    }))}
                     value={fin.safe_id}
-                    onChange={(e) => fp('safe_id', e.target.value)}
+                    onChange={(v) => fp('safe_id', v)}
+                    placeholder="— اختر الخزينة —"
                     className={sCls('safe_id')}
-                  >
-                    <option value="">— اختر الخزينة —</option>
-                    {safes.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} — {parseFloat(s.balance).toLocaleString('ar-EG')} ج
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {safes.length === 0 && (
                     <p className="text-[10px] text-amber-400/60 mt-1 flex items-center gap-1">
                       <Info className="w-3 h-3" /> لا يوجد خزينة — أضف خزينة من إعدادات النظام

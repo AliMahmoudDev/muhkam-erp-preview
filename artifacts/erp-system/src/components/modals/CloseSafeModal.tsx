@@ -12,6 +12,7 @@ import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { formatCurrency } from '@/lib/format';
 import { Lock, Printer, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Combobox } from '@/components/ui/combobox';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -153,18 +154,15 @@ export default function CloseSafeModal({ onClose }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-ink/50 text-xs mb-1.5 font-medium">الخزينة</label>
-            <select
-              className="glass-input w-full text-sm"
+            <Combobox
+              options={[
+                { value: '', label: '-- اختر --' },
+                ...safes.map((s) => ({ value: String(s.id), label: `${s.name} — ${formatCurrency(Number(s.balance))}` })),
+              ]}
               value={safeId}
-              onChange={(e) => setSafeId(e.target.value)}
-            >
-              <option value="">-- اختر --</option>
-              {safes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — {formatCurrency(Number(s.balance))}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setSafeId(v)}
+              className="w-full text-sm"
+            />
           </div>
           <div>
             <label className="block text-ink/50 text-xs mb-1.5 font-medium">تاريخ الإقفال</label>

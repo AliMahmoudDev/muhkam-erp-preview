@@ -11,6 +11,7 @@ import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { formatCurrency } from '@/lib/format';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeftRight, X, ArrowRight, AlertCircle } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -150,39 +151,31 @@ export default function TransferModal({ onClose }: Props) {
         {/* From safe */}
         <div>
           <label className="block text-ink/50 text-xs mb-1.5 font-medium">من الخزينة *</label>
-          <select
-            required
-            className="glass-input w-full text-sm"
+          <Combobox
+            options={[
+              { value: '', label: '-- اختر الخزينة المُحوِّلة --' },
+              ...safes.map((s) => ({ value: String(s.id), label: `${s.name} (${formatCurrency(Number(s.balance))})` })),
+            ]}
             value={form.from_safe_id}
-            onChange={(e) => setForm((f) => ({ ...f, from_safe_id: e.target.value }))}
-          >
-            <option value="">-- اختر الخزينة المُحوِّلة --</option>
-            {safes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({formatCurrency(Number(s.balance))})
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, from_safe_id: v }))}
+            className="w-full text-sm"
+          />
         </div>
 
         {/* To safe */}
         <div>
           <label className="block text-ink/50 text-xs mb-1.5 font-medium">إلى الخزينة *</label>
-          <select
-            required
-            className="glass-input w-full text-sm"
+          <Combobox
+            options={[
+              { value: '', label: '-- اختر الخزينة المستقبِلة --' },
+              ...safes
+                .filter((s) => String(s.id) !== form.from_safe_id)
+                .map((s) => ({ value: String(s.id), label: `${s.name} (${formatCurrency(Number(s.balance))})` })),
+            ]}
             value={form.to_safe_id}
-            onChange={(e) => setForm((f) => ({ ...f, to_safe_id: e.target.value }))}
-          >
-            <option value="">-- اختر الخزينة المستقبِلة --</option>
-            {safes
-              .filter((s) => String(s.id) !== form.from_safe_id)
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({formatCurrency(Number(s.balance))})
-                </option>
-              ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, to_safe_id: v }))}
+            className="w-full text-sm"
+          />
         </div>
 
         {/* Amount + Date */}
@@ -214,17 +207,16 @@ export default function TransferModal({ onClose }: Props) {
         {/* Fee Type */}
         <div>
           <label className="block text-ink/50 text-xs mb-1.5 font-medium">نوع الرسوم</label>
-          <select
-            className="glass-input w-full text-sm"
+          <Combobox
+            options={[
+              { value: 'none', label: 'بدون رسوم' },
+              { value: 'fixed', label: 'رسوم ثابتة' },
+              { value: 'percentage', label: 'رسوم نسبة' },
+            ]}
             value={form.fee_type}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, fee_type: e.target.value as FeeType, fee_value: '' }))
-            }
-          >
-            <option value="none">بدون رسوم</option>
-            <option value="fixed">رسوم ثابتة</option>
-            <option value="percentage">رسوم نسبة</option>
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, fee_type: v as FeeType, fee_value: '' }))}
+            className="w-full text-sm"
+          />
         </div>
 
         {/* Fee Value (conditional) */}

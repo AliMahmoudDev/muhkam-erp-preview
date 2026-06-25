@@ -3,6 +3,7 @@ import { formatCurrency } from '@/lib/format';
 import { useQueryClient } from '@tanstack/react-query';
 import { Package, X, Plus, Trash2, Warehouse, Loader2, FileSpreadsheet, Eye } from 'lucide-react';
 import { api } from './_shared';
+import { Combobox } from '@/components/ui/combobox';
 
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
@@ -222,29 +223,25 @@ export default function WarehouseSection({
 
                   {/* Branch assignment */}
                   {isAdmin && branches.length > 0 ? (
-                    <select
-                      className="mt-1.5 mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-[var(--surface)] border border-[var(--line)] opacity-50 hover:border-[var(--brand)]/25 transition-colors outline-none cursor-pointer"
-                      value={w.branch_id ?? ''}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
-                        e.stopPropagation();
-                        const bid = e.target.value;
-                        await authFetch(api(`/api/settings/warehouses/${w.id}`), {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ branch_id: bid ? Number(bid) : null }),
-                        });
-                        invalidateWH();
-                        qc.invalidateQueries({ queryKey: ['/api/branches'] });
-                      }}
-                    >
-                      <option value="">— بدون فرع —</option>
-                      {branches.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mt-1.5 mb-2" onClick={(e) => e.stopPropagation()}>
+                      <Combobox
+                        options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
+                        value={w.branch_id ? String(w.branch_id) : ''}
+                        onChange={async (v) => {
+                          const bid = v;
+                          await authFetch(api(`/api/settings/warehouses/${w.id}`), {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ branch_id: bid ? Number(bid) : null }),
+                          });
+                          invalidateWH();
+                          qc.invalidateQueries({ queryKey: ['/api/branches'] });
+                        }}
+                        placeholder="— بدون فرع —"
+                        clearable
+                        className="w-full !text-[10px]"
+                      />
+                    </div>
                   ) : w.branch_id ? (
                     <p className="opacity-40 text-[10px] mb-2">
                       {branches.find((b) => b.id === w.branch_id)?.name ?? ''}
@@ -359,18 +356,14 @@ export default function WarehouseSection({
               {branches.length > 0 && (
                 <div>
                   <label className="block opacity-60 text-xs mb-1.5">الفرع (اختياري)</label>
-                  <select
-                    className="erp-input w-full"
+                  <Combobox
+                    options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
                     value={whForm.branch_id}
-                    onChange={(e) => setWhForm((f) => ({ ...f, branch_id: e.target.value }))}
-                  >
-                    <option value="">— بدون فرع —</option>
-                    {branches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setWhForm((f) => ({ ...f, branch_id: v }))}
+                    placeholder="— بدون فرع —"
+                    clearable
+                    className="w-full"
+                  />
                 </div>
               )}
             </div>

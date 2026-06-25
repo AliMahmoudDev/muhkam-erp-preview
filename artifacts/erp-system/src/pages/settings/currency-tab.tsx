@@ -16,6 +16,7 @@ import {
   AlignLeft,
   RotateCcw,
 } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 import { PageHeader } from './_shared';
 import type {
   CurrencyCode,
@@ -837,54 +838,34 @@ export default function CurrencyTab() {
               الحجم والوزن
             </span>
             <div className="flex items-center gap-3 flex-1">
-              {/* حجم الخط — select */}
+              {/* حجم الخط — Combobox */}
               <div className="relative flex-1 max-w-[180px]">
                 <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-canvas leading-none z-10">
                   حجم الخط
                 </label>
-                <select
+                <Combobox
+                  options={FONT_SIZE_OPTIONS.map((o) => ({
+                    value: o.value,
+                    label: `${o.label} — ${o.px}`,
+                  }))}
                   value={fontSize}
-                  onChange={(e) => setFontSize(e.target.value as FontSize)}
-                  dir="rtl"
-                  className="w-full appearance-none bg-canvas border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 font-bold focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
-                  style={{ fontFamily: `'${fontFamily}', sans-serif` }}
-                >
-                  {FONT_SIZE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value} style={{ background: 'var(--bg-app)' }}>
-                      {o.label} — {o.px}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 text-xs">
-                  ▾
-                </span>
+                  onChange={(v) => setFontSize(v as FontSize)}
+                />
               </div>
 
-              {/* وزن الخط — select */}
+              {/* وزن الخط — Combobox */}
               <div className="relative flex-1 max-w-[180px]">
                 <label className="absolute -top-[9px] right-3 px-1 text-[10px] font-bold text-ink/30 bg-canvas leading-none z-10">
                   وزن الخط
                 </label>
-                <select
-                  value={fontWeight}
-                  onChange={(e) => setFontWeight(Number(e.target.value))}
-                  dir="rtl"
-                  className="w-full appearance-none bg-canvas border border-line rounded-lg px-3 py-2.5 text-sm text-ink/80 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
-                  style={{ fontFamily: `'${fontFamily}', sans-serif`, fontWeight }}
-                >
-                  {FONT_WEIGHT_OPTIONS.map((w) => (
-                    <option
-                      key={w.value}
-                      value={w.value}
-                      style={{ background: 'var(--bg-app)', fontWeight: w.value }}
-                    >
-                      {w.label}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 text-xs">
-                  ▾
-                </span>
+                <Combobox
+                  options={FONT_WEIGHT_OPTIONS.map((w) => ({
+                    value: String(w.value),
+                    label: w.label,
+                  }))}
+                  value={String(fontWeight)}
+                  onChange={(v) => setFontWeight(Number(v))}
+                />
               </div>
 
               {/* معاينة حية */}

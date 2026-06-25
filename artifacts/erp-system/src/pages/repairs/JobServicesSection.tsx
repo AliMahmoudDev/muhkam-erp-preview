@@ -29,6 +29,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { safeArray } from '@/lib/safe-data';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ── Types ────────────────────────────────────────────────────── */
 interface ServiceType {
@@ -170,18 +171,13 @@ function ServiceForm({
         <div>
           <label className="text-[10px] erp-label mb-1 block">نوع الخدمة</label>
           {serviceTypes.length > 0 ? (
-            <select
-              value={value.service_type_id ?? ''}
-              onChange={(e) => onServiceTypeChange(e.target.value)}
-              className="erp-input w-full text-xs"
-            >
-              <option value="">— اختر أو اكتب —</option>
-              {serviceTypes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name_ar}
-                </option>
-              ))}
-            </select>
+            <Combobox
+              options={serviceTypes.map((s) => ({ value: String(s.id), label: s.name_ar }))}
+              value={value.service_type_id ? String(value.service_type_id) : ''}
+              onChange={onServiceTypeChange}
+              placeholder="— اختر أو اكتب —"
+              className="w-full text-xs"
+            />
           ) : (
             <input
               type="text"
@@ -279,18 +275,13 @@ function ServiceForm({
           <label className="text-[10px] erp-label mb-1 block">الفني المنفذ</label>
           {users.length > 0 ? (
             <>
-              <select
-                value={value.technician_id ?? ''}
-                onChange={(e) => onTechSelect(e.target.value)}
-                className="erp-input w-full text-xs"
-              >
-                <option value="">— اختر من القائمة —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
+              <Combobox
+                options={users.map((u) => ({ value: String(u.id), label: u.name }))}
+                value={value.technician_id ? String(value.technician_id) : ''}
+                onChange={onTechSelect}
+                placeholder="— اختر من القائمة —"
+                className="w-full text-xs"
+              />
               {!value.technician_id && (
                 <input
                   type="text"
@@ -318,15 +309,16 @@ function ServiceForm({
 
         <div>
           <label className="text-[10px] erp-label mb-1 block">الحالة</label>
-          <select
+          <Combobox
+            options={[
+              { value: 'pending', label: 'انتظار' },
+              { value: 'in_progress', label: 'جاري' },
+              { value: 'completed', label: 'مكتمل' },
+            ]}
             value={value.status}
-            onChange={(e) => onChange({ ...value, status: e.target.value as JobService['status'] })}
-            className="erp-input w-full text-xs"
-          >
-            <option value="pending">انتظار</option>
-            <option value="in_progress">جاري</option>
-            <option value="completed">مكتمل</option>
-          </select>
+            onChange={(v) => onChange({ ...value, status: v as JobService['status'] })}
+            className="w-full text-xs"
+          />
         </div>
 
         <div>

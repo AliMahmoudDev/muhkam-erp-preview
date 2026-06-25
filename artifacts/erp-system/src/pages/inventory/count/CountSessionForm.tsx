@@ -1,5 +1,6 @@
 import { ClipboardList, TrendingUp } from 'lucide-react';
 import type { CountMode } from './types';
+import { Combobox } from '@/components/ui/combobox';
 
 export function CountSessionForm({
   warehouses,
@@ -36,20 +37,13 @@ export function CountSessionForm({
           <label className="block text-ink/50 text-xs mb-1.5">
             المخزن <span className="text-red-400">*</span>
           </label>
-          <select
-            value={selectedWarehouse}
-            onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
-            className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:border-amber-500/40"
-          >
-            <option value={0} className="bg-surface">
-              — اختر مخزناً —
-            </option>
-            {warehouses.map((w) => (
-              <option key={w.id} value={w.id} className="bg-surface">
-                {w.name}
-              </option>
-            ))}
-          </select>
+          <Combobox
+            options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+            value={selectedWarehouse ? String(selectedWarehouse) : ''}
+            onChange={(v) => setSelectedWarehouse(v ? Number(v) : 0)}
+            placeholder="— اختر مخزناً —"
+            className="w-full"
+          />
         </div>
         <div>
           <label className="block text-ink/50 text-xs mb-1.5">

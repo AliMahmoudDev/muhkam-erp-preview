@@ -470,15 +470,16 @@ export default function UsersTab() {
               <div>
                 <FieldLabel>الدور</FieldLabel>
                 <SSelect
+                  options={[
+                    { value: 'admin', label: 'مدير النظام' },
+                    { value: 'manager', label: 'مشرف' },
+                    { value: 'cashier', label: 'كاشير' },
+                    { value: 'salesperson', label: 'مندوب مبيعات' },
+                    { value: 'employee', label: 'موظف (بياناتي فقط)' },
+                  ]}
                   value={form.role}
-                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                >
-                  <option value="admin">مدير النظام</option>
-                  <option value="manager">مشرف</option>
-                  <option value="cashier">كاشير</option>
-                  <option value="salesperson">مندوب مبيعات</option>
-                  <option value="employee">موظف (بياناتي فقط)</option>
-                </SSelect>
+                  onChange={(v) => setForm((f) => ({ ...f, role: v }))}
+                />
               </div>
               <div>
                 <FieldLabel>
@@ -488,16 +489,13 @@ export default function UsersTab() {
                   )}
                 </FieldLabel>
                 <SSelect
+                  options={[
+                    { value: '', label: 'اختر المخزن' },
+                    ...warehouses.map((w) => ({ value: String(w.id), label: w.name })),
+                  ]}
                   value={form.warehouse_id}
-                  onChange={(e) => setForm((f) => ({ ...f, warehouse_id: e.target.value }))}
-                >
-                  <option value="">اختر المخزن</option>
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-                </SSelect>
+                  onChange={(v) => setForm((f) => ({ ...f, warehouse_id: v }))}
+                />
               </div>
               <div>
                 <FieldLabel>
@@ -507,16 +505,13 @@ export default function UsersTab() {
                   )}
                 </FieldLabel>
                 <SSelect
+                  options={[
+                    { value: '', label: 'اختر الخزنة' },
+                    ...safes.map((s) => ({ value: String(s.id), label: s.name })),
+                  ]}
                   value={form.safe_id}
-                  onChange={(e) => setForm((f) => ({ ...f, safe_id: e.target.value }))}
-                >
-                  <option value="">اختر الخزنة</option>
-                  {safes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </SSelect>
+                  onChange={(v) => setForm((f) => ({ ...f, safe_id: v }))}
+                />
               </div>
             </div>
 
@@ -540,16 +535,16 @@ export default function UsersTab() {
                 )}
               </FieldLabel>
               <SSelect
+                options={[
+                  { value: '', label: '— اختر الموظف —' },
+                  ...empOptions.map((e) => ({
+                    value: String(e.id),
+                    label: `${String(e.first_name_ar)} ${String(e.last_name_ar)} [${String(e.employee_code)}]`,
+                  })),
+                ]}
                 value={form.employee_id}
-                onChange={(e) => setForm((f) => ({ ...f, employee_id: e.target.value }))}
-              >
-                <option value="">— اختر الموظف —</option>
-                {empOptions.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {String(e.first_name_ar)} {String(e.last_name_ar)} [{String(e.employee_code)}]
-                  </option>
-                ))}
-              </SSelect>
+                onChange={(v) => setForm((f) => ({ ...f, employee_id: v }))}
+              />
               {form.role === 'employee' && !form.employee_id && (
                 <p className="text-amber-400 text-[11px] mt-1.5">
                   ⚠ يجب اختيار ملف الموظف حتى تظهر بوابة الموظف الشخصية عند تسجيل الدخول
@@ -581,21 +576,16 @@ export default function UsersTab() {
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <SSelect
+                      options={[
+                        { value: '', label: 'اختر قالباً لملء الصلاحيات تلقائياً...' },
+                        ...TEMPLATE_LABELS.map((t) => ({ value: t.value, label: t.label })),
+                      ]}
                       value=""
-                      onChange={(e) => {
-                        const tpl = PERMISSION_TEMPLATES[e.target.value];
+                      onChange={(v) => {
+                        const tpl = PERMISSION_TEMPLATES[v];
                         if (tpl) setForm((f) => ({ ...f, permissions: { ...tpl } }));
                       }}
-                    >
-                      <option value="" disabled>
-                        اختر قالباً لملء الصلاحيات تلقائياً...
-                      </option>
-                      {TEMPLATE_LABELS.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </SSelect>
+                    />
                   </div>
                   <button
                     type="button"

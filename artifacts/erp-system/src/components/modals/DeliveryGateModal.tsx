@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { JobLite, lineDiscountAmount, lineNet } from './delivery-gate/types';
 import { useDeliveryGate } from './delivery-gate/useDeliveryGate';
 import DeliveryGateForm from './delivery-gate/DeliveryGateForm';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Props {
   job: JobLite;
@@ -369,18 +370,15 @@ ${g.numericDisc > 0 ? `<div class="row discount"><span>خصم:</span><span>- ${f
                       className="w-full px-3 py-2 rounded-lg bg-surface border border-sky-400/20 text-sm text-ink focus:outline-none focus:border-sky-400/40"
                     />
                     {g.numericCost > 0 && (
-                      <select
+                      <Combobox
+                        options={[
+                          { value: '', label: '-- الخزنة --' },
+                          ...g.safes.map((s) => ({ value: String(s.id), label: s.name })),
+                        ]}
                         value={g.safeId}
-                        onChange={(e) => g.setSafeId(e.target.value)}
-                        className="w-full mt-1.5 px-3 py-1.5 rounded-lg bg-surface border border-sky-400/20 text-[11px] text-ink focus:outline-none focus:border-sky-400/40"
-                      >
-                        <option value="">-- الخزنة --</option>
-                        {g.safes.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => g.setSafeId(v)}
+                        className="w-full mt-1.5 text-[11px]"
+                      />
                     )}
                   </div>
                   {/* الخصم */}

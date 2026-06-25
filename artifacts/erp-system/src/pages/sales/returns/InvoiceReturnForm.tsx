@@ -5,6 +5,7 @@ import type { InvoiceDetail, ReturnLineItem } from '../salesTypes';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Safe {
   id: number;
@@ -217,18 +218,13 @@ export function InvoiceReturnForm({
                   <label className="opacity-50 text-xs font-semibold block mb-1">
                     الخزينة الصارفة *
                   </label>
-                  <select
-                    className="erp-input w-full"
+                  <Combobox
+                    options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
                     value={safeId}
-                    onChange={(e) => setSafeId(e.target.value)}
-                  >
-                    <option value="">— اختر خزينة —</option>
-                    {safes.map((s) => (
-                      <option key={s.id} value={String(s.id)}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setSafeId(v)}
+                    placeholder="— اختر خزينة —"
+                    className="w-full"
+                  />
                 </div>
               )}
 

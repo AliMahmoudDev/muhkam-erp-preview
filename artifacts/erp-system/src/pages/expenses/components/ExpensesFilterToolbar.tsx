@@ -1,5 +1,6 @@
 import { Search, X } from 'lucide-react';
 import type { ExpenseCategory } from '../types';
+import { Combobox } from '@/components/ui/combobox';
 
 interface ExpensesFilterToolbarProps {
   search: string;
@@ -56,20 +57,14 @@ export function ExpensesFilterToolbar({
       {/* Category */}
       <div className="flex flex-col gap-1.5">
         <label className="text-ink/30 text-xs font-medium pr-1">التصنيف</label>
-        <select
+        <Combobox
+          options={categories.map((c) => ({ value: c.name, label: c.name }))}
           value={catFilter}
-          onChange={(e) => setCatFilter(e.target.value)}
-          className="glass-input text-sm py-2.5 w-36"
-        >
-          <option value="" className="bg-gray-900">
-            الكل
-          </option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.name} className="bg-gray-900">
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setCatFilter(v)}
+          placeholder="الكل"
+          clearable
+          className="w-36"
+        />
       </div>
 
       {/* Date range */}
