@@ -1,32 +1,30 @@
 /**
- * PageHeader — canonical heading area for list and form pages.
+ * PageHeader — toolbar band for list and form pages.
  *
- * Different from EntityHeader (which is for entity detail pages).
- * PageHeader is for top-of-page titles in list/report/form contexts.
+ * The page title and subtitle are now shown in the application topbar,
+ * so PageHeader only renders the actionsSlot and/or tabsSlot.
+ * When neither is provided the component returns null (no visible band).
  *
  * Convention: actionsSlot should contain at most 1 primary action button
  * and secondary actions. Overflow handled by caller (e.g. a "more" menu).
  *
  * tabsSlot: optional module-level tab bar.
- * When provided, it renders at the bottom of the sticky header band so
- * tabs appear as part of the band rather than below it.
+ * When provided, it renders at the bottom of the sticky band so tabs
+ * appear as part of the band rather than below it.
  */
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 export interface PageHeaderProps {
-  /** Main page title — rendered as <h1>. */
-  title: string;
-  /** Supporting subtitle or description. */
+  /** Kept for callsite compatibility — no longer rendered visually. */
+  title?: string;
+  /** Kept for callsite compatibility — no longer rendered visually. */
   subtitle?: string;
-  /**
-   * Eyebrow slot — breadcrumb trail, section label, or category chip.
-   * Rendered above the title.
-   */
+  /** Kept for callsite compatibility — no longer rendered visually. */
+  sub?: string;
+  /** Kept for callsite compatibility — no longer rendered visually. */
   eyebrowSlot?: React.ReactNode;
-  /**
-   * Status slot — a status badge or indicator inline with the title.
-   */
+  /** Kept for callsite compatibility — no longer rendered visually. */
   statusSlot?: React.ReactNode;
   /**
    * Actions slot — primary + secondary actions.
@@ -44,35 +42,28 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader({
-  title,
-  subtitle,
-  eyebrowSlot,
-  statusSlot,
+  title: _title,
+  subtitle: _subtitle,
+  sub: _sub,
+  eyebrowSlot: _eyebrowSlot,
+  statusSlot: _statusSlot,
   actionsSlot,
   tabsSlot,
   className,
 }: PageHeaderProps) {
+  if (!actionsSlot && !tabsSlot) return null;
+
   return (
-    <div className={cn('erp-page-header', tabsSlot ? 'erp-page-header--with-tabs' : '', className)}>
-      {eyebrowSlot && (
-        <div className="erp-page-header-eyebrow">{eyebrowSlot}</div>
+    <div
+      className={cn(
+        'erp-page-header',
+        tabsSlot ? 'erp-page-header--with-tabs' : '',
+        className,
       )}
-
-      {/* Title row + actions */}
-      <div className="erp-page-header-row">
-        <div className="erp-page-header-identity">
-          <div className="erp-page-header-title-row">
-            <h1 className="erp-page-header-title">{title}</h1>
-            {statusSlot && (
-              <div className="erp-page-header-status">{statusSlot}</div>
-            )}
-          </div>
-          {subtitle && (
-            <p className="erp-page-header-subtitle">{subtitle}</p>
-          )}
-        </div>
-
-        {actionsSlot && (
+    >
+      {actionsSlot && (
+        <div className="erp-page-header-row">
+          <div style={{ flex: 1 }} />
           <div
             className="erp-page-header-actions"
             role="toolbar"
@@ -80,12 +71,14 @@ export function PageHeader({
           >
             {actionsSlot}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Tabs — bottom of band */}
       {tabsSlot && (
-        <div className="erp-page-header-tabs">
+        <div
+          className="erp-page-header-tabs"
+          style={!actionsSlot ? { marginBlockStart: 0 } : undefined}
+        >
           {tabsSlot}
         </div>
       )}
