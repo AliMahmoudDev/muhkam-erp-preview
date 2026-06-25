@@ -327,10 +327,6 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       {/* ── Header (hidden when embedded) ── */}
       {!embedded && (
         <div className="erp-page-header">
-          <h1 className="erp-page-title flex items-center gap-2">
-            <Shield className="w-6 h-6 text-amber-400" />
-            سجلات الضمان
-          </h1>
           <div className="erp-page-actions">
             <button
               onClick={() => setShowForm(true)}

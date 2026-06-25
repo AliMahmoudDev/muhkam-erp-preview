@@ -407,11 +407,6 @@ export default function Vouchers({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className={embedded ? 'space-y-5' : 'erp-page'} dir="rtl">
-      {/* Page title */}
-      {!embedded && (
-        <h1 className="text-2xl font-black text-ink mb-2">السندات</h1>
-      )}
-
       {/* Confirm delete */}
       {confirmDelete && (
         <ConfirmModal

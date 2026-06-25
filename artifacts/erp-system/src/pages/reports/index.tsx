@@ -282,17 +282,6 @@ export default function Reports() {
   return (
     <div className="erp-page" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }} dir="rtl">
 
-      {/* ── Page header ── */}
-      <div className="erp-page-header no-print">
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>
-            التقارير
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-hint)', marginTop: 2 }}>
-            تحليل الأداء المالي والتشغيلي — {activeGroup.label} / {activeTabDef?.label}
-          </p>
-        </div>
-      </div>
 
       {/* ── Category navigation (Level 1) ── */}
       <div className="no-print flex gap-2 flex-wrap">

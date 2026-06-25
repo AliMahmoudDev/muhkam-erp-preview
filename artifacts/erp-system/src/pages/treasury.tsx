@@ -233,23 +233,6 @@ export default function Treasury() {
         toast={toast}
       />
 
-      {/* ── Page title ── */}
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title flex items-center gap-3">
-            <Wallet className="w-7 h-7 text-amber-400" />
-            السندات والخزينة
-          </h1>
-          <p className="erp-page-subtitle">
-            {new Date().toLocaleDateString('ar-EG-u-nu-latn', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
-      </div>
 
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

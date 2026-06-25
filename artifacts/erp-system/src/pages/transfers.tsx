@@ -548,15 +548,6 @@ export default function Transfers() {
 
         {/* ── Header ── */}
         <div className="erp-page-header">
-          <div>
-            <h1 className="erp-page-title flex items-center gap-2">
-              <ArrowRightLeft className="w-5 h-5 text-amber-400" />
-              تحويل المخزون بين الفروع
-            </h1>
-            <p className="erp-page-subtitle">
-              {transfers.length} طلب {filterStatus ? `— ${STATUS_LABEL[filterStatus]}` : 'إجمالاً'}
-            </p>
-          </div>
           {canManage && (
             <div className="erp-page-actions">
               <button

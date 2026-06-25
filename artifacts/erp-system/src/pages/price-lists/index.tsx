@@ -83,16 +83,7 @@ export default function PriceLists() {
   return (
     <div className="h-full flex flex-col overflow-hidden" dir="rtl">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-4 border-b border-line">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
-            <Tags className="w-5 h-5 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-base font-black text-ink">قوائم الأسعار</h1>
-            <p className="text-xs text-ink/40">قوائم مخصصة لتسعير المنتجات للعملاء</p>
-          </div>
-        </div>
+      <div className="shrink-0 flex justify-end gap-4 px-4 py-4 border-b border-line">
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-black font-bold text-sm hover:bg-amber-400 transition"

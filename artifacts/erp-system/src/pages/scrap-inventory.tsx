@@ -84,9 +84,6 @@ export default function ScrapInventory({ embedded = false }: { embedded?: boolea
         </div>
       ) : (
         <div className="erp-page-header">
-          <h1 className="erp-page-title flex items-center gap-2">
-            <Trash2 className="w-5 h-5 text-amber-400" /> مخزن التوالف
-          </h1>
           <div className="erp-page-actions">
             <button
               onClick={() => setShowNew(true)}

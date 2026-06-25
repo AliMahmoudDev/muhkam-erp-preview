@@ -240,15 +240,6 @@ export default function Branches() {
         {/* Header */}
         <div className="shrink-0 px-4 pt-5 pb-4 border-b border-[var(--erp-border)]">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
-                <GitBranch className="w-4 h-4 text-amber-400" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-ink">إدارة الفروع</h1>
-                <p className="text-[10px] text-ink/40">إنشاء وإدارة فروع الشركة</p>
-              </div>
-            </div>
             {isAdmin && (
               <button
                 onClick={() => {

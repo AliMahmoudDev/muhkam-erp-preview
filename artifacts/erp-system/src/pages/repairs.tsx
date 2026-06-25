@@ -286,10 +286,6 @@ export default function Repairs() {
       >
         {/* Header */}
         <div className="erp-page-header" style={{ flexWrap: 'nowrap' }}>
-          <h1 className="erp-page-title" style={{ fontSize: '18px' }}>
-            <Wrench className="w-5 h-5 text-amber-400 inline-block ml-2" />
-            بطاقات الصيانة
-          </h1>
           <div className="erp-page-actions">
             <button
               onClick={() => setShowSettings(true)}
