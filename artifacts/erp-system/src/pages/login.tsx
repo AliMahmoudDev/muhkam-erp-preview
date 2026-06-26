@@ -609,9 +609,14 @@ export default function Login() {
     <div
       dir="rtl"
       className="lp-login-wrap"
-      style={{ minHeight: '100vh', display: 'flex', background: '#F5F5F5' }}
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        background: '#F5F5F5',
+        flexDirection: 'row-reverse',
+      }}
     >
-      {/* ── Left panel: Brand showcase (hidden on mobile) ── */}
+      {/* ── Brand panel: orange gradient (visible on right in RTL) ── */}
       <div
         className="lg-brand-panel"
         style={{
