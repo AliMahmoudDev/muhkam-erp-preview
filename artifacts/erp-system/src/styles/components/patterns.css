@@ -95,14 +95,38 @@
   border-block-end: none;
 }
 
-/* Open variant: transparent background for full-viewport page shells
-   (e.g. Sales POS). Frosted-glass backdrop keeps tabs legible when
-   content scrolls underneath. Apply via className at the callsite only.
-   Safe to combine with --with-tabs. */
+/* Open variant: fused-topbar header for full-viewport page shells (e.g. Sales POS).
+   ─ Matches topbar background → no grey canvas bleed.
+   ─ Cancels scroll-container pt-4/pt-6 via negative margin so the tab bar appears
+     immediately below the topbar with zero visible gap.
+   ─ Zero top padding → tabs are the only visual content of the band.
+   Apply via className at the callsite only. Safe to combine with --with-tabs. */
 .erp-page-header--open {
-  background: transparent;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--erp-bg-topbar);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding-block-start: 0;
+  border-block-end: none;
+  /* cancel scroll-container pt-4 at sm */
+  margin-block-start: calc(-1 * var(--space-4, 1rem));
+}
+
+@media (min-width: 768px) {
+  .erp-page-header--open {
+    /* cancel scroll-container pt-6 at md+ */
+    margin-block-start: calc(-1 * var(--space-6, 1.5rem));
+  }
+}
+
+/* Tabs slot: flush with top of band — remove the 8px margin-block-start */
+.erp-page-header--open .erp-page-header-tabs {
+  margin-block-start: 0;
+}
+
+/* Inactive tabs: slightly muted in the open header to reduce visual weight.
+   Active tab keeps full brand color/weight unchanged. */
+.erp-page-header--open .erp-tab-bar--underline .erp-tab:not(.erp-tab--active):not(:disabled) {
+  opacity: 0.7;
 }
 
 /* Tabs slot — sits at the bottom of the sticky band */
