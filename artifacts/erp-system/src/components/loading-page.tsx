@@ -1,79 +1,232 @@
+/* eslint-disable erp/no-hardcoded-colors -- loading page decorative colors: intentional fixed palette */
 /**
- * LoadingPage — صفحة التحميل الاحترافية لنظام مُحكم
- * تُعرض أثناء تحميل الصفحات (Suspense fallback) وأثناء التحقق من الجلسة.
+ * LoadingPage — Light mode premium loader (amber/gold palette)
  */
 
 export function LoadingPage() {
   return (
     <div
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-      style={{ background: 'var(--erp-bg-app, #0a0e1a)' }}
+      style={{ background: '#F5F5F5', overflow: 'hidden' }}
     >
-      {/* Logo + Text */}
-      <div className="relative flex flex-col items-center gap-6">
-        {/* Logo icon */}
-        <div className="relative">
-          <div
-            className="w-20 h-20 rounded-2xl border border-line flex items-center justify-center animate-[logo-breathe_2.5s_ease-in-out_infinite]"
-            style={{ background: 'var(--bg-surface)' }}
+      {/* Soft pastel orbs */}
+      <div
+        style={{
+          position: 'absolute',
+          width: 600,
+          height: 600,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          top: '20%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          animation: 'lp-ld-orb-1 8s ease-in-out infinite',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          width: 500,
+          height: 500,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,179,0,.12) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          bottom: '10%',
+          left: '30%',
+          animation: 'lp-ld-orb-2 10s ease-in-out infinite',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          width: 400,
+          height: 400,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,215,0,.18) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          top: '40%',
+          left: '40%',
+          animation: 'lp-ld-orb-3 16s ease-in-out infinite',
+        }}
+      />
+
+      {/* Grid pattern */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage:
+            'linear-gradient(rgba(0,0,0,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.025) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          maskImage: 'radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 80%)',
+        }}
+      />
+
+      {/* Main content */}
+      <div className="relative flex flex-col items-center" style={{ gap: 32 }}>
+        {/* Logo with rotating ring */}
+        <div style={{ position: 'relative', width: 120, height: 120 }}>
+          <svg
+            width="120"
+            height="120"
+            viewBox="0 0 120 120"
+            style={{ position: 'absolute', inset: 0, animation: 'lp-ld-spin 3s linear infinite' }}
           >
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 180 180"
+            <defs>
+              <linearGradient id="lp-ld-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#F59E0B" />
+                <stop offset="50%" stopColor="#FFD700" />
+                <stop offset="100%" stopColor="#FFB300" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="60"
+              cy="60"
+              r="56"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              stroke="url(#lp-ld-grad)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeDasharray="60 280"
+              opacity="0.9"
+            />
+            <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(0,0,0,.06)" strokeWidth="1" />
+          </svg>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 20,
+              borderRadius: 22,
+              background: 'linear-gradient(135deg, #F59E0B 0%, #FFB300 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(245,158,11,.25), inset 0 1px 0 rgba(255,255,255,.25)',
+              animation: 'lp-ld-pulse 2s ease-in-out infinite',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 22,
+                background:
+                  'radial-gradient(circle at 30% 20%, rgba(255,255,255,.3) 0%, transparent 50%)',
+              }}
+            />
+            <span
+              style={{
+                position: 'relative',
+                color: '#fff',
+                fontFamily: "'Tajawal','SF Pro Display',sans-serif",
+                fontSize: 44,
+                fontWeight: 800,
+                lineHeight: 1,
+              }}
             >
-              <rect x="20" y="16" width="140" height="4" rx="2" fill="var(--status-warning)" />
-              <text
-                x="90"
-                y="115"
-                fontFamily="Arial, sans-serif"
-                fontSize="88"
-                fontWeight="bold"
-                textAnchor="middle"
-                fill="var(--status-warning)"
-              >
-                م
-              </text>
-              <circle cx="90" cy="148" r="6" fill="var(--status-warning)" opacity="0.7" />
-            </svg>
+              م
+            </span>
           </div>
         </div>
 
-        {/* Brand name */}
-        <div className="flex flex-col items-center gap-1">
+        {/* Brand */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <h1
-            className="text-2xl font-bold text-ink/90 tracking-wide"
-            style={{ fontFamily: 'Tajawal, sans-serif' }}
+            style={{
+              fontFamily: "'Tajawal','SF Pro Display',sans-serif",
+              fontSize: 28,
+              fontWeight: 800,
+              color: '#333333',
+              letterSpacing: '-0.02em',
+              margin: 0,
+              lineHeight: 1,
+            }}
           >
             مُحكم
           </h1>
-          <p className="text-xs text-ink/40 tracking-widest uppercase">MUHKAM ERP</p>
+          <p
+            style={{
+              fontFamily: "'Inter','Tajawal',sans-serif",
+              fontSize: 10,
+              fontWeight: 600,
+              color: '#999999',
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              margin: 0,
+            }}
+          >
+            MUHKAM ERP
+          </p>
         </div>
 
         {/* Progress bar */}
-        <div className="w-48 h-1 rounded-full bg-surface overflow-hidden mt-2">
-          <div className="h-full rounded-full bg-[var(--brand)] animate-[progress-slide_1.8s_ease-in-out_infinite]" />
+        <div
+          style={{
+            width: 220,
+            height: 3,
+            borderRadius: 980,
+            background: 'rgba(0,0,0,.06)',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(90deg, transparent 0%, #F59E0B 30%, #FFD700 50%, #F59E0B 70%, transparent 100%)',
+              backgroundSize: '200% 100%',
+              animation: 'lp-ld-shimmer 1.6s ease-in-out infinite',
+              borderRadius: 980,
+            }}
+          />
         </div>
 
         {/* Loading text */}
-        <p className="text-sm text-ink/30 mt-1" style={{ fontFamily: 'Tajawal, sans-serif' }}>
-          جارِ التحميل...
-        </p>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontFamily: "'Tajawal','SF Pro Display',sans-serif",
+            fontSize: 14,
+            color: '#666666',
+          }}
+        >
+          <span>جارٍ التحميل</span>
+          <span style={{ display: 'inline-flex', gap: 3 }}>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: '50%',
+                  background: '#F59E0B',
+                  animation: `lp-ld-dot 1.4s ease-in-out ${i * 0.2}s infinite`,
+                  display: 'inline-block',
+                }}
+              />
+            ))}
+          </span>
+        </div>
       </div>
 
-      {/* Inline keyframes */}
       <style>{`
-        @keyframes logo-breathe {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.04); opacity: 0.92; }
+        @keyframes lp-ld-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes lp-ld-pulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(245,158,11,.25), inset 0 1px 0 rgba(255,255,255,.25); }
+          50% { transform: scale(1.05); box-shadow: 0 12px 32px rgba(245,158,11,.4), inset 0 1px 0 rgba(255,255,255,.25); }
         }
-        @keyframes progress-slide {
-          0% { width: 0%; margin-left: 0%; }
-          50% { width: 60%; margin-left: 20%; }
-          100% { width: 0%; margin-left: 100%; }
-        }
+        @keyframes lp-ld-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes lp-ld-dot { 0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); } 30% { opacity: 1; transform: scale(1.2); } }
+        @keyframes lp-ld-orb-1 { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.6; } 50% { transform: translateX(-30%) scale(1.2); opacity: 0.9; } }
+        @keyframes lp-ld-orb-2 { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.3); opacity: 0.7; } }
+        @keyframes lp-ld-orb-3 { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 0.8; } }
       `}</style>
     </div>
   );
