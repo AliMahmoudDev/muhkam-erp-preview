@@ -142,3 +142,8 @@ overrides:
   rollup>@rollup/rollup-win32-ia32-msvc: '-'
   rollup>@rollup/rollup-win32-x64-gnu: '-'
   rollup>@rollup/rollup-win32-x64-msvc: '-'
+
+allowBuilds:
+  '@scarf/scarf': set this to true or false
+  core-js: set this to true or false
+  esbuild: set this to true or false

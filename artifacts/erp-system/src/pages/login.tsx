@@ -36,7 +36,7 @@ const LG_CSS = `
   -webkit-appearance:none;
 }
 .lg-input::placeholder{color:#999999;}
-.lg-input:focus{border-color:#F59E0B;box-shadow:0 0 0 4px rgba(245,158,11,.1);}
+.lg-input:focus{border-color:#0071E3;box-shadow:0 0 0 4px rgba(245,158,11,.1);}
 .lg-input:hover:not(:focus):not(:disabled){border-color:#BDBDBD;}
 .lg-input:disabled{opacity:.4;cursor:not-allowed;}
 .lg-input-error{border-color:#EF4444!important;box-shadow:0 0 0 4px rgba(239,68,68,.08)!important;}
@@ -59,21 +59,21 @@ const LG_CSS = `
 
 .lg-submit{
   width:100%;height:54px;
-  background:linear-gradient(135deg,#F59E0B 0%,#F57F17 100%);
+  background:linear-gradient(135deg,#0071E3 0%,#2997FF 100%);
   color:#fff;
   border:none;border-radius:12px;cursor:pointer;
   font-family:'Tajawal',sans-serif;font-size:16px;font-weight:700;
   display:flex;align-items:center;justify-content:center;gap:8px;
   transition:all .2s;
-  box-shadow:0 4px 16px rgba(245,158,11,.3);
+  box-shadow:0 4px 16px rgba(0,113,227,.3);
 }
-.lg-submit:hover:not(:disabled){background:linear-gradient(135deg,#F57F17 0%,#E65100 100%);box-shadow:0 6px 24px rgba(245,158,11,.45);transform:translateY(-1px);}
+.lg-submit:hover:not(:disabled){background:linear-gradient(135deg,#0077ED 0%,#1D4ED8 100%);box-shadow:0 6px 24px rgba(0,113,227,.4);transform:translateY(-1px);}
 .lg-submit:active:not(:disabled){transform:translateY(0);}
 .lg-submit:disabled{opacity:.5;cursor:not-allowed;}
 
 .lg-link{
   background:none;border:none;padding:0;cursor:pointer;
-  font-family:'Tajawal',sans-serif;color:#F59E0B;font-size:13px;font-weight:600;
+  font-family:'Tajawal',sans-serif;color:#0071E3;font-size:13px;font-weight:600;
   transition:opacity .15s;
 }
 .lg-link:hover{opacity:.7;}
@@ -91,9 +91,9 @@ const LG_CSS = `
   display:flex;align-items:center;justify-content:center;gap:8px;
   transition:all .15s;
 }
-.lg-outline-btn:hover{border-color:#F59E0B;color:#F59E0B;background:#FFF9E6;}
+.lg-outline-btn:hover{border-color:#0071E3;color:#0071E3;background:#E6F0FF;}
 
-.lg-gradient-text{background:linear-gradient(135deg,#F59E0B 0%,#FFD700 50%,#FFB300 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lg-gradient 6s ease infinite;}
+.lg-gradient-text{background:linear-gradient(135deg,#0071E3 0%,#2997FF 50%,#A855F7 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lg-gradient 6s ease infinite;}
 `;
 
 /* ── Icons ── */
@@ -156,7 +156,7 @@ function LoginLogo({ size = 48 }: { size?: number }) {
           width: size,
           height: size,
           borderRadius: size * 0.28,
-          background: 'linear-gradient(135deg, #F59E0B 0%, #FFB300 100%)',
+          background: 'linear-gradient(135deg, #0071E3 0%, #A855F7 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -164,7 +164,7 @@ function LoginLogo({ size = 48 }: { size?: number }) {
           fontFamily: "'Tajawal','SF Pro Display',sans-serif",
           fontSize: size * 0.55,
           fontWeight: 800,
-          boxShadow: '0 8px 24px rgba(245,158,11,.3)',
+          boxShadow: '0 8px 24px rgba(0,113,227,.3)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -621,7 +621,7 @@ export default function Login() {
         className="lg-brand-panel"
         style={{
           flex: '1 1 50%',
-          background: 'linear-gradient(135deg, #F59E0B 0%, #F57F17 60%, #E65100 100%)',
+          background: 'linear-gradient(135deg, #0071E3 0%, #2997FF 60%, #A855F7 100%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -863,9 +863,9 @@ export default function Login() {
               marginBottom: 24,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#FFF9E6';
-              e.currentTarget.style.borderColor = '#F59E0B';
-              e.currentTarget.style.color = '#F59E0B';
+              e.currentTarget.style.background = '#E6F0FF';
+              e.currentTarget.style.borderColor = '#0071E3';
+              e.currentTarget.style.color = '#0071E3';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'rgba(255,255,255,.7)';

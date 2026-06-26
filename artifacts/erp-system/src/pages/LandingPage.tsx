@@ -34,7 +34,7 @@ body{margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:graysca
 @keyframes lp-marquee-rtl { from{transform:translateX(-50%)} to{transform:translateX(0)} }
 @keyframes lp-gradient { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
 
-.lp-gradient-text{background:linear-gradient(135deg,#F59E0B 0%,#FFD700 50%,#FFB300 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lp-gradient 6s ease infinite;}
+.lp-gradient-text{background:linear-gradient(135deg,#0071E3 0%,#2997FF 50%,#A855F7 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lp-gradient 6s ease infinite;}
 .lp-orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;}
 .lp-glass{background:rgba(255,255,255,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,.06);}
 .lp-float{animation:lp-float 4s ease-in-out infinite;}
@@ -44,7 +44,7 @@ body{margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:graysca
 
 .lp-tab{padding:10px 18px;border-radius:980px;font-family:'Tajawal','SF Pro Display','Inter',sans-serif;font-size:14px;font-weight:500;color:#666;background:transparent;border:1px solid transparent;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .lp-tab:hover{color:#1A1A1A;}
-.lp-tab.lp-tab-active{background:#F59E0B;color:#fff;border-color:#F59E0B;}
+.lp-tab.lp-tab-active{background:#0071E3;color:#fff;border-color:#0071E3;}
 
 .lp-stat-num{font-family:'Inter','Tajawal',sans-serif;font-weight:700;letter-spacing:-0.04em;line-height:1;}
 
@@ -59,8 +59,8 @@ body{margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:graysca
 .lp-nav-link{font-family:'Tajawal','SF Pro Display','Inter',sans-serif;font-size:14px;font-weight:500;color:#666;text-decoration:none;transition:color .15s;white-space:nowrap;}
 .lp-nav-link:hover{color:#1A1A1A;}
 
-.lp-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 28px;background:linear-gradient(135deg,#F59E0B 0%,#F57F17 100%);color:#fff;border:none;border-radius:980px;cursor:pointer;font-family:'Tajawal','SF Pro Display','Inter',sans-serif;font-size:15px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;transition:all .15s;box-shadow:0 4px 14px rgba(245,158,11,.3);}
-.lp-btn-primary:hover{background:linear-gradient(135deg,#F57F17 0%,#E65100 100%);box-shadow:0 6px 20px rgba(245,158,11,.45);}
+.lp-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 28px;background:linear-gradient(135deg,#0071E3 0%,#2997FF 100%);color:#fff;border:none;border-radius:980px;cursor:pointer;font-family:'Tajawal','SF Pro Display','Inter',sans-serif;font-size:15px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;transition:all .15s;box-shadow:0 4px 14px rgba(0,113,227,.25);}
+.lp-btn-primary:hover{background:linear-gradient(135deg,#0077ED 0%,#1D4ED8 100%);box-shadow:0 6px 20px rgba(0,113,227,.4);}
 .lp-btn-primary:active{transform:scale(.98);}
 .lp-btn-primary-lg{height:52px;padding:0 36px;font-size:16px;}
 
@@ -71,11 +71,11 @@ body{margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:graysca
 .lp-card:hover{box-shadow:0 12px 36px rgba(0,0,0,.06);transform:translateY(-2px);}
 
 .lp-pricing-card{background:#fff;border:1px solid #E8E8EB;border-radius:18px;padding:28px;position:relative;}
-.lp-pricing-card-popular{border-color:#F59E0B;box-shadow:0 12px 40px rgba(245,158,11,.15);}
-.lp-popular-badge{position:absolute;top:-12px;right:50%;transform:translateX(50%);background:linear-gradient(135deg,#F59E0B,#F57F17);color:#fff;padding:4px 14px;border-radius:980px;font-size:11px;font-weight:600;white-space:nowrap;}
+.lp-pricing-card-popular{border-color:#0071E3;box-shadow:0 12px 40px rgba(0,113,227,.12);}
+.lp-popular-badge{position:absolute;top:-12px;right:50%;transform:translateX(50%);background:linear-gradient(135deg,#0071E3,#2997FF);color:#fff;padding:4px 14px;border-radius:980px;font-size:11px;font-weight:600;white-space:nowrap;}
 
-.lp-check{color:#4CAF50;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;}
-.lp-check::before{content:"✓";color:#4CAF50;font-weight:700;flex-shrink:0;}
+.lp-check{color:#34C759;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;}
+.lp-check::before{content:"✓";color:#34C759;font-weight:700;flex-shrink:0;}
 
 .lp-faq-btn{width:100%;background:none;border:none;padding:20px 0;cursor:pointer;font-family:'Tajawal','SF Pro Display','Inter',sans-serif;font-size:16px;font-weight:500;color:#1A1A1A;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:right;}
 .lp-faq-btn:hover{color:#F59E0B;}
@@ -124,9 +124,9 @@ const C = {
   bg: '#F5F5F5',
   surface: '#FFFFFF',
   border: '#E0E0E0',
-  primary: '#F59E0B', // Amber/gold (replaces Apple blue)
-  primaryBg: '#FFF9C4', // Pale yellow tint
-  accent: '#FFD700', // Gold
+  primary: '#0071E3', // Apple blue
+  primaryBg: '#E6F0FF',
+  accent: '#F0D830',
   accentBg: '#FFF9E6',
   text: '#333333', // Dark gray (matches reference)
   sub: '#666666',
@@ -331,7 +331,7 @@ const Icon = {
 
 const FEATURES = [
   {
-    gradient: 'linear-gradient(135deg, #F59E0B 0%, #F57F17 100%)',
+    gradient: 'linear-gradient(135deg, #0071E3 0%, #2997FF 100%)',
     icon: <Icon.POS />,
     title: 'نقطة البيع',
     desc: 'إصدار الفواتير فوري لجميع أنواع المحلات ونقاط البيع والتجار بكل سهولة',
@@ -498,7 +498,7 @@ function MuhkamLogo({ size = 36, withText = true }: { size?: number; withText?: 
           width: size,
           height: size,
           borderRadius: size * 0.28,
-          background: 'linear-gradient(135deg, #F59E0B 0%, #FFB300 100%)',
+          background: 'linear-gradient(135deg, #0071E3 0%, #A855F7 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -506,7 +506,7 @@ function MuhkamLogo({ size = 36, withText = true }: { size?: number; withText?: 
           fontFamily: "'Tajawal','SF Pro Display',sans-serif",
           fontSize: size * 0.55,
           fontWeight: 800,
-          boxShadow: '0 4px 14px rgba(245,158,11,.3)',
+          boxShadow: '0 4px 14px rgba(0,113,227,.25)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -818,7 +818,7 @@ function Navbar({ onLogin, onRegister }: { onLogin: () => void; onRegister: () =
                 style={{
                   height: 40,
                   padding: '0 20px',
-                  background: 'linear-gradient(135deg, #F59E0B 0%, #F57F17 100%)',
+                  background: 'linear-gradient(135deg, #0071E3 0%, #2997FF 100%)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 980,
@@ -827,15 +827,15 @@ function Navbar({ onLogin, onRegister }: { onLogin: () => void; onRegister: () =
                   fontSize: 13,
                   fontWeight: 600,
                   transition: 'all .2s',
-                  boxShadow: '0 4px 14px rgba(245,158,11,.3)',
+                  boxShadow: '0 4px 14px rgba(0,113,227,.25)',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,.45)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,113,227,.4)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(245,158,11,.3)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,113,227,.25)';
                 }}
               >
                 ابدأ مجاناً
@@ -928,7 +928,7 @@ function Navbar({ onLogin, onRegister }: { onLogin: () => void; onRegister: () =
                   onClick={onRegister}
                   style={{
                     height: 48,
-                    background: 'linear-gradient(135deg, #F59E0B 0%, #F57F17 100%)',
+                    background: 'linear-gradient(135deg, #0071E3 0%, #2997FF 100%)',
                     color: '#fff',
                     border: 'none',
                     borderRadius: 980,
@@ -936,7 +936,7 @@ function Navbar({ onLogin, onRegister }: { onLogin: () => void; onRegister: () =
                     fontFamily: "'Tajawal','SF Pro Display','Inter',sans-serif",
                     fontSize: 15,
                     fontWeight: 600,
-                    boxShadow: '0 4px 14px rgba(245,158,11,.3)',
+                    boxShadow: '0 4px 14px rgba(0,113,227,.25)',
                   }}
                 >
                   ابدأ مجاناً — ٧ أيام
@@ -969,7 +969,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
         style={{
           width: 500,
           height: 500,
-          background: 'radial-gradient(circle, rgba(245,158,11,.2) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0,113,227,.18) 0%, transparent 70%)',
           top: '5%',
           right: '5%',
           animation: 'lp-orb-1 18s ease-in-out infinite',
@@ -980,7 +980,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
         style={{
           width: 600,
           height: 600,
-          background: 'radial-gradient(circle, rgba(255,179,0,.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(168,85,247,.15) 0%, transparent 70%)',
           bottom: '5%',
           left: '0%',
           animation: 'lp-orb-2 22s ease-in-out infinite',
@@ -991,7 +991,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
         style={{
           width: 400,
           height: 400,
-          background: 'radial-gradient(circle, rgba(255,215,0,.2) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(240,216,48,.18) 0%, transparent 70%)',
           top: '40%',
           left: '40%',
           animation: 'lp-orb-3 16s ease-in-out infinite',
@@ -1029,7 +1029,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
         >
           <span
             style={{
-              background: 'linear-gradient(135deg, #F59E0B, #FFB300)',
+              background: 'linear-gradient(135deg, #0071E3, #A855F7)',
               color: '#fff',
               padding: '3px 10px',
               borderRadius: 980,
@@ -1298,7 +1298,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
               <div
                 style={{
                   background: 'rgba(255,159,10,.15)',
-                  color: '#F59E0B',
+                  color: '#0071E3',
                   padding: '2px 8px',
                   borderRadius: 980,
                   fontSize: 10,
@@ -1490,7 +1490,7 @@ function AnimatedStats() {
         style={{
           width: 500,
           height: 500,
-          background: 'radial-gradient(circle, rgba(245,158,11,.12) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0,113,227,.1) 0%, transparent 70%)',
           top: '30%',
           right: '20%',
         }}
@@ -1840,7 +1840,7 @@ function ShowcaseSection() {
         style={{
           width: 700,
           height: 700,
-          background: 'radial-gradient(circle, rgba(255,179,0,.12) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(168,85,247,.12) 0%, transparent 70%)',
           top: '10%',
           left: '50%',
           transform: 'translateX(-50%)',
@@ -2074,7 +2074,7 @@ function TestimonialsSection() {
       role: 'صاحب محل تجاري',
       location: 'القاهرة',
       photo: ahmedImg,
-      color: '#F59E0B',
+      color: '#0071E3',
     },
     {
       quote:
@@ -2407,7 +2407,7 @@ function FinalCTA({ onRegister }: { onRegister: () => void }) {
         <div
           className="lp-reveal"
           style={{
-            background: 'linear-gradient(135deg, #F59E0B 0%, #FFB300 100%)',
+            background: 'linear-gradient(135deg, #0071E3 0%, #A855F7 100%)',
             borderRadius: 24,
             padding: '64px 48px',
             textAlign: 'center',

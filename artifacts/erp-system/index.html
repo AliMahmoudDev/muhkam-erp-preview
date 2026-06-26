@@ -1,16 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>MuhKam Advanced</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
     <!-- ⚡ Apply theme synchronously before first paint to prevent dark→light flash -->
     <script>
-      (function() {
+      (function () {
         try {
           var s = JSON.parse(localStorage.getItem('halal_erp_settings') || '{}');
           var theme = s.theme || 'dark';
@@ -25,7 +28,7 @@
             root.classList.remove('light');
             root.setAttribute('data-theme', 'dark');
           }
-        } catch(e) {
+        } catch (e) {
           document.documentElement.classList.add('dark');
           document.documentElement.setAttribute('data-theme', 'dark');
         }
@@ -35,33 +38,163 @@
   <body>
     <div id="root">
       <!-- ⚡ Inline loading screen — visible until React mounts and removes it -->
-      <div id="initial-loader" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0e1a;">
+      <div
+        id="initial-loader"
+        style="
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: #0a0e1a;
+        "
+      >
         <!-- Ambient glow -->
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;border-radius:50%;background:rgba(245,158,11,0.04);filter:blur(100px);"></div>
+        <div
+          style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: rgba(0, 113, 227, 0.04);
+            filter: blur(100px);
+          "
+        ></div>
         <!-- Logo -->
-        <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:24px;">
-          <div style="width:80px;height:80px;border-radius:16px;background:linear-gradient(135deg,#0F172A,#1e293b);border:1px solid rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center;box-shadow:0 25px 50px -12px rgba(245,158,11,0.1);animation:ldr-breathe 2.5s ease-in-out infinite;">
-            <svg width="48" height="48" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="20" y="16" width="140" height="4" rx="2" fill="#F59E0B"/>
-              <text x="90" y="115" font-family="Arial,sans-serif" font-size="88" font-weight="bold" text-anchor="middle" fill="#F59E0B">م</text>
-              <circle cx="90" cy="148" r="6" fill="#F59E0B" opacity="0.7"/>
+        <div
+          style="
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+          "
+        >
+          <div
+            style="
+              width: 80px;
+              height: 80px;
+              border-radius: 16px;
+              background: linear-gradient(135deg, #0f172a, #1e293b);
+              border: 1px solid rgba(0, 113, 227, 0.2);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 25px 50px -12px rgba(0, 113, 227, 0.1);
+              animation: ldr-breathe 2.5s ease-in-out infinite;
+            "
+          >
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 180 180"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="20" y="16" width="140" height="4" rx="2" fill="#0071E3" />
+              <text
+                x="90"
+                y="115"
+                font-family="Arial,sans-serif"
+                font-size="88"
+                font-weight="bold"
+                text-anchor="middle"
+                fill="#0071E3"
+              >
+                م
+              </text>
+              <circle cx="90" cy="148" r="6" fill="#0071E3" opacity="0.7" />
             </svg>
           </div>
           <!-- Brand -->
-          <div style="text-align:center;">
-            <h1 style="margin:0;font-size:24px;font-weight:700;color:rgba(255,255,255,0.9);font-family:Tajawal,sans-serif;letter-spacing:0.5px;">مُحكم</h1>
-            <p style="margin:4px 0 0;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase;">MUHKAM ERP</p>
+          <div style="text-align: center">
+            <h1
+              style="
+                margin: 0;
+                font-size: 24px;
+                font-weight: 700;
+                color: rgba(255, 255, 255, 0.9);
+                font-family: Tajawal, sans-serif;
+                letter-spacing: 0.5px;
+              "
+            >
+              مُحكم
+            </h1>
+            <p
+              style="
+                margin: 4px 0 0;
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.4);
+                letter-spacing: 3px;
+                text-transform: uppercase;
+              "
+            >
+              MUHKAM ERP
+            </p>
           </div>
           <!-- Progress bar -->
-          <div style="width:192px;height:4px;border-radius:4px;background:rgba(255,255,255,0.05);overflow:hidden;margin-top:8px;">
-            <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#f59e0b,#fbbf24);animation:ldr-slide 1.8s ease-in-out infinite;"></div>
+          <div
+            style="
+              width: 192px;
+              height: 4px;
+              border-radius: 4px;
+              background: rgba(255, 255, 255, 0.05);
+              overflow: hidden;
+              margin-top: 8px;
+            "
+          >
+            <div
+              style="
+                height: 100%;
+                border-radius: 4px;
+                background: linear-gradient(90deg, #f59e0b, #fbbf24);
+                animation: ldr-slide 1.8s ease-in-out infinite;
+              "
+            ></div>
           </div>
           <!-- Text -->
-          <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.3);font-family:Tajawal,sans-serif;">جارِ التحميل...</p>
+          <p
+            style="
+              margin: 0;
+              font-size: 13px;
+              color: rgba(255, 255, 255, 0.3);
+              font-family: Tajawal, sans-serif;
+            "
+          >
+            جارِ التحميل...
+          </p>
         </div>
         <style>
-          @keyframes ldr-breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.04);opacity:.92}}
-          @keyframes ldr-slide{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+          @keyframes ldr-breathe {
+            0%,
+            100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(1.04);
+              opacity: 0.92;
+            }
+          }
+          @keyframes ldr-slide {
+            0% {
+              width: 0;
+              margin-left: 0;
+            }
+            50% {
+              width: 60%;
+              margin-left: 20%;
+            }
+            100% {
+              width: 0;
+              margin-left: 100%;
+            }
+          }
         </style>
       </div>
     </div>

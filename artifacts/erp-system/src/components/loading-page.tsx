@@ -16,7 +16,7 @@ export function LoadingPage() {
           width: 600,
           height: 600,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0,113,227,.15) 0%, transparent 70%)',
           filter: 'blur(60px)',
           top: '20%',
           left: '50%',
@@ -30,7 +30,7 @@ export function LoadingPage() {
           width: 500,
           height: 500,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,179,0,.12) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(168,85,247,.12) 0%, transparent 70%)',
           filter: 'blur(60px)',
           bottom: '10%',
           left: '30%',
@@ -43,7 +43,7 @@ export function LoadingPage() {
           width: 400,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,215,0,.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(240,216,48,.18) 0%, transparent 70%)',
           filter: 'blur(60px)',
           top: '40%',
           left: '40%',
@@ -76,9 +76,9 @@ export function LoadingPage() {
           >
             <defs>
               <linearGradient id="lp-ld-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#F59E0B" />
-                <stop offset="50%" stopColor="#FFD700" />
-                <stop offset="100%" stopColor="#FFB300" />
+                <stop offset="0%" stopColor="#0071E3" />
+                <stop offset="50%" stopColor="#2997FF" />
+                <stop offset="100%" stopColor="#A855F7" />
               </linearGradient>
             </defs>
             <circle
@@ -99,11 +99,11 @@ export function LoadingPage() {
               position: 'absolute',
               inset: 20,
               borderRadius: 22,
-              background: 'linear-gradient(135deg, #F59E0B 0%, #FFB300 100%)',
+              background: 'linear-gradient(135deg, #0071E3 0%, #A855F7 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(245,158,11,.25), inset 0 1px 0 rgba(255,255,255,.25)',
+              boxShadow: '0 8px 24px rgba(0,113,227,.25), inset 0 1px 0 rgba(255,255,255,.25)',
               animation: 'lp-ld-pulse 2s ease-in-out infinite',
               overflow: 'hidden',
             }}
@@ -139,7 +139,7 @@ export function LoadingPage() {
               fontFamily: "'Tajawal','SF Pro Display',sans-serif",
               fontSize: 28,
               fontWeight: 800,
-              color: '#333333',
+              color: '#1D1D1F',
               letterSpacing: '-0.02em',
               margin: 0,
               lineHeight: 1,
@@ -152,7 +152,7 @@ export function LoadingPage() {
               fontFamily: "'Inter','Tajawal',sans-serif",
               fontSize: 10,
               fontWeight: 600,
-              color: '#999999',
+              color: '#86868B',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               margin: 0,
@@ -178,7 +178,7 @@ export function LoadingPage() {
               position: 'absolute',
               inset: 0,
               background:
-                'linear-gradient(90deg, transparent 0%, #F59E0B 30%, #FFD700 50%, #F59E0B 70%, transparent 100%)',
+                'linear-gradient(90deg, transparent 0%, #0071E3 30%, #2997FF 50%, #0071E3 70%, transparent 100%)',
               backgroundSize: '200% 100%',
               animation: 'lp-ld-shimmer 1.6s ease-in-out infinite',
               borderRadius: 980,
@@ -194,7 +194,7 @@ export function LoadingPage() {
             gap: 4,
             fontFamily: "'Tajawal','SF Pro Display',sans-serif",
             fontSize: 14,
-            color: '#666666',
+            color: '#6E6E73',
           }}
         >
           <span>جارٍ التحميل</span>
@@ -206,7 +206,7 @@ export function LoadingPage() {
                   width: 4,
                   height: 4,
                   borderRadius: '50%',
-                  background: '#F59E0B',
+                  background: '#0071E3',
                   animation: `lp-ld-dot 1.4s ease-in-out ${i * 0.2}s infinite`,
                   display: 'inline-block',
                 }}
@@ -219,8 +219,8 @@ export function LoadingPage() {
       <style>{`
         @keyframes lp-ld-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes lp-ld-pulse {
-          0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(245,158,11,.25), inset 0 1px 0 rgba(255,255,255,.25); }
-          50% { transform: scale(1.05); box-shadow: 0 12px 32px rgba(245,158,11,.4), inset 0 1px 0 rgba(255,255,255,.25); }
+          0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(0,113,227,.25), inset 0 1px 0 rgba(255,255,255,.25); }
+          50% { transform: scale(1.05); box-shadow: 0 12px 32px rgba(0,113,227,.4), inset 0 1px 0 rgba(255,255,255,.25); }
         }
         @keyframes lp-ld-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         @keyframes lp-ld-dot { 0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); } 30% { opacity: 1; transform: scale(1.2); } }
