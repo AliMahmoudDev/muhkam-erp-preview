@@ -230,7 +230,7 @@ export function NewSalePanel({ onDone }: { onDone: () => void }) {
         />
       )}
 
-      <div className="flex flex-col lg:flex-row gap-3" style={{ height: 'calc(100vh - 114px)' }}>
+      <div className="flex flex-col lg:flex-row gap-3" style={{ height: 'calc(100vh - 170px)' }}>
         {/* ═══ يسار — كتالوج المنتجات ═══ */}
         <SaleProductPicker
           search={search}

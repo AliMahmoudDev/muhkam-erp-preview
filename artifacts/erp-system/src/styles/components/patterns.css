@@ -95,36 +95,18 @@
   border-block-end: none;
 }
 
-/* Open variant: fused-topbar header for full-viewport page shells (e.g. Sales POS).
-   ─ Matches topbar background → no grey canvas bleed.
-   ─ Cancels scroll-container pt-4/pt-6 via negative margin so the tab bar appears
-     immediately below the topbar with zero visible gap.
-   ─ Zero top padding → tabs are the only visual content of the band.
+/* Open variant: for full-viewport page shells (e.g. Sales POS).
+   ─ Matches topbar background → removes grey canvas bleed without altering height.
+   ─ All padding/margin/sticky behaviour stays at base values so tabs keep their
+     own band row and content starts correctly below them.
    Apply via className at the callsite only. Safe to combine with --with-tabs. */
 .erp-page-header--open {
   background: var(--erp-bg-topbar);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  padding-block-start: 0;
-  border-block-end: none;
-  /* cancel scroll-container pt-4 at sm */
-  margin-block-start: calc(-1 * var(--space-4, 1rem));
 }
 
-@media (min-width: 768px) {
-  .erp-page-header--open {
-    /* cancel scroll-container pt-6 at md+ */
-    margin-block-start: calc(-1 * var(--space-6, 1.5rem));
-  }
-}
-
-/* Tabs slot: flush with top of band — remove the 8px margin-block-start */
-.erp-page-header--open .erp-page-header-tabs {
-  margin-block-start: 0;
-}
-
-/* Inactive tabs: slightly muted in the open header to reduce visual weight.
-   Active tab keeps full brand color/weight unchanged. */
+/* Inactive tabs: subtly muted — active tab stays full brand weight. */
 .erp-page-header--open .erp-tab-bar--underline .erp-tab:not(.erp-tab--active):not(:disabled) {
   opacity: 0.7;
 }
