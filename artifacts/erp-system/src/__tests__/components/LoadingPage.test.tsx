@@ -1,52 +1,52 @@
-import React from "react";
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { LoadingPage } from "@/components/loading-page";
+import React from 'react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { LoadingPage } from '@/components/loading-page';
 
-describe("LoadingPage", () => {
-  it("renders without crashing", () => {
+describe('LoadingPage', () => {
+  it('renders without crashing', () => {
     const { container } = render(<LoadingPage />);
     expect(container).toBeTruthy();
   });
 
-  it("shows the brand name مُحكم", () => {
+  it('shows the brand name مُحكم', () => {
     render(<LoadingPage />);
-    expect(screen.getByText("مُحكم")).toBeInTheDocument();
+    expect(screen.getByText('مُحكم')).toBeInTheDocument();
   });
 
-  it("shows MUHKAM ERP subtitle", () => {
+  it('shows MUHKAM ERP subtitle', () => {
     render(<LoadingPage />);
-    expect(screen.getByText("MUHKAM ERP")).toBeInTheDocument();
+    expect(screen.getByText('MUHKAM ERP')).toBeInTheDocument();
   });
 
-  it("shows loading text", () => {
+  it('shows loading text', () => {
     render(<LoadingPage />);
-    expect(screen.getByText("جارِ التحميل...")).toBeInTheDocument();
+    expect(screen.getByText('جارٍ التحميل')).toBeInTheDocument();
   });
 
-  it("uses theme variable for background", () => {
+  it('uses light background', () => {
     const { container } = render(<LoadingPage />);
     const wrapper = container.firstElementChild as HTMLElement;
-    expect(wrapper.style.background).toContain("var(--erp-bg-app");
+    expect(wrapper.style.background).toMatch(/245,\s*245,\s*245|F5F5F5/i);
   });
 
-  it("renders the SVG logo", () => {
+  it('renders the SVG logo', () => {
     const { container } = render(<LoadingPage />);
-    const svg = container.querySelector("svg");
+    const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
   });
 
-  it("includes animation keyframes in style tag", () => {
+  it('includes animation keyframes in style tag', () => {
     const { container } = render(<LoadingPage />);
-    const style = container.querySelector("style");
-    expect(style?.textContent).toContain("logo-breathe");
-    expect(style?.textContent).toContain("progress-slide");
+    const style = container.querySelector('style');
+    expect(style?.textContent).toContain('lp-ld-pulse');
+    expect(style?.textContent).toContain('lp-ld-shimmer');
   });
 
-  it("has fixed positioning (full-screen overlay)", () => {
+  it('has fixed positioning (full-screen overlay)', () => {
     const { container } = render(<LoadingPage />);
     const wrapper = container.firstElementChild as HTMLElement;
-    expect(wrapper.className).toContain("fixed");
-    expect(wrapper.className).toContain("inset-0");
+    expect(wrapper.className).toContain('fixed');
+    expect(wrapper.className).toContain('inset-0');
   });
 });
