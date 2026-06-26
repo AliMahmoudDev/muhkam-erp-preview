@@ -1220,7 +1220,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
                 </span>
               </div>
             </div>
-            <ClickableImage
+            <img
               src={dashboardImg}
               alt="MUHKAM ERP Dashboard"
               style={{
