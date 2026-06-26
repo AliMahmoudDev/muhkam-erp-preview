@@ -108,7 +108,7 @@ export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: num
             />
           </div>
 
-          <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+          <div className="glass-panel overflow-hidden border border-line">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-sm whitespace-nowrap">
                 <thead className="bg-surface border-b border-line">
@@ -176,7 +176,7 @@ export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: num
           </div>
         </>
       ) : (
-        <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+        <div className="glass-panel overflow-hidden border border-line">
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm whitespace-nowrap">
               <thead className="bg-surface border-b border-line">

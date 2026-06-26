@@ -473,7 +473,7 @@ export default function Vouchers({ embedded = false }: { embedded?: boolean }) {
       </div>
 
       {/* Table */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-ink/80 whitespace-nowrap">
             <thead className="bg-surface border-b border-line">

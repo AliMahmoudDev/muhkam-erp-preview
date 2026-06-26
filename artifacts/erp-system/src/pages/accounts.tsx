@@ -381,7 +381,7 @@ export default function Accounts() {
       )}
 
       {/* الجدول */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm">
             <thead className="bg-surface border-b border-line">

@@ -324,7 +324,7 @@ export default function Income() {
       </div>
 
       {/* Table */}
-      <div className="glass-panel rounded-3xl overflow-hidden">
+      <div className="glass-panel overflow-hidden">
         {(search || monthFilter !== 'all') && filtered.length > 0 && (
           <div className="px-5 py-3 border-b border-line bg-surface flex justify-between items-center">
             <span className="text-ink/50 text-sm">{filtered.length} نتيجة</span>
