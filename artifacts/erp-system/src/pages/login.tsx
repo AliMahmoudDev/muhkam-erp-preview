@@ -838,6 +838,53 @@ export default function Login() {
         />
 
         <div style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 1 }}>
+          {/* Back to home button */}
+          <a
+            href="/"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 16px',
+              borderRadius: 980,
+              background: 'rgba(255,255,255,.7)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid #E0E0E0',
+              color: '#666666',
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: 'none',
+              transition: 'all .2s',
+              marginBottom: 24,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#FFF9E6';
+              e.currentTarget.style.borderColor = '#F59E0B';
+              e.currentTarget.style.color = '#F59E0B';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,.7)';
+              e.currentTarget.style.borderColor = '#E0E0E0';
+              e.currentTarget.style.color = '#666666';
+            }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            العودة للرئيسية
+          </a>
+
           {/* Mobile logo (hidden on desktop) */}
           <div className="lg-mobile-logo" style={{ display: 'none', marginBottom: 32 }}>
             <LoginLogo size={56} />
