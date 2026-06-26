@@ -1,5 +1,6 @@
 import { Coins, Clock, Plus, Trash2, UserCog, Wrench, X, Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 import {
   PartLine,
   PayRow,
@@ -193,18 +194,16 @@ export default function DeliveryGateForm({
         {warehouses.length > 1 && (
           <div className="mb-3">
             <label className="text-[10px] font-bold text-ink/50 mb-1 block">المخزن</label>
-            <select
-              value={selectedWarehouseId ?? ''}
-              onChange={(e) => setSelectedWarehouseId(parseInt(e.target.value) || null)}
-              className="w-full max-w-xs px-3 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-blue-400/40"
-            >
-              <option value="">-- اختر المخزن --</option>
-              {warehouses.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
+            <Combobox
+              options={[
+                { value: '', label: '-- اختر المخزن --' },
+                ...warehouses.map((w) => ({ value: String(w.id), label: w.name })),
+              ]}
+              value={selectedWarehouseId ? String(selectedWarehouseId) : ''}
+              onChange={(v) => setSelectedWarehouseId(v ? parseInt(v) : null)}
+              className="w-full max-w-xs text-[11px]"
+              searchable={false}
+            />
           </div>
         )}
 
@@ -402,18 +401,16 @@ export default function DeliveryGateForm({
                         <label className="text-[10px] font-bold text-ink/50 mb-1 block">
                           الخزنة
                         </label>
-                        <select
-                          value={extVendorSafeId ?? ''}
-                          onChange={(e) => setExtVendorSafeId(parseInt(e.target.value) || null)}
-                          className="w-full px-2 py-1.5 rounded-lg bg-surface border border-emerald-400/25 text-[11px] text-ink focus:outline-none"
-                        >
-                          <option value="">-- اختر --</option>
-                          {safes.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
+                        <Combobox
+                          options={[
+                            { value: '', label: '-- اختر --' },
+                            ...safes.map((s) => ({ value: String(s.id), label: s.name })),
+                          ]}
+                          value={extVendorSafeId ? String(extVendorSafeId) : ''}
+                          onChange={(v) => setExtVendorSafeId(v ? parseInt(v) : null)}
+                          className="w-full text-[11px]"
+                          searchable={false}
+                        />
                       </div>
                     )}
                     {extVendorPayType === 'credit' && (
@@ -615,17 +612,13 @@ export default function DeliveryGateForm({
             </div>
             <div className="flex gap-1.5 items-stretch">
               {payType === 'cash' && safes.length > 0 ? (
-                <select
-                  value={paySafe ?? ''}
-                  onChange={(e) => setPaySafe(parseInt(e.target.value) || null)}
-                  className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none"
-                >
-                  {safes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                <Combobox
+                  options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
+                  value={paySafe ? String(paySafe) : ''}
+                  onChange={(v) => setPaySafe(v ? parseInt(v) : null)}
+                  className="flex-1 min-w-0 text-[11px]"
+                  searchable={false}
+                />
               ) : (
                 <div className="flex-1 flex items-center justify-end text-[11px] text-ink/40 px-2 rounded-lg bg-surface border border-line">
                   ائتمان العميل

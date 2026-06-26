@@ -299,7 +299,7 @@ export default function CompanyTab() {
                 placeholder="نص يظهر في أعلى كل فاتورة مطبوعة، مثال: بسم الله الرحمن الرحيم"
                 value={form.invoice_header}
                 onChange={(e) => update('invoice_header', e.target.value)}
-                className="glass-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
+                className="erp-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
               />
             </div>
 
@@ -310,7 +310,7 @@ export default function CompanyTab() {
                 placeholder="نص يظهر في أسفل كل فاتورة مطبوعة، مثال: شكراً لتعاملكم معنا"
                 value={form.invoice_footer}
                 onChange={(e) => update('invoice_footer', e.target.value)}
-                className="glass-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
+                className="erp-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
               />
             </div>
 
@@ -322,7 +322,7 @@ export default function CompanyTab() {
                 placeholder="أي معلومات إضافية تظهر أسفل الفواتير..."
                 value={form.company_notes}
                 onChange={(e) => update('company_notes', e.target.value)}
-                className="glass-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
+                className="erp-input w-full rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500/40 resize-none transition-colors"
               />
             </div>
           </div>

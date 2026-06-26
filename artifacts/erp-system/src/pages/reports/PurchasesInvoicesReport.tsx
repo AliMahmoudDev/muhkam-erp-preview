@@ -10,6 +10,7 @@ import {
   InvoicePdfButton,
 } from './shared';
 import { escapeHtml } from '@/lib/print-utils';
+import { EmptyTable } from '@/components/ui/empty-table';
 import { useAppSettings } from '@/contexts/app-settings';
 import { exportTableToPDF } from '@/lib/pdf-export';
 
@@ -110,7 +111,7 @@ export default function PurchasesInvoicesReport() {
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input
-            className="glass-input w-full icon-pr text-sm"
+            className="erp-input w-full icon-pr text-sm"
             placeholder="بحث برقم الفاتورة أو العميل..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -179,7 +180,7 @@ export default function PurchasesInvoicesReport() {
           </button>
         </div>
       </div>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
             <thead className="bg-surface border-b border-line">
@@ -199,9 +200,9 @@ export default function PurchasesInvoicesReport() {
               {isLoading ? (
                 <TableSkeleton cols={9} rows={5} />
               ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="p-12 text-center text-ink/40">
-                    لا توجد مشتريات
+                <tr className="erp-table-row">
+                  <td colSpan={9}>
+                    <EmptyTable variant="no-data" headline="لا توجد مشتريات" />
                   </td>
                 </tr>
               ) : (

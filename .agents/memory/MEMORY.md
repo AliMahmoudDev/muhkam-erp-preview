@@ -1,4 +1,8 @@
 - [Receipt endpoint tx pattern](receipt-tx-pattern.md) — customerLedger insert must use company_id; fetch customer outside tx for clean 404, writes inside tx.
 - [txMock select limitation](txmock-select-limitation.md) — txMock.select().from().where() is NOT thenable; must fetch outside db.transaction() when using customers-full.test.ts mock.
 - [TopReportsTab any retention](toprepor-any-retention.md) — generic table renderer accessing row[c.key] as ReactNode+formatCurrency args; Record<string,unknown> breaks downstream — keep any[] with eslint-disable.
-- [Token Design System](token-design-system.md) — 4-layer design token system on design-tokens branch; critical naming & cascade decisions.
+- [Token Design System](token-design-system.md) — 4-layer design token system; critical naming & cascade decisions.
+- [Theme token @theme inline bug](theme-attheme-inline-bug.md) — @theme inline inlines values statically; bg-canvas was hardcoded to dark primitive, breaking light mode. Fix: reference switchable CSS vars (--bg-app, --bg-surface, --bg-elevated) not primitives.
+- [glass-input unification](glass-input-unification.md) — legacy glass-* inputs must mirror erp-input & use accent tokens (--focus-edge/--focus-ring), never hardcoded amber; box-model left alone for textareas.
+- [ERP shell page migration](erp-shell-migration.md) — Phase: actions→PageHeader actionsSlot, tabs→tabsSlot, filters as w-fit row below; settings→SettingsPattern; never touch already-consistent tested pages.
+- [Design system adoption state](design-system-adoption.md) — Phases 1-10 complete; token counts and skip decisions recorded.

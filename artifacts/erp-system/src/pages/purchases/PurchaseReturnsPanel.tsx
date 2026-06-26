@@ -22,6 +22,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
+import { Combobox } from '@/components/ui/combobox';
 
 interface PurchaseReturnRecord {
   id: number;
@@ -221,22 +222,17 @@ export default function PurchaseReturnsPanel() {
             {/* Supplier */}
             <div>
               <label className="block opacity-60 text-xs font-semibold mb-1">المورد</label>
-              <select
-                className="erp-input w-full"
+              <Combobox
+                options={suppliers.map((s) => ({ value: String(s.id), label: s.name }))}
                 value={supplierId}
-                onChange={(e) => {
-                  setSupplierId(e.target.value);
+                onChange={(v) => {
+                  setSupplierId(v);
                   setPurchaseId('');
                   setCart([]);
                 }}
-              >
-                <option value="">— اختر المورد —</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={String(s.id)}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="— اختر المورد —"
+                className="w-full"
+              />
             </div>
 
             {/* Linked purchase */}
@@ -244,22 +240,19 @@ export default function PurchaseReturnsPanel() {
               <label className="block opacity-60 text-xs font-semibold mb-1">
                 فاتورة الشراء (اختياري)
               </label>
-              <select
-                className="erp-input w-full"
+              <Combobox
+                options={postedPurchases.map((p) => ({
+                  value: String(p.id),
+                  label: `${p.invoice_no}${p.supplier_name ? ` — ${p.supplier_name}` : ''}`,
+                }))}
                 value={purchaseId}
-                onChange={(e) => {
-                  setPurchaseId(e.target.value);
+                onChange={(v) => {
+                  setPurchaseId(v);
                   setCart([]);
                 }}
-              >
-                <option value="">— بدون ربط بفاتورة —</option>
-                {postedPurchases.map((p) => (
-                  <option key={p.id} value={String(p.id)}>
-                    {p.invoice_no}
-                    {p.supplier_name ? ` — ${p.supplier_name}` : ''}
-                  </option>
-                ))}
-              </select>
+                placeholder="— بدون ربط بفاتورة —"
+                className="w-full"
+              />
               {purchaseId && purchaseItems.length === 0 && (
                 <p className="opacity-40 text-xs mt-1">جاري تحميل بنود الفاتورة…</p>
               )}
@@ -304,18 +297,14 @@ export default function PurchaseReturnsPanel() {
             {refundType === 'cash' && (
               <div>
                 <label className="block opacity-60 text-xs font-semibold mb-1">الخزينة *</label>
-                <select
-                  className="erp-input w-full"
+                <Combobox
+                  options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
                   value={safeId}
-                  onChange={(e) => setSafeId(e.target.value)}
-                >
-                  <option value="">— اختر الخزينة —</option>
-                  {safes.map((s) => (
-                    <option key={s.id} value={String(s.id)}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setSafeId(v)}
+                  placeholder="— اختر الخزينة —"
+                  className="w-full"
+                  searchable={false}
+                />
               </div>
             )}
 

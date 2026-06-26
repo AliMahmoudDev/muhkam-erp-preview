@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { formatCurrency } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 import { LEDGER_TYPE_LABELS, type CustomerLedgerData } from './hooks/useCustomerLedger';
 
 interface DirectPayForm {
@@ -57,7 +58,7 @@ export function LedgerTable({
           <p className="font-bold text-ink">تسجيل سداد مباشر في دفتر الأستاذ</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-ink/60 mb-1 block">المبلغ (ج.م)</label>
+              <label className="erp-label">المبلغ (ج.م)</label>
               <input
                 type="number"
                 min="0.01"
@@ -70,23 +71,19 @@ export function LedgerTable({
               />
             </div>
             <div>
-              <label className="text-xs text-ink/60 mb-1 block">الخزينة (اختياري)</label>
-              <select
+              <label className="erp-label">الخزينة (اختياري)</label>
+              <Combobox
+                options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
                 value={directPayForm.safe_id}
-                onChange={(e) => setDirectPayForm((f) => ({ ...f, safe_id: e.target.value }))}
-                className="erp-input w-full"
-              >
-                <option value="">— بدون خزينة —</option>
-                {safes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setDirectPayForm((f) => ({ ...f, safe_id: v }))}
+                placeholder="— بدون خزينة —"
+                className="w-full"
+                searchable={false}
+              />
             </div>
           </div>
           <div>
-            <label className="text-xs text-ink/60 mb-1 block">ملاحظات</label>
+            <label className="erp-label">ملاحظات</label>
             <input
               type="text"
               value={directPayForm.notes}

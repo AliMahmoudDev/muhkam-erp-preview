@@ -12,6 +12,7 @@ import {
   thisMonthStart,
   todayStr,
 } from './shared';
+import { EmptyTable } from '@/components/ui/empty-table';
 
 interface ProductProfitData {
   products: Array<{
@@ -113,7 +114,7 @@ export default function ProductProfitReport({ warehouseId }: { warehouseId?: num
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input
-            className="glass-input w-full icon-pr text-sm"
+            className="erp-input w-full icon-pr text-sm"
             placeholder="بحث بالمنتج..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -137,7 +138,7 @@ export default function ProductProfitReport({ warehouseId }: { warehouseId?: num
           ))}
         </div>
       </div>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
             <thead className="bg-surface border-b border-line">
@@ -155,9 +156,9 @@ export default function ProductProfitReport({ warehouseId }: { warehouseId?: num
               {isLoading ? (
                 <TableSkeleton cols={7} rows={5} />
               ) : products.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-12 text-center text-ink/40">
-                    لا توجد بيانات
+                <tr className="erp-table-row">
+                  <td colSpan={7}>
+                    <EmptyTable variant="no-results" headline="لا توجد بيانات" />
                   </td>
                 </tr>
               ) : (

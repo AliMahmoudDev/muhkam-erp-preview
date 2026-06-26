@@ -31,6 +31,7 @@ import {
 import { ScoreRing, StatusBadge } from './repairComponents';
 import { JobChecklist } from './ChecklistComponents';
 import { REPAIR_SETTING_KEYS } from '@/components/repair-settings/constants';
+import { Combobox } from '@/components/ui/combobox';
 
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
@@ -633,18 +634,14 @@ export function JobDetail({
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="text-[10px] erp-label mb-1 block">الفني المسؤول</label>
-              <select
+              <Combobox
+                options={users.map((u) => ({ value: String(u.id), label: u.name }))}
                 value={editTech}
-                onChange={(e) => setEditTech(e.target.value)}
-                className="erp-input w-full text-xs"
-              >
-                <option value="">— اختر الفني —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setEditTech(v)}
+                placeholder="— اختر الفني —"
+                className="w-full text-xs"
+                clearable
+              />
             </div>
             <div>
               <label className="text-[10px] erp-label mb-1 block">موعد التسليم</label>

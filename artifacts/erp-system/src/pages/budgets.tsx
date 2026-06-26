@@ -168,8 +168,8 @@ export default function BudgetsPage() {
                 color: detail.summary.total_variance >= 0 ? 'text-green-400' : 'text-red-400',
               },
             ].map((c) => (
-              <div key={c.label} className="rounded-xl border border-line bg-surface p-4">
-                <p className="text-ink/50 text-sm">{c.label}</p>
+              <div key={c.label} className="erp-card p-4">
+                <p className="erp-kpi-label">{c.label}</p>
                 <p className={`text-xl font-bold font-mono mt-1 ${c.color}`}>
                   {formatCurrency(c.value)}
                 </p>

@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { authFetch } from '@/lib/auth-fetch';
 import { formatCurrency } from '@/lib/format';
 import { api } from '@/lib/api';
+import { Combobox } from '@/components/ui/combobox';
 import { REPAIR_SETTING_KEYS, REPAIR_WA_DEFAULTS } from '@/components/repair-settings/constants';
 import {
   RepairJob,
@@ -286,10 +287,6 @@ export default function Repairs() {
       >
         {/* Header */}
         <div className="erp-page-header" style={{ flexWrap: 'nowrap' }}>
-          <h1 className="erp-page-title" style={{ fontSize: '18px' }}>
-            <Wrench className="w-5 h-5 text-amber-400 inline-block ml-2" />
-            بطاقات الصيانة
-          </h1>
           <div className="erp-page-actions">
             <button
               onClick={() => setShowSettings(true)}
@@ -354,18 +351,14 @@ export default function Repairs() {
               <ScanLine className="w-3.5 h-3.5" />
             </button>
           </div>
-          <select
+          <Combobox
+            options={users.map((u) => ({ value: String(u.id), label: u.name }))}
             value={techFilter}
-            onChange={(e) => setTechFilter(e.target.value)}
-            className="erp-input text-sm flex-1"
-          >
-            <option value="">— كل الفنيين —</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setTechFilter(v)}
+            placeholder="— كل الفنيين —"
+            clearable
+            className="flex-1"
+          />
           {!selectedJob && (
             <div className="flex gap-0.5 bg-surface rounded-xl border border-line p-0.5 shrink-0">
               <button

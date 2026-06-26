@@ -4,7 +4,6 @@
  */
 import {
   LayoutDashboard,
-  Receipt,
   CreditCard,
   Package,
   Users,
@@ -30,6 +29,7 @@ import {
   Smartphone,
   UserCircle,
   Tags,
+  ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -74,7 +74,7 @@ export const ROUTE_PERMISSION: Record<string, string> = {
 };
 
 /* ── Nav items with role visibility + icons ─────────────── */
-export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: AppRole[] }[] = [
+export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: AppRole[]; subtitle?: string }[] = [
   /* ── القائمة ───────────────────────────────────────────── */
   {
     name: 'الرئيسية',
@@ -93,8 +93,9 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   {
     name: 'المبيعات',
     href: '/sales',
-    icon: Receipt,
+    icon: ShoppingBag,
     roles: ['admin', 'manager', 'cashier', 'salesperson'],
+    subtitle: 'تسجيل فواتير البيع ومتابعة المرتجعات',
   },
   { name: 'المرتجعات', href: '/returns', icon: RotateCcw, roles: ['admin', 'manager'] },
 

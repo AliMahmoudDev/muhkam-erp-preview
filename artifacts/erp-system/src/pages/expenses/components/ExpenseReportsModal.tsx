@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { ExpenseCategory, ExpenseReportRow } from '../types';
 import { printExpenseReport } from '../utils/printExpenseReport';
+import { Combobox } from '@/components/ui/combobox';
 
 interface ExpenseReportsModalProps {
   show: boolean;
@@ -65,36 +66,31 @@ export function ExpenseReportsModal({
         <div className="px-6 py-4 border-b border-line">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-ink/50 text-xs mb-1">التصنيف</label>
-              <select
-                className="glass-input w-full text-sm appearance-none"
+              <label className="erp-label">التصنيف</label>
+              <Combobox
+                options={categories.map((c) => ({ value: c.name, label: c.name }))}
                 value={reportFilters.category}
-                onChange={(e) => setReportFilters((f) => ({ ...f, category: e.target.value }))}
-              >
-                <option value="" className="bg-gray-900">
-                  كل التصنيفات
-                </option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.name} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setReportFilters((f) => ({ ...f, category: v }))}
+                placeholder="كل التصنيفات"
+                clearable
+                className="w-full"
+                searchable={false}
+              />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">من تاريخ</label>
+              <label className="erp-label">من تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateFrom}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateFrom: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">إلى تاريخ</label>
+              <label className="erp-label">إلى تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateTo}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateTo: e.target.value }))}
               />

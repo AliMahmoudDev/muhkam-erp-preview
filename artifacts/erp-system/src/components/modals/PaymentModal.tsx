@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SearchableSelect } from '@/components/searchable-select';
 import { ArrowUpFromLine, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
+import { Combobox } from '@/components/ui/combobox';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -159,19 +160,16 @@ export default function PaymentModal({ onClose }: Props) {
 
         <div>
           <label className="block text-ink/50 text-xs mb-1.5 font-medium">الخزينة *</label>
-          <select
-            required
-            className="glass-input w-full text-sm"
+          <Combobox
+            options={[
+              { value: '', label: '-- اختر الخزينة --' },
+              ...safes.map((s) => ({ value: String(s.id), label: s.name })),
+            ]}
             value={form.safe_id}
-            onChange={(e) => setForm((f) => ({ ...f, safe_id: e.target.value }))}
-          >
-            <option value="">-- اختر الخزينة --</option>
-            {safes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, safe_id: v }))}
+            className="w-full text-sm"
+            searchable={false}
+          />
         </div>
 
         <div>

@@ -1,5 +1,8 @@
-import { Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { ExpenseCategory } from '../types';
+import { Combobox } from '@/components/ui/combobox';
+import { PageToolbar } from '@/components/patterns';
+import { SearchInput } from '@/components/ui/search-input';
 
 interface ExpensesFilterToolbarProps {
   search: string;
@@ -29,79 +32,53 @@ export function ExpensesFilterToolbar({
   onClearAll,
 }: ExpensesFilterToolbarProps) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
-      {/* Search */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-ink/30 text-xs font-medium pr-1">بحث</label>
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/25 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث بالتصنيف أو التفاصيل..."
-            className="glass-input w-full icon-pr text-sm py-2.5"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Category */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-ink/30 text-xs font-medium pr-1">التصنيف</label>
-        <select
-          value={catFilter}
-          onChange={(e) => setCatFilter(e.target.value)}
-          className="glass-input text-sm py-2.5 w-36"
-        >
-          <option value="" className="bg-gray-900">
-            الكل
-          </option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.name} className="bg-gray-900">
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Date range */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-ink/30 text-xs font-medium pr-1">من تاريخ</label>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="glass-input text-sm py-2.5 w-36 [color-scheme:dark]"
+    <PageToolbar
+      searchSlot={
+        <SearchInput
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onClear={() => setSearch('')}
+          placeholder="بحث بالتصنيف أو التفاصيل..."
+          aria-label="بحث في المصروفات"
         />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label className="text-ink/30 text-xs font-medium pr-1">إلى تاريخ</label>
-        <div className="flex items-center gap-2">
+      }
+      filtersSlot={
+        <>
+          <Combobox
+            options={categories.map((c) => ({ value: c.name, label: c.name }))}
+            value={catFilter}
+            onChange={(v) => setCatFilter(v)}
+            placeholder="كل التصنيفات"
+            clearable
+            className="w-36"
+            searchable={false}
+          />
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="erp-input text-sm py-2 w-36 [color-scheme:dark]"
+            aria-label="من تاريخ"
+          />
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="glass-input text-sm py-2.5 w-36 [color-scheme:dark]"
+            className="erp-input text-sm py-2 w-36 [color-scheme:dark]"
+            aria-label="إلى تاريخ"
           />
           {hasFilter && (
             <button
               onClick={onClearAll}
               title="مسح كل الفلاتر"
+              aria-label="مسح كل الفلاتر"
               className="flex-shrink-0 w-9 h-9 rounded-xl bg-surface border border-line flex items-center justify-center text-ink/30 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all"
             >
               <X className="w-4 h-4" />
             </button>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }

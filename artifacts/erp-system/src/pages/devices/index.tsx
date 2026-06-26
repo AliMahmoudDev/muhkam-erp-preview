@@ -427,26 +427,16 @@ export default function Devices() {
 
   return (
     <div className="p-4 space-y-4 max-w-5xl mx-auto" dir="rtl">
-      {/* ── Page header ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-            <Smartphone className="w-4 h-4 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-ink leading-tight">الأجهزة المستعملة</h1>
-            <p className="text-[11px] text-ink/30">شراء وبيع الأجهزة — البيع والصيانة</p>
-          </div>
-        </div>
-        {pageView === 'devices' && (
+      {pageView === 'devices' && (
+        <div className="flex justify-end">
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 text-sm font-bold hover:bg-amber-500/25 transition-all"
           >
             <Plus className="w-4 h-4" /> إضافة جهاز
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Page-level tab bar ── */}
       <div className="flex gap-1 border-b border-line pb-0">

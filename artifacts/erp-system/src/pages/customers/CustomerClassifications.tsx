@@ -2,6 +2,7 @@ import { BarChart2, Printer, X } from 'lucide-react';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { openPrintWindow } from '@/lib/print-utils';
 import { formatCurrency } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Classification {
   id: number;
@@ -211,55 +212,42 @@ export function CustomerReportsModal({
         <div className="px-6 py-4 border-b border-line">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-ink/50 text-xs mb-1">العميل</label>
-              <select
-                className="glass-input w-full text-sm appearance-none"
+              <label className="erp-label">العميل</label>
+              <Combobox
+                options={customers.map((c) => ({ value: String(c.id), label: c.name }))}
                 value={reportFilters.customerId}
-                onChange={(e) => setReportFilters((f) => ({ ...f, customerId: e.target.value }))}
-              >
-                <option value="" className="bg-gray-900">
-                  كل العملاء
-                </option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setReportFilters((f) => ({ ...f, customerId: v }))}
+                placeholder="كل العملاء"
+                clearable
+                className="w-full text-sm"
+              />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">التصنيف</label>
-              <select
-                className="glass-input w-full text-sm appearance-none"
+              <label className="erp-label">التصنيف</label>
+              <Combobox
+                options={classifications.map((c) => ({ value: String(c.id), label: c.name }))}
                 value={reportFilters.classificationId}
-                onChange={(e) =>
-                  setReportFilters((f) => ({ ...f, classificationId: e.target.value }))
-                }
-              >
-                <option value="" className="bg-gray-900">
-                  كل التصنيفات
-                </option>
-                {classifications.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setReportFilters((f) => ({ ...f, classificationId: v }))}
+                placeholder="كل التصنيفات"
+                clearable
+                className="w-full text-sm"
+                searchable={false}
+              />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">من تاريخ</label>
+              <label className="erp-label">من تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateFrom}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateFrom: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1">إلى تاريخ</label>
+              <label className="erp-label">إلى تاريخ</label>
               <input
                 type="date"
-                className="glass-input w-full text-sm"
+                className="erp-input w-full text-sm"
                 value={reportFilters.dateTo}
                 onChange={(e) => setReportFilters((f) => ({ ...f, dateTo: e.target.value }))}
               />

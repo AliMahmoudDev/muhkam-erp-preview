@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, ChevronDown, ChevronRight, Globe } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 import { COLOR_MAP, type PermGroup } from './_constants';
 
 /* ─── Field Label ─── */
@@ -19,20 +20,36 @@ export function SInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`glass-input w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all ${props.className ?? ''}`}
+      className={`erp-input w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all ${props.className ?? ''}`}
     />
   );
 }
 
 /* ─── Select ─── */
-export function SSelect({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function SSelect({
+  options = [],
+  value,
+  onChange,
+  placeholder,
+  className,
+  disabled,
+}: {
+  options?: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  disabled?: boolean;
+}) {
   return (
-    <select
-      {...props}
-      className={`glass-input w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all appearance-none cursor-pointer ${props.className ?? ''}`}
-    >
-      {children}
-    </select>
+    <Combobox
+      options={options}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={className}
+      disabled={disabled}
+    />
   );
 }
 

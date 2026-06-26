@@ -34,39 +34,41 @@ export default function Sales() {
         : tab;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-2">
       <PageHeader
         title="المبيعات"
         subtitle="تسجيل فواتير البيع ومتابعة المرتجعات"
+        className="erp-page-header--open"
+        tabsSlot={
+          <div className="erp-tab-bar erp-tab-bar--underline">
+            {canCreateSale && (
+              <button
+                onClick={() => changeTab('new')}
+                className={`erp-tab${effectiveTab === 'new' ? ' erp-tab--active' : ''}`}
+              >
+                <ShoppingBag className="w-4 h-4" />
+                فاتورة بيع جديدة
+              </button>
+            )}
+            <button
+              onClick={() => changeTab('history')}
+              className={`erp-tab${effectiveTab === 'history' ? ' erp-tab--active' : ''}`}
+            >
+              <ClipboardList className="w-4 h-4" />
+              سجل الفواتير
+            </button>
+            {canReturnSale && (
+              <button
+                onClick={() => changeTab('returns')}
+                className={`erp-tab${effectiveTab === 'returns' ? ' erp-tab--active' : ''}`}
+              >
+                <RotateCcw className="w-4 h-4" />
+                المرتجعات
+              </button>
+            )}
+          </div>
+        }
       />
-
-      <div className="erp-tab-bar erp-tab-bar--underline">
-        {canCreateSale && (
-          <button
-            onClick={() => changeTab('new')}
-            className={`erp-tab${effectiveTab === 'new' ? ' erp-tab--active' : ''}`}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            فاتورة بيع جديدة
-          </button>
-        )}
-        <button
-          onClick={() => changeTab('history')}
-          className={`erp-tab${effectiveTab === 'history' ? ' erp-tab--active' : ''}`}
-        >
-          <ClipboardList className="w-4 h-4" />
-          سجل الفواتير
-        </button>
-        {canReturnSale && (
-          <button
-            onClick={() => changeTab('returns')}
-            className={`erp-tab${effectiveTab === 'returns' ? ' erp-tab--active' : ''}`}
-          >
-            <RotateCcw className="w-4 h-4" />
-            المرتجعات
-          </button>
-        )}
-      </div>
 
       {selectedSaleId && (
         <SaleDetailModal saleId={selectedSaleId} onClose={() => setSelectedSaleId(null)} />

@@ -3,6 +3,7 @@
  */
 import { Search, Plus } from 'lucide-react';
 import type { Department } from './types';
+import { Combobox } from '@/components/ui/combobox';
 
 interface EmployeeFiltersProps {
   search: string;
@@ -34,18 +35,15 @@ export function EmployeeFilters({
           className="erp-input w-full text-sm pl-[20px] pr-[20px]"
         />
       </div>
-      <select
-        value={deptFilter}
-        onChange={(e) => setDeptFilter(e.target.value === '' ? '' : Number(e.target.value))}
-        className="erp-input text-sm pl-[8px] pr-[8px] ml-[250px] mr-[250px]"
-      >
-        <option value="">كل الأقسام</option>
-        {departments.map((d) => (
-          <option key={d.id} value={d.id}>
-            {d.name_ar}
-          </option>
-        ))}
-      </select>
+      <Combobox
+        options={departments.map((d) => ({ value: String(d.id), label: d.name_ar }))}
+        value={deptFilter === '' ? '' : String(deptFilter)}
+        onChange={(v) => setDeptFilter(v === '' ? '' : Number(v))}
+        placeholder="كل الأقسام"
+        className="ml-[250px] mr-[250px]"
+        clearable
+        searchable={false}
+      />
       {canManage && (
         <button
           onClick={onAddEmployee}

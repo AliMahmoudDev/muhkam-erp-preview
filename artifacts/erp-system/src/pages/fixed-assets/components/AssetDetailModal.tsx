@@ -218,7 +218,7 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                         type="month"
                         value={depPeriod}
                         onChange={(e) => setDepPeriod(e.target.value)}
-                        className="glass-input px-4 py-2 rounded-xl text-ink text-sm flex-1"
+                        className="erp-input px-4 py-2 rounded-xl text-ink text-sm flex-1"
                       />
                       <button
                         onClick={() => depMutation.mutate()}
@@ -343,7 +343,7 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                         <p className="text-sm font-bold text-red-400">استبعاد الأصل الثابت</p>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs text-ink/50 mb-1">
+                            <label className="erp-label">
                               تاريخ الاستبعاد
                             </label>
                             <input
@@ -352,11 +352,11 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                               onChange={(e) =>
                                 setDisposeForm((p) => ({ ...p, date: e.target.value }))
                               }
-                              className="w-full glass-input px-4 py-2 rounded-xl text-ink text-sm"
+                              className="w-full erp-input px-4 py-2 rounded-xl text-ink text-sm"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-ink/50 mb-1">
+                            <label className="erp-label">
                               عائد البيع (ج.م) — اختياري
                             </label>
                             <input
@@ -367,7 +367,7 @@ export function AssetDetailModal({ assetId, onClose }: { assetId: number; onClos
                                 setDisposeForm((p) => ({ ...p, proceeds: e.target.value }))
                               }
                               placeholder="0"
-                              className="w-full glass-input px-4 py-2 rounded-xl text-ink text-sm"
+                              className="w-full erp-input px-4 py-2 rounded-xl text-ink text-sm"
                             />
                           </div>
                         </div>

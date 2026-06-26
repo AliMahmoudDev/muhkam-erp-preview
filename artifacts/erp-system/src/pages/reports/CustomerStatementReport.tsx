@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 import {
   api,
   authFetch,
@@ -74,18 +75,13 @@ export default function CustomerStatementReport() {
   return (
     <div className="space-y-4" style={{ fontFamily: "'Tajawal','Cairo',sans-serif" }}>
       <div className="flex flex-wrap gap-3 items-center">
-        <select
+        <Combobox
+          options={customers.map((c: CustomerOption) => ({ value: String(c.id), label: c.name }))}
           value={customerId}
-          onChange={(e) => setCustomerId(e.target.value)}
-          className="glass-input rounded-xl px-3 py-2 text-sm text-ink min-w-[200px]"
-        >
-          <option value="">اختر العميل...</option>
-          {customers.map((c: CustomerOption) => (
-            <option key={c.id} value={String(c.id)}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setCustomerId(v)}
+          placeholder="اختر العميل..."
+          className="min-w-[200px]"
+        />
         <DateFilterBar
           mode={mode}
           setMode={setMode}
@@ -131,7 +127,7 @@ export default function CustomerStatementReport() {
               </div>
             </div>
           )}
-          <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+          <div className="glass-panel overflow-hidden border border-line">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-sm whitespace-nowrap">
                 <thead className="bg-surface border-b border-line">

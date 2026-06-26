@@ -276,8 +276,8 @@ export default function BankReconciliationPage() {
                 color: 'text-amber-400',
               },
             ].map((card) => (
-              <div key={card.label} className="rounded-xl border border-line bg-surface p-4">
-                <p className="text-ink/50 text-sm">{card.label}</p>
+              <div key={card.label} className="erp-card p-4">
+                <p className="erp-kpi-label">{card.label}</p>
                 <p className={`text-xl font-bold font-mono mt-1 ${card.color}`}>{card.value}</p>
               </div>
             ))}

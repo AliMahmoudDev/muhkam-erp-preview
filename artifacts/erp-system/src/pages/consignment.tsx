@@ -84,7 +84,6 @@ export default function ConsignmentPage() {
     return (
       <div className="p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-black text-ink mb-1">تقرير الائتمان</h1>
           <p className="text-ink/40 text-sm">جاري التحميل...</p>
         </div>
         <table className="w-full">
@@ -112,18 +111,6 @@ export default function ConsignmentPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-          <Package className="w-6 h-6 text-amber-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-black text-ink">تقرير الائتمان</h1>
-          <p className="text-ink/40 text-sm">
-            بضاعة أُودعت بالأمانة — تتبع المستلم والمباع والمستحق
-          </p>
-        </div>
-      </div>
 
       {/* Summary cards */}
       {summary && (

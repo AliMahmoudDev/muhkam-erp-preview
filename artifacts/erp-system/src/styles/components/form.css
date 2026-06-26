@@ -72,7 +72,7 @@ textarea.glass-input {
 .erp-input:focus,
 .erp-input:focus-visible {
   border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
+  box-shadow: 0 0 0 3px rgba(59, 128, 255, 0.18) !important;
   background: var(--bg-surface) !important;
   outline: none !important;
 }
@@ -118,7 +118,7 @@ html.light .erp-input:focus,
 html.light .erp-input:focus-visible {
   background: #ffffff !important;
   border-color: var(--focus-edge) !important;
-  box-shadow: var(--focus-ring) !important;
+  box-shadow: 0 0 0 3px rgba(29, 100, 216, 0.14) !important;
 }
 html.light .glass-input::placeholder,
 html.light .erp-input::placeholder {

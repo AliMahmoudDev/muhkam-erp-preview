@@ -14,6 +14,7 @@ import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { safeArray } from '@/lib/safe-data';
 import { useAuth } from '@/contexts/auth';
 import { authFetch } from '@/lib/auth-fetch';
+import { Combobox } from '@/components/ui/combobox';
 
 interface SafeRow {
   id: number;
@@ -252,24 +253,16 @@ export default function RepairReturnModal({
                     <Wallet className="w-3 h-3" />
                     الخزنة (لخصم المبلغ المسترد منها) <span className="text-red-400">*</span>
                   </label>
-                  <select
+                  <Combobox
+                    options={[
+                      { value: '', label: '— اختر الخزنة —' },
+                      ...safes.map((s) => ({ value: String(s.id), label: `${s.name} — رصيد: ${Number(s.balance).toFixed(2)}` })),
+                    ]}
                     value={safeId}
-                    onChange={(e) => setSafeId(e.target.value)}
-                    className="w-full rounded-xl px-3 py-2.5 text-xs text-ink outline-none transition-all"
-                    style={{
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid rgba(239,68,68,0.3)',
-                    }}
-                  >
-                    <option value="" className="bg-raised">
-                      — اختر الخزنة —
-                    </option>
-                    {safes.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-raised">
-                        {s.name} — رصيد: {Number(s.balance).toFixed(2)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setSafeId(v)}
+                    className="w-full text-xs"
+                    searchable={false}
+                  />
                   {safes.length === 0 && (
                     <p className="text-[10px] text-amber-400/80 mt-1">⚠ لا توجد خزن متاحة لحسابك</p>
                   )}

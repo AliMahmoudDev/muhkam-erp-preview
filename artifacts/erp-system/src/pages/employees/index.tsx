@@ -150,9 +150,6 @@ export default function Employees() {
   const PageHeader = (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-ink flex items-center gap-2">
-          <UserCheck size={22} className="text-amber-400" /> إدارة الموظفين
-        </h1>
         <div className="flex items-center gap-1 bg-surface rounded-xl p-1 border border-line">
           {PAGE_TABS.map((tab) => (
             <button

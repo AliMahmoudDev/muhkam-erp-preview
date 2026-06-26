@@ -1,5 +1,6 @@
 import { Plus, Trash2, X, Vault, CreditCard } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Classification {
   id: number;
@@ -86,27 +87,27 @@ export function AddCustomerModal({
         onSubmit={handleAdd}
         className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line"
       >
-        <h3 className="text-2xl font-bold text-ink mb-6">عميل جديد</h3>
+        <h3 className="erp-modal-title mb-5">عميل جديد</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-ink/70 text-sm mb-1">اسم العميل *</label>
+            <label className="erp-label">اسم العميل *</label>
             <input
               required
               type="text"
-              className="glass-input"
+              className="erp-input"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-ink/70 text-sm mb-1">
+            <label className="erp-label">
               رقم الهاتف * <span className="text-ink/30 text-xs">(11 رقم)</span>
             </label>
             <input
               required
               type="text"
               inputMode="numeric"
-              className="glass-input"
+              className="erp-input"
               value={formData.phone}
               onChange={(e) =>
                 setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })
@@ -116,11 +117,11 @@ export function AddCustomerModal({
             />
           </div>
           <div>
-            <label className="block text-ink/70 text-sm mb-1">رصيد ابتدائي (عليه)</label>
+            <label className="erp-label">رصيد ابتدائي (عليه)</label>
             <input
               type="number"
               step="0.01"
-              className="glass-input"
+              className="erp-input"
               value={formData.balance || ''}
               onChange={(e) =>
                 setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })
@@ -129,27 +130,21 @@ export function AddCustomerModal({
           </div>
 
           <div>
-            <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
+            <label className="erp-label">تصنيف العميل</label>
             <div className="flex items-center gap-2">
-              <select
-                className="glass-input flex-1 appearance-none"
-                value={formData.classification_id ?? ''}
-                onChange={(e) =>
-                  setFormData((f) => ({
-                    ...f,
-                    classification_id: e.target.value ? parseInt(e.target.value) : null,
-                  }))
-                }
-              >
-                <option value="" className="bg-gray-900">
-                  -- بدون تصنيف --
-                </option>
-                {classifications.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1 min-w-0">
+                <Combobox
+                  options={classifications.map((c) => ({ value: String(c.id), label: c.name }))}
+                  value={formData.classification_id ? String(formData.classification_id) : ''}
+                  onChange={(v) =>
+                    setFormData((f) => ({ ...f, classification_id: v ? parseInt(v) : null }))
+                  }
+                  placeholder="-- بدون تصنيف --"
+                  clearable
+                  className="w-full"
+                  searchable={false}
+                />
+              </div>
               {formData.classification_id && (
                 <button
                   type="button"
@@ -167,7 +162,7 @@ export function AddCustomerModal({
                   <input
                     type="text"
                     autoFocus
-                    className="glass-input flex-1 text-sm py-1.5"
+                    className="erp-input flex-1 text-sm py-1.5"
                     placeholder="اسم التصنيف الجديد"
                     value={newClassificationName}
                     onChange={(e) => setNewClassificationName(e.target.value)}
@@ -298,27 +293,27 @@ export function EditCustomerModal({
         onSubmit={handleEdit}
         className="glass-panel rounded-3xl p-8 w-full max-w-md border border-line"
       >
-        <h3 className="text-2xl font-bold text-ink mb-6">تعديل بيانات العميل</h3>
+        <h3 className="erp-modal-title mb-5">تعديل بيانات العميل</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-ink/70 text-sm mb-1">اسم العميل *</label>
+            <label className="erp-label">اسم العميل *</label>
             <input
               required
               type="text"
-              className="glass-input"
+              className="erp-input"
               value={editFormData.name}
               onChange={(e) => setEditFormData((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
           <div>
-            <label className="block text-ink/70 text-sm mb-1">
+            <label className="erp-label">
               رقم الهاتف * <span className="text-ink/30 text-xs">(11 رقم)</span>
             </label>
             <input
               required
               type="text"
               inputMode="numeric"
-              className="glass-input"
+              className="erp-input"
               value={editFormData.phone}
               onChange={(e) =>
                 setEditFormData((f) => ({
@@ -332,27 +327,21 @@ export function EditCustomerModal({
           </div>
 
           <div>
-            <label className="block text-ink/70 text-sm mb-1">تصنيف العميل</label>
+            <label className="erp-label">تصنيف العميل</label>
             <div className="flex items-center gap-2">
-              <select
-                className="glass-input flex-1 appearance-none"
-                value={editFormData.classification_id ?? ''}
-                onChange={(e) =>
-                  setEditFormData((f) => ({
-                    ...f,
-                    classification_id: e.target.value ? parseInt(e.target.value) : null,
-                  }))
-                }
-              >
-                <option value="" className="bg-gray-900">
-                  -- بدون تصنيف --
-                </option>
-                {classifications.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-gray-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1 min-w-0">
+                <Combobox
+                  options={classifications.map((c) => ({ value: String(c.id), label: c.name }))}
+                  value={editFormData.classification_id ? String(editFormData.classification_id) : ''}
+                  onChange={(v) =>
+                    setEditFormData((f) => ({ ...f, classification_id: v ? parseInt(v) : null }))
+                  }
+                  placeholder="-- بدون تصنيف --"
+                  clearable
+                  className="w-full"
+                  searchable={false}
+                />
+              </div>
               {editFormData.classification_id && (
                 <button
                   type="button"
@@ -370,7 +359,7 @@ export function EditCustomerModal({
                   <input
                     type="text"
                     autoFocus
-                    className="glass-input flex-1 text-sm py-1.5"
+                    className="erp-input flex-1 text-sm py-1.5"
                     placeholder="اسم التصنيف الجديد"
                     value={newClassificationName}
                     onChange={(e) => setNewClassificationName(e.target.value)}
@@ -415,27 +404,22 @@ export function EditCustomerModal({
           </div>
 
           <div>
-            <label className="block text-ink/70 text-sm mb-1">قائمة الأسعار</label>
-            <select
-              className="glass-input w-full appearance-none"
-              value={editFormData.price_list_id ?? ''}
-              onChange={(e) =>
+            <label className="erp-label">قائمة الأسعار</label>
+            <Combobox
+              options={priceLists.map((pl) => ({ value: String(pl.id), label: pl.name }))}
+              value={editFormData.price_list_id ? String(editFormData.price_list_id) : ''}
+              onChange={(v) =>
                 setEditFormData((f) => ({
                   ...f,
-                  price_list_id: e.target.value ? parseInt(e.target.value) : null,
-                  price_list_markup: e.target.value ? f.price_list_markup : '',
+                  price_list_id: v ? parseInt(v) : null,
+                  price_list_markup: v ? f.price_list_markup : '',
                 }))
               }
-            >
-              <option value="" className="bg-gray-900">
-                -- بدون قائمة أسعار --
-              </option>
-              {priceLists.map((pl) => (
-                <option key={pl.id} value={pl.id} className="bg-gray-900">
-                  {pl.name}
-                </option>
-              ))}
-            </select>
+              placeholder="-- بدون قائمة أسعار --"
+              clearable
+              className="w-full"
+              searchable={false}
+            />
             {editFormData.price_list_id && (
               <div className="mt-2 flex items-center gap-2">
                 <label className="text-ink/50 text-xs shrink-0">هامش الربح الخاص %</label>
@@ -448,7 +432,7 @@ export function EditCustomerModal({
                     setEditFormData((f) => ({ ...f, price_list_markup: e.target.value }))
                   }
                   placeholder="مثال: 15"
-                  className="glass-input flex-1 text-sm py-1.5"
+                  className="erp-input flex-1 text-sm py-1.5"
                 />
                 <span className="text-ink/40 text-xs shrink-0">%</span>
               </div>
@@ -563,32 +547,28 @@ export function ReceiptModal({
         )}
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">الخزينة المستلِمة *</label>
-          <select
-            required
-            className="glass-input w-full appearance-none"
+          <label className="erp-label">الخزينة المستلِمة *</label>
+          <Combobox
+            options={safes.map((s) => ({
+              value: String(s.id),
+              label: `${s.name} (${formatCurrency(Number(s.balance))})`,
+            }))}
             value={receiptData.safe_id}
-            onChange={(e) => setReceiptData((d) => ({ ...d, safe_id: e.target.value }))}
-          >
-            <option value="" className="bg-gray-900">
-              -- اختر خزينة --
-            </option>
-            {safes.map((s) => (
-              <option key={s.id} value={s.id} className="bg-gray-900">
-                {s.name} ({formatCurrency(Number(s.balance))})
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setReceiptData((d) => ({ ...d, safe_id: v }))}
+            placeholder="-- اختر خزينة --"
+            className="w-full"
+            searchable={false}
+          />
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">المبلغ المستلم *</label>
+          <label className="erp-label">المبلغ المستلم *</label>
           <input
             required
             type="number"
             step="0.01"
             min="0.01"
-            className="glass-input text-xl font-bold"
+            className="erp-input text-xl font-bold"
             value={receiptData.amount}
             onChange={(e) => setReceiptData((d) => ({ ...d, amount: e.target.value }))}
             placeholder="0.00"
@@ -615,10 +595,10 @@ export function ReceiptModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">بيان (اختياري)</label>
+          <label className="erp-label">بيان (اختياري)</label>
           <input
             type="text"
-            className="glass-input"
+            className="erp-input"
             placeholder="دفعة على الحساب..."
             value={receiptData.notes}
             onChange={(e) => setReceiptData((d) => ({ ...d, notes: e.target.value }))}
@@ -701,32 +681,28 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">الخزينة المدفوعة منها *</label>
-          <select
-            required
-            className="glass-input w-full appearance-none"
+          <label className="erp-label">الخزينة المدفوعة منها *</label>
+          <Combobox
+            options={safes.map((s) => ({
+              value: String(s.id),
+              label: `${s.name} (${formatCurrency(Number(s.balance))})`,
+            }))}
             value={supplierPaymentData.safe_id}
-            onChange={(e) => setSupplierPaymentData((d) => ({ ...d, safe_id: e.target.value }))}
-          >
-            <option value="" className="bg-gray-900">
-              -- اختر خزينة --
-            </option>
-            {safes.map((s) => (
-              <option key={s.id} value={s.id} className="bg-gray-900">
-                {s.name} ({formatCurrency(Number(s.balance))})
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setSupplierPaymentData((d) => ({ ...d, safe_id: v }))}
+            placeholder="-- اختر خزينة --"
+            className="w-full"
+            searchable={false}
+          />
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">المبلغ المسدَّد *</label>
+          <label className="erp-label">المبلغ المسدَّد *</label>
           <input
             required
             type="number"
             step="0.01"
             min="0.01"
-            className="glass-input text-xl font-bold"
+            className="erp-input text-xl font-bold"
             value={supplierPaymentData.amount}
             onChange={(e) => setSupplierPaymentData((d) => ({ ...d, amount: e.target.value }))}
             placeholder="0.00"
@@ -759,10 +735,10 @@ export function SupplierPaymentModal({
         </div>
 
         <div>
-          <label className="block text-ink/70 text-sm mb-1">ملاحظات (اختياري)</label>
+          <label className="erp-label">ملاحظات (اختياري)</label>
           <input
             type="text"
-            className="glass-input"
+            className="erp-input"
             placeholder="دفعة مقابل مشتريات..."
             value={supplierPaymentData.notes}
             onChange={(e) => setSupplierPaymentData((d) => ({ ...d, notes: e.target.value }))}

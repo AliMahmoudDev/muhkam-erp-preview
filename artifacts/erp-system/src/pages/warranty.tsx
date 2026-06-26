@@ -3,9 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { authFetch } from '@/lib/auth-fetch';
 import { safeArray } from '@/lib/safe-data';
-import { Search, Plus, Shield, ShieldCheck, ShieldX, Clock, Trash2 } from 'lucide-react';
+import { Plus, Shield, ShieldCheck, ShieldX, Clock, Trash2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { AlertSettingBanner } from '@/components/AlertSettingBanner';
+import { Combobox } from '@/components/ui/combobox';
+import { PageToolbar } from '@/components/patterns';
+import { SearchInput } from '@/components/ui/search-input';
+import { EmptyTable } from '@/components/ui/empty-table';
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 interface WarrantyRecord {
@@ -84,7 +88,7 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
           <div className="col-span-2">
             <label className="text-ink/50 text-xs mb-1 block">المنتج / الخدمة *</label>
             <input
-              className="glass-input w-full text-sm"
+              className="erp-input w-full text-sm"
               placeholder="اسم المنتج أو الخدمة"
               value={form.product_name}
               onChange={(e) => field('product_name', e.target.value)}
@@ -93,7 +97,7 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
           <div>
             <label className="text-ink/50 text-xs mb-1 block">اسم العميل</label>
             <input
-              className="glass-input w-full text-sm"
+              className="erp-input w-full text-sm"
               placeholder="العميل"
               value={form.customer_name}
               onChange={(e) => field('customer_name', e.target.value)}
@@ -108,7 +112,7 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
               type="text"
               inputMode="numeric"
               maxLength={11}
-              className="glass-input w-full text-sm"
+              className="erp-input w-full text-sm"
               placeholder="01xxxxxxxxx"
               value={form.customer_phone}
               onChange={(e) =>
@@ -119,7 +123,7 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
           <div>
             <label className="text-ink/50 text-xs mb-1 block">الرقم التسلسلي</label>
             <input
-              className="glass-input w-full text-sm"
+              className="erp-input w-full text-sm"
               placeholder="S/N أو IMEI"
               value={form.serial_number}
               onChange={(e) => field('serial_number', e.target.value)}
@@ -128,7 +132,7 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
           <div>
             <label className="text-ink/50 text-xs mb-1 block">الموديل</label>
             <input
-              className="glass-input w-full text-sm"
+              className="erp-input w-full text-sm"
               placeholder="iPhone 14 / Samsung S23..."
               value={form.device_model}
               onChange={(e) => field('device_model', e.target.value)}
@@ -136,23 +140,25 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <label className="text-ink/50 text-xs mb-1 block">مدة الضمان (شهر) *</label>
-            <select
-              className="glass-input w-full text-sm"
+            <Combobox
+              options={[
+                { value: '1', label: 'شهر' },
+                { value: '3', label: '3 أشهر' },
+                { value: '6', label: '6 أشهر' },
+                { value: '12', label: 'سنة' },
+                { value: '24', label: 'سنتان' },
+              ]}
               value={form.warranty_months}
-              onChange={(e) => field('warranty_months', e.target.value)}
-            >
-              <option value="1">شهر</option>
-              <option value="3">3 أشهر</option>
-              <option value="6">6 أشهر</option>
-              <option value="12">سنة</option>
-              <option value="24">سنتان</option>
-            </select>
+              onChange={(v) => field('warranty_months', v)}
+              className="w-full"
+              searchable={false}
+            />
           </div>
           <div>
             <label className="text-ink/50 text-xs mb-1 block">تاريخ البدء *</label>
             <input
               type="date"
-              className="glass-input w-full text-sm"
+              className="erp-input w-full text-sm"
               value={form.warranty_start}
               onChange={(e) => field('warranty_start', e.target.value)}
             />
@@ -160,7 +166,7 @@ function NewWarrantyForm({ onClose }: { onClose: () => void }) {
           <div className="col-span-2">
             <label className="text-ink/50 text-xs mb-1 block">ملاحظات</label>
             <textarea
-              className="glass-input w-full text-sm resize-none"
+              className="erp-input w-full text-sm resize-none"
               rows={2}
               placeholder="ملاحظات إضافية..."
               value={form.notes}
@@ -327,10 +333,6 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       {/* ── Header (hidden when embedded) ── */}
       {!embedded && (
         <div className="erp-page-header">
-          <h1 className="erp-page-title flex items-center gap-2">
-            <Shield className="w-6 h-6 text-amber-400" />
-            سجلات الضمان
-          </h1>
           <div className="erp-page-actions">
             <button
               onClick={() => setShowForm(true)}
@@ -368,46 +370,50 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
       />
 
       {/* ── Filters ── */}
-      <div className="erp-toolbar">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
-          <input
-            className="glass-input w-full icon-pr text-sm"
-            placeholder="بحث بالمنتج / العميل / الرقم التسلسلي..."
+      <PageToolbar
+        searchSlot={
+          <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+            placeholder="بحث بالمنتج / العميل / الرقم التسلسلي..."
+            aria-label="بحث في سجلات الضمان"
           />
-        </div>
-        <div className="flex gap-1">
-          {(['all', 'active', 'expiring', 'expired'] as const).map((f) => (
+        }
+        filtersSlot={
+          <div className="flex gap-1">
+            {(['all', 'active', 'expiring', 'expired'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  filter === f
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                    : 'glass-panel border-line text-ink/50 hover:text-ink'
+                }`}
+              >
+                {f === 'all'
+                  ? 'الكل'
+                  : f === 'active'
+                    ? 'نشط'
+                    : f === 'expiring'
+                      ? 'ينتهي قريباً'
+                      : 'منتهي'}
+              </button>
+            ))}
+          </div>
+        }
+        actionsSlot={
+          embedded ? (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                filter === f
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
-                  : 'glass-panel border-line text-ink/50 hover:text-ink'
-              }`}
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition-all"
             >
-              {f === 'all'
-                ? 'الكل'
-                : f === 'active'
-                  ? 'نشط'
-                  : f === 'expiring'
-                    ? 'ينتهي قريباً'
-                    : 'منتهي'}
+              <Plus className="w-3.5 h-3.5" /> ضمان جديد
             </button>
-          ))}
-        </div>
-        {embedded && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition-all mr-auto"
-          >
-            <Plus className="w-3.5 h-3.5" /> ضمان جديد
-          </button>
-        )}
-      </div>
+          ) : undefined
+        }
+      />
 
       {/* ── Table ── */}
       <div className="glass-panel rounded-3xl overflow-hidden border border-line">
@@ -427,15 +433,22 @@ export default function Warranty({ embedded = false }: { embedded?: boolean }) {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-ink/40">
-                    جاري التحميل...
+                <tr className="erp-table-row">
+                  <td colSpan={8} className="erp-table-loading-cell">
+                    <div className="erp-loading">
+                      <Loader2 />
+                      جاري التحميل...
+                    </div>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-ink/40">
-                    لا توجد سجلات ضمان
+                <tr className="erp-table-row">
+                  <td colSpan={8}>
+                    <EmptyTable
+                      variant={search ? 'no-results' : 'no-data'}
+                      headline="لا توجد سجلات ضمان"
+                      description="ابدأ بإضافة أول سجل ضمان."
+                    />
                   </td>
                 </tr>
               ) : (

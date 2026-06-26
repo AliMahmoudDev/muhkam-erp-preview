@@ -1,5 +1,6 @@
 import { Clock, LogOut, Pencil } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
+import { Combobox } from '@/components/ui/combobox';
 
 type AnyRec = Record<string, unknown>;
 
@@ -69,7 +70,7 @@ export default function AttendanceList({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-ink/50">من:</label>
+          <label className="erp-label">من:</label>
           <input
             type="date"
             className="erp-input"
@@ -78,7 +79,7 @@ export default function AttendanceList({
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-ink/50">إلى:</label>
+          <label className="erp-label">إلى:</label>
           <input
             type="date"
             className="erp-input"
@@ -92,18 +93,21 @@ export default function AttendanceList({
           value={empSearch}
           onChange={(e) => setEmpSearch(e.target.value)}
         />
-        <select
-          className="erp-input"
+        <Combobox
+          options={[
+            { value: 'present', label: 'حاضر' },
+            { value: 'late', label: 'متأخر' },
+            { value: 'absent', label: 'غائب' },
+            { value: 'on_leave', label: 'إجازة' },
+            { value: 'holiday', label: 'إجازة رسمية' },
+          ]}
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">كل الحالات</option>
-          <option value="present">حاضر</option>
-          <option value="late">متأخر</option>
-          <option value="absent">غائب</option>
-          <option value="on_leave">إجازة</option>
-          <option value="holiday">إجازة رسمية</option>
-        </select>
+          onChange={(v) => setStatusFilter(v)}
+          placeholder="كل الحالات"
+          clearable
+          className="w-44"
+          searchable={false}
+        />
       </div>
 
       <div className="text-xs text-ink/40 flex gap-4">

@@ -4,6 +4,7 @@ import { authFetch } from '@/lib/auth-fetch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle, Wallet, X } from 'lucide-react';
 import { ADVANCE_TYPES } from './constants';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ══════════════════════════════════════════════════
    SALARY ADVANCE REQUEST MODAL
@@ -162,36 +163,38 @@ export function AdvanceRequestModal({
           {/* Advance type */}
           <div>
             <label style={labelStyle}>نوع السلفة</label>
-            <select
-              value={form.advance_type}
-              onChange={(e) => setForm((p) => ({ ...p, advance_type: e.target.value }))}
-              style={inputStyle}
-            >
-              {ADVANCE_TYPES.map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
+            <div style={{ width: '100%' }}>
+              <Combobox
+                options={ADVANCE_TYPES.map(([v, l]) => ({ value: v, label: l }))}
+                value={form.advance_type}
+                onChange={(v) => setForm((p) => ({ ...p, advance_type: v }))}
+                className="w-full"
+                searchable={false}
+              />
+            </div>
           </div>
 
           {/* Deduct from */}
           <div>
             <label style={labelStyle}>خصم السلفة من</label>
-            <select
-              value={form.deduct_from}
-              onChange={(e) =>
-                setForm((p) => ({
-                  ...p,
-                  deduct_from: e.target.value as 'fixed' | 'commission' | 'both',
-                }))
-              }
-              style={inputStyle}
-            >
-              <option value="fixed">الراتب الثابت</option>
-              <option value="commission">العمولة</option>
-              <option value="both">من الراتب الثابت والعمولة معاً</option>
-            </select>
+            <div style={{ width: '100%' }}>
+              <Combobox
+                options={[
+                  { value: 'fixed', label: 'الراتب الثابت' },
+                  { value: 'commission', label: 'العمولة' },
+                  { value: 'both', label: 'من الراتب الثابت والعمولة معاً' },
+                ]}
+                value={form.deduct_from}
+                onChange={(v) =>
+                  setForm((p) => ({
+                    ...p,
+                    deduct_from: v as 'fixed' | 'commission' | 'both',
+                  }))
+                }
+                className="w-full"
+                searchable={false}
+              />
+            </div>
           </div>
 
           {/* Reason */}

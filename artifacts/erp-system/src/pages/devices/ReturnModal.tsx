@@ -3,6 +3,7 @@ import { RotateCcw, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Device } from './types';
 import { apiPost } from './index';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ════════════════════════════════════════════════════════
    RETURN DEVICE MODAL
@@ -82,7 +83,7 @@ export function ReturnModal({
 
           {/* Return price (read-only, equals sale price) */}
           <div>
-            <label className="text-[11px] text-ink/40 mb-1 block text-right">
+            <label className="erp-label">
               سعر الإرجاع (نفس سعر الفاتورة)
             </label>
             <div className="erp-input w-full text-sm flex items-center justify-between opacity-70 cursor-not-allowed">
@@ -95,18 +96,14 @@ export function ReturnModal({
 
           {/* Return reason */}
           <div>
-            <label className="text-[11px] text-ink/40 mb-1 block text-right">سبب الإرجاع *</label>
-            <select
+            <label className="erp-label">سبب الإرجاع *</label>
+            <Combobox
+              options={RETURN_REASONS.map((r) => ({ value: r, label: r }))}
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="erp-input w-full text-sm"
-            >
-              {RETURN_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setReason(v)}
+              className="w-full"
+              searchable={false}
+            />
             {reason === 'أخرى' && (
               <input
                 value={customReason}

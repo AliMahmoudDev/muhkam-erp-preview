@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/skeletons';
 import { ConfirmModal } from '@/components/confirm-modal';
 import { api } from '@/lib/api';
+import { Combobox } from '@/components/ui/combobox';
+import { PageHeader } from '@/components/patterns';
 
 interface Account {
   id: number;
@@ -41,18 +43,18 @@ interface JournalEntryDetail extends JournalEntry {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'posted')
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1.5">
+      <span className="erp-status erp-status-posted">
         <CheckCircle className="w-3 h-3" /> مرحَّل
       </span>
     );
   if (status === 'reversed')
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-bold border bg-orange-500/20 text-orange-400 border-orange-500/30">
+      <span className="erp-status erp-status-pending">
         ↩ معكوس
       </span>
     );
   return (
-    <span className="px-3 py-1 rounded-full text-xs font-bold border bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+    <span className="erp-status erp-status-draft">
       مسودة
     </span>
   );
@@ -343,7 +345,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
               <label className="text-ink/60 text-xs mb-1 block">التاريخ *</label>
               <input
                 type="date"
-                className="glass-input"
+                className="erp-input"
                 value={form.date}
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
               />
@@ -352,7 +354,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
               <label className="text-ink/60 text-xs mb-1 block">البيان *</label>
               <input
                 type="text"
-                className="glass-input"
+                className="erp-input"
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 placeholder="وصف القيد"
@@ -362,7 +364,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
               <label className="text-ink/60 text-xs mb-1 block">المرجع</label>
               <input
                 type="text"
-                className="glass-input"
+                className="erp-input"
                 value={form.reference}
                 onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
                 placeholder="رقم مرجعي اختياري"
@@ -386,20 +388,16 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                 {lines.map((line, i) => (
                   <tr key={`form-line-${i}`} className="border-b border-line">
                     <td className="p-2">
-                      <select
-                        className="glass-input text-sm appearance-none w-full"
+                      <Combobox
+                        options={postingAccounts.map((a) => ({
+                          value: String(a.id),
+                          label: `[${a.code}] ${a.name}`,
+                        }))}
                         value={line.account_id}
-                        onChange={(e) => updateLine(i, 'account_id', e.target.value)}
-                      >
-                        <option value="" className="bg-gray-900">
-                          اختر الحساب
-                        </option>
-                        {postingAccounts.map((a) => (
-                          <option key={a.id} value={a.id} className="bg-gray-900">
-                            [{a.code}] {a.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => updateLine(i, 'account_id', v)}
+                        placeholder="اختر الحساب"
+                        className="w-full"
+                      />
                     </td>
                     <td className="p-2">
                       <input
@@ -407,7 +405,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                         step="0.01"
                         min="0"
                         placeholder="0.00"
-                        className="glass-input text-sm text-blue-300 w-full"
+                        className="erp-input text-sm text-blue-300 w-full"
                         value={line.debit}
                         onChange={(e) => {
                           updateLine(i, 'debit', e.target.value);
@@ -421,7 +419,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                         step="0.01"
                         min="0"
                         placeholder="0.00"
-                        className="glass-input text-sm text-amber-300 w-full"
+                        className="erp-input text-sm text-amber-300 w-full"
                         value={line.credit}
                         onChange={(e) => {
                           updateLine(i, 'credit', e.target.value);
@@ -433,7 +431,7 @@ function NewEntryModal({ onClose }: { onClose: () => void }) {
                       <input
                         type="text"
                         placeholder="اختياري"
-                        className="glass-input text-sm w-full"
+                        className="erp-input text-sm w-full"
                         value={line.description}
                         onChange={(e) => updateLine(i, 'description', e.target.value)}
                       />
@@ -524,34 +522,38 @@ export default function JournalEntries() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-3 items-center flex-wrap">
-        <div className="flex bg-surface rounded-2xl p-1 border border-line">
-          {[
-            ['all', 'الكل'],
-            ['draft', 'مسودة'],
-            ['posted', 'مرحَّل'],
-          ].map(([v, l]) => (
-            <button
-              key={v}
-              onClick={() => setFilter(v as 'all' | 'draft' | 'posted')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === v ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="btn-primary px-5 py-2.5 flex items-center gap-2 text-sm mr-auto"
-        >
-          <Plus className="w-4 h-4" /> قيد جديد
-        </button>
+      <PageHeader
+        title="القيود اليومية"
+        actionsSlot={
+          <button
+            onClick={() => setShowNew(true)}
+            className="btn-primary px-5 py-2.5 flex items-center gap-2 text-sm"
+          >
+            <Plus className="w-4 h-4" /> قيد جديد
+          </button>
+        }
+      />
+
+      <div className="flex bg-surface rounded-2xl p-1 border border-line w-fit">
+        {[
+          ['all', 'الكل'],
+          ['draft', 'مسودة'],
+          ['posted', 'مرحَّل'],
+        ].map(([v, l]) => (
+          <button
+            key={v}
+            onClick={() => setFilter(v as 'all' | 'draft' | 'posted')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === v ? 'bg-amber-500 text-black shadow' : 'text-ink/50 hover:text-ink'}`}
+          >
+            {l}
+          </button>
+        ))}
       </div>
 
       {showNew && <NewEntryModal onClose={() => setShowNew(false)} />}
       {selectedId && <EntryDetailModal entryId={selectedId} onClose={() => setSelectedId(null)} />}
 
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
             <thead className="bg-surface border-b border-line">

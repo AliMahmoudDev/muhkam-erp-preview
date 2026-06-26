@@ -5,6 +5,7 @@ import { SearchableSelect } from '@/components/searchable-select';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Safe {
   id: number;
@@ -115,34 +116,27 @@ export function StandaloneReturnForm({
           {standalone.refund_type === 'cash' && (
             <div>
               <label className="opacity-60 text-xs mb-1 block">الخزينة *</label>
-              <select
-                required
-                className="erp-input w-full"
+              <Combobox
+                options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
                 value={standalone.safe_id}
-                onChange={(e) => setStandalone((f) => ({ ...f, safe_id: e.target.value }))}
-              >
-                <option value="">-- اختر خزينة --</option>
-                {safes.map((s) => (
-                  <option key={s.id} value={String(s.id)}>{s.name}</option>
-                ))}
-              </select>
+                onChange={(v) => setStandalone((f) => ({ ...f, safe_id: v }))}
+                placeholder="-- اختر خزينة --"
+                className="w-full"
+                searchable={false}
+              />
             </div>
           )}
 
           {/* Product */}
           <div>
             <label className="opacity-60 text-xs mb-1 block">الصنف *</label>
-            <select
-              required
-              className="erp-input w-full"
+            <Combobox
+              options={products.map((p) => ({ value: String(p.id), label: p.name }))}
               value={standalone.item_id}
-              onChange={(e) => setStandalone((f) => ({ ...f, item_id: e.target.value }))}
-            >
-              <option value="">-- اختر صنف --</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+              onChange={(v) => setStandalone((f) => ({ ...f, item_id: v }))}
+              placeholder="-- اختر صنف --"
+              className="w-full"
+            />
           </div>
 
           {/* Qty + price */}

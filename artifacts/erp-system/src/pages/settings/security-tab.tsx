@@ -123,7 +123,7 @@ export default function SecurityTab() {
               <code className="text-xs font-mono text-ink break-all">{qrData.secret}</code>
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-ink/70">أدخل رمز التحقق من التطبيق</label>
+              <label className="erp-label">أدخل رمز التحقق من التطبيق</label>
               <input
                 type="text"
                 inputMode="numeric"

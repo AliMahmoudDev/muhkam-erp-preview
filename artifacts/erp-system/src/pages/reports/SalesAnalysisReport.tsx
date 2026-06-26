@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Package, Users } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 import {
   api,
   authFetch,
@@ -95,24 +96,19 @@ export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: num
             <span className="px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/40 bg-amber-500/15 text-amber-400 select-none">
               🏆 الأعلى مبيعًا
             </span>
-            <select
+            <Combobox
+              options={[
+                { value: 'all', label: 'الكل' },
+                { value: '5', label: 'Top 5' },
+                { value: '10', label: 'Top 10' },
+              ]}
               value={topLimit}
-              onChange={(e) => setTopLimit(e.target.value as 'all' | '5' | '10')}
-              className="bg-surface border border-line rounded-xl px-3 py-1.5 text-xs font-bold text-ink/70 cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-400/40"
-            >
-              <option value="all" className="bg-surface">
-                الكل
-              </option>
-              <option value="5" className="bg-surface">
-                Top 5
-              </option>
-              <option value="10" className="bg-surface">
-                Top 10
-              </option>
-            </select>
+              onChange={(v) => setTopLimit(v as 'all' | '5' | '10')}
+              searchable={false}
+            />
           </div>
 
-          <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+          <div className="glass-panel overflow-hidden border border-line">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-sm whitespace-nowrap">
                 <thead className="bg-surface border-b border-line">
@@ -180,7 +176,7 @@ export default function SalesAnalysisReport({ warehouseId }: { warehouseId?: num
           </div>
         </>
       ) : (
-        <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+        <div className="glass-panel overflow-hidden border border-line">
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm whitespace-nowrap">
               <thead className="bg-surface border-b border-line">

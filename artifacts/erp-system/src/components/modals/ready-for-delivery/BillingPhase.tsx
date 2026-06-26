@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { safeArray } from '@/lib/safe-data';
 import { JobLite, Product, PayRow, PayType, PartLine } from './types';
+import { Combobox } from '@/components/ui/combobox';
 
 function fmtCurrency(n: number) {
   return formatCurrency(n);
@@ -295,17 +296,13 @@ export default function BillingPhase({
               </div>
               <div className="flex gap-1.5 items-stretch">
                 {payType === 'cash' && safes.length > 0 ? (
-                  <select
-                    value={paySafe ?? ''}
-                    onChange={(e) => setPaySafe(parseInt(e.target.value) || null)}
-                    className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-emerald-400/40"
-                  >
-                    {safes.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Combobox
+                    options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
+                    value={paySafe ? String(paySafe) : ''}
+                    onChange={(v) => setPaySafe(v ? parseInt(v) : null)}
+                    className="flex-1 min-w-0 text-[11px]"
+                    searchable={false}
+                  />
                 ) : (
                   <div className="flex-1 flex items-center justify-end text-[11px] text-blue-300/70 px-2 rounded-lg bg-blue-500/5 border border-blue-500/15">
                     ائتمان العميل

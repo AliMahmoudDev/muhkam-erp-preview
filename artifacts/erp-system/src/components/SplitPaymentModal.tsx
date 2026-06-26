@@ -10,6 +10,7 @@ import {
   CalendarRange,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ── أنواع طرق الدفع ── */
 export type PaymentMethodKey = 'cash' | 'card' | 'bank_transfer' | 'installment';
@@ -356,30 +357,14 @@ export function SplitPaymentModal({
                 {activeType !== 'credit' &&
                 activeType !== 'installment' &&
                 activeType !== 'bank_transfer' ? (
-                  <select
-                    value={activeSafe ?? ''}
-                    onChange={(e) => setActiveSafe(parseInt(e.target.value) || null)}
+                  <Combobox
+                    options={safes.map((s) => ({ value: String(s.id), label: s.name }))}
+                    value={activeSafe ? String(activeSafe) : ''}
+                    onChange={(v) => setActiveSafe(v ? parseInt(v) : null)}
                     disabled={isRestricted}
-                    className="flex-1 min-w-0 rounded-xl text-sm outline-none appearance-none transition-colors"
-                    style={{
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--erp-border)',
-                      color: 'var(--text-1)',
-                      padding: '10px 12px',
-                      direction: 'rtl',
-                      cursor: isRestricted ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {safes.map((s) => (
-                      <option
-                        key={s.id}
-                        value={s.id}
-                        style={{ background: 'var(--bg-app)', color: 'var(--text-1)' }}
-                      >
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    className="flex-1 min-w-0 text-sm"
+                    searchable={false}
+                  />
                 ) : (
                   <div
                     className="flex-1 rounded-xl px-3 flex items-center justify-end text-sm"

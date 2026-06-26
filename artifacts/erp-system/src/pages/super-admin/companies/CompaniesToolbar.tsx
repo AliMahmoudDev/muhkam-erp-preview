@@ -1,4 +1,5 @@
 import { C, FONT } from '../types';
+import { Combobox } from '@/components/ui/combobox';
 
 export function CompaniesToolbar({
   search,
@@ -98,27 +99,12 @@ export function CompaniesToolbar({
       <div style={{ flex: 1 }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         <span style={{ fontSize: '12px', color: C.muted, whiteSpace: 'nowrap' }}>عدد الصفوف:</span>
-        <select
-          value={perPage}
-          onChange={(e) => setPerPage(Number(e.target.value))}
-          style={{
-            padding: '6px 10px',
-            borderRadius: '8px',
-            border: `1px solid ${C.border}`,
-            background: C.bg,
-            color: C.text,
-            fontSize: '12px',
-            fontFamily: FONT,
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
-          {[10, 25, 50, 100].map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+        <Combobox
+          options={[10, 25, 50, 100].map((n) => ({ value: String(n), label: String(n) }))}
+          value={String(perPage)}
+          onChange={(v) => setPerPage(Number(v))}
+          searchable={false}
+        />
       </div>
       <div
         style={{

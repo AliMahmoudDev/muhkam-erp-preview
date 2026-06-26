@@ -32,6 +32,7 @@ import LogoutCheckoutModal from '@/components/logout-checkout-modal';
 import IdleCheckoutModal from '@/components/idle-checkout-modal';
 
 import { resolveUploadedFileUrl } from '@/lib/file-upload';
+import { Combobox } from '@/components/ui/combobox';
 /* ── Nav sections ───────────────────────────────────────────
    IA: parent modules only. Child pages live inside their parent tabs.
    - /transfers → embedded in /inventory (التحويلات بين الفروع tab)
@@ -80,6 +81,7 @@ const ROLE_DOT: Record<string, string> = {
   cashier: 'var(--status-success)',
   salesperson: 'var(--status-info)',
 };
+
 
 function getInitials(name: string) {
   const p = name.trim().split(' ');
@@ -666,31 +668,16 @@ export function AppLayout({ children }: LayoutProps) {
                 المخزن
               </span>
             </div>
-            <select
+            <Combobox
+              options={[
+                { value: '', label: 'كل المخازن' },
+                ...warehouses.map((w) => ({ value: String(w.id), label: w.name })),
+              ]}
               value={currentWarehouseId}
-              onChange={(e) => setWarehouseId(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: textPrimary,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                appearance: 'none',
-              }}
-            >
-              <option value="" style={{ background: 'var(--bg-card)' }}>
-                كل المخازن
-              </option>
-              {warehouses.map((w) => (
-                <option key={w.id} value={String(w.id)} style={{ background: 'var(--bg-card)' }}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setWarehouseId(v)}
+              className="w-full text-sm"
+              searchable={false}
+            />
           </div>
         )}
 
@@ -842,8 +829,47 @@ export function AppLayout({ children }: LayoutProps) {
             zIndex: 30,
           }}
         >
-          {/* Left: spacer so search stays centred */}
-          <div className="flex-1 min-w-0" />
+          {/* Left: current page title + optional subtitle (auto-derived from route) */}
+          {(() => {
+            const match = NAV_ITEMS.find((i) =>
+              i.href === '/'
+                ? location === '/'
+                : location === i.href || location.startsWith(i.href + '/'),
+            );
+            const PageIcon = match?.icon;
+            return (
+              <div className="flex-1 min-w-0 hidden md:flex items-center gap-2.5 overflow-hidden">
+                {match && PageIcon && (
+                  <>
+                    <PageIcon
+                      aria-hidden
+                      className="erp-topbar-page-icon"
+                      style={{ width: 16, height: 16, color: 'var(--erp-brand)', flexShrink: 0 }}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                      <span
+                        style={{
+                          fontSize: match.subtitle ? 22 : 15,
+                          fontWeight: 700,
+                          color: textPrimary,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: 1.15,
+                          letterSpacing: '-0.3px',
+                        }}
+                      >
+                        {match.name}
+                      </span>
+                      {match.subtitle && (
+                        <span className="erp-topbar-subtitle">{match.subtitle}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Center: Search */}
           <div className="hidden md:flex justify-center" style={{ flexShrink: 0 }}>

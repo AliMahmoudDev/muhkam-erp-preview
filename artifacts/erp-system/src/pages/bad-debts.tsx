@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Ban, Plus, XCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, XCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { authFetch } from '@/lib/auth-fetch';
 import { formatCurrency } from '@/lib/format';
@@ -111,10 +111,7 @@ export default function BadDebts({ embedded = false }: { embedded?: boolean } = 
   return (
     <div className={embedded ? 'space-y-4' : 'p-4 space-y-4 h-full overflow-y-auto'} dir="rtl">
       {!embedded && (
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black text-ink flex items-center gap-2">
-            <Ban className="w-5 h-5 text-red-400" /> الديون المعدومة / المتعثرة
-          </h1>
+        <div className="flex justify-end">
           <button
             onClick={() => setShowNew(true)}
             className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm"

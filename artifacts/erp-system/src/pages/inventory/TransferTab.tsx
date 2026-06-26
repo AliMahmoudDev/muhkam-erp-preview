@@ -17,6 +17,7 @@ import {
 import { exportToExcel, exportToPDF } from '@/lib/inventory-export';
 import { api } from './_shared';
 import type { AuditProduct, TransferEnriched, TransferPrefill } from './_shared';
+import { Combobox } from '@/components/ui/combobox';
 
 interface TransferLine {
   product_id: number;
@@ -281,20 +282,16 @@ function TransferTab({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
               <div>
-                <label className="block text-ink/50 text-xs mb-1.5">
+                <label className="erp-label">
                   من مخزن <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={fromWH}
-                  onChange={(e) => setFromWH(Number(e.target.value))}
-                  className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:border-amber-500/40"
-                >
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id} className="bg-surface">
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+                <Combobox
+                  options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+                  value={String(fromWH)}
+                  onChange={(v) => setFromWH(Number(v))}
+                  className="w-full"
+                  searchable={false}
+                />
               </div>
               <div className="flex items-center justify-center pb-1">
                 <div className="w-10 h-10 rounded-full bg-surface border border-line flex items-center justify-center">
@@ -302,35 +299,29 @@ function TransferTab({
                 </div>
               </div>
               <div>
-                <label className="block text-ink/50 text-xs mb-1.5">
+                <label className="erp-label">
                   إلى مخزن <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={toWH}
-                  onChange={(e) => setToWH(Number(e.target.value))}
-                  className={`w-full bg-surface border rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 ${
-                    fromWH === toWH ? 'border-red-500/40' : 'border-line'
-                  }`}
-                >
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id} className="bg-surface">
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+                <Combobox
+                  options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+                  value={String(toWH)}
+                  onChange={(v) => setToWH(Number(v))}
+                  className="w-full"
+                  searchable={false}
+                />
                 {fromWH === toWH && (
                   <p className="text-red-400 text-xs mt-1">يجب اختيار مخزن مختلف</p>
                 )}
               </div>
             </div>
             <div>
-              <label className="block text-ink/50 text-xs mb-1.5">ملاحظات (اختياري)</label>
+              <label className="erp-label">ملاحظات (اختياري)</label>
               <input
                 type="text"
                 value={transferNotes}
                 onChange={(e) => setTransferNotes(e.target.value)}
                 placeholder="سبب التحويل..."
-                className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
+                className="erp-input w-full text-sm"
               />
             </div>
           </div>
@@ -349,21 +340,14 @@ function TransferTab({
                   >
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-start">
                       <div>
-                        <label className="block text-ink/50 text-xs mb-1.5">المنتج</label>
-                        <select
-                          value={line.product_id}
-                          onChange={(e) => updateLine(idx, 'product_id', e.target.value)}
-                          className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50"
-                        >
-                          <option value={0} className="bg-surface">
-                            — اختر منتجاً —
-                          </option>
-                          {allProducts.map((p) => (
-                            <option key={p.id} value={p.id} className="bg-surface">
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
+                        <label className="erp-label">المنتج</label>
+                        <Combobox
+                          options={allProducts.map((p) => ({ value: String(p.id), label: p.name }))}
+                          value={line.product_id ? String(line.product_id) : ''}
+                          onChange={(v) => updateLine(idx, 'product_id', v ? Number(v) : 0)}
+                          placeholder="— اختر منتجاً —"
+                          className="w-full"
+                        />
                         {line.product_id > 0 && (
                           <div
                             className={`mt-1 text-xs flex items-center gap-1 ${availableQty > 0 ? 'text-ink/40' : 'text-red-400/70'}`}
@@ -381,7 +365,7 @@ function TransferTab({
                         )}
                       </div>
                       <div className="md:w-36">
-                        <label className="block text-ink/50 text-xs mb-1.5">الكمية</label>
+                        <label className="erp-label">الكمية</label>
                         <input
                           type="number"
                           min="0.001"
@@ -492,11 +476,11 @@ function TransferTab({
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-ink font-bold">تحويل #{t.id}</span>
-                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300">
+                      <span className="erp-status erp-status-paid">
                         {t.status === 'completed' ? '✓ مكتمل' : t.status}
                       </span>
                       {t.items_count > 0 && (
-                        <span className="px-2 py-0.5 rounded-lg text-xs bg-surface text-ink/50">
+                        <span className="erp-status erp-status-inactive">
                           {t.items_count} صنف
                         </span>
                       )}

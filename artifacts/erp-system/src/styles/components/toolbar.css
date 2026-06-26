@@ -265,3 +265,44 @@ html.light .erp-tab--active {
 .erp-modal-footer .erp-btn-ghost {
   order: 1 !important;
 }
+
+/* ═══════════════════════════════════════════════════════
+   TOPBAR PAGE ICON — subtle breathe/glow on active page.
+   Calm 4-second pulse. Respects prefers-reduced-motion.
+   ════════════════════════════════════════════════════ */
+@keyframes erp-icon-breathe {
+  0%, 100% { filter: drop-shadow(0 0 0px var(--erp-brand)); }
+  50%       { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--erp-brand) 65%, transparent)); }
+}
+
+.erp-topbar-page-icon {
+  animation: erp-icon-breathe 4s ease-in-out infinite;
+  transition: transform 0.18s ease;
+  will-change: filter;
+}
+
+.erp-topbar-page-icon:hover {
+  transform: scale(1.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-topbar-page-icon {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOPBAR SUBTITLE — muted but readable in dark + light.
+   Uses --erp-text-3 (tertiary) instead of --erp-text-4
+   (disabled) which was too faint in light-mode topbars.
+   ════════════════════════════════════════════════════ */
+.erp-topbar-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--erp-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+}

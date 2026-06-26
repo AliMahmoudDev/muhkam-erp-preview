@@ -1,8 +1,9 @@
-import { UserCheck, Pencil, Trash2, ChevronLeft } from 'lucide-react';
+import { Pencil, Trash2, ChevronLeft } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
 import { PaginationBar } from '@/components/PaginationBar';
 import { EmployeeFilters } from './EmployeeFilters';
 import type { Employee, Department, DetailTab } from './types';
+import { EmptyTable } from '@/components/ui/empty-table';
 
 interface EmployeeListProps {
   search: string;
@@ -83,12 +84,13 @@ export function EmployeeList({
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center py-12 text-ink/40">
-                    <div className="erp-empty-state">
-                      <UserCheck size={36} className="mb-2 opacity-30" />
-                      <p>لا توجد بيانات موظفين</p>
-                    </div>
+                <tr className="erp-table-row">
+                  <td colSpan={7}>
+                    <EmptyTable
+                      variant="no-data"
+                      headline="لا توجد بيانات موظفين"
+                      description="ابدأ بإضافة أول موظف."
+                    />
                   </td>
                 </tr>
               )}

@@ -11,6 +11,7 @@ import {
   thisMonthStart,
   todayStr,
 } from './shared';
+import { EmptyTable } from '@/components/ui/empty-table';
 
 interface DailyProfitData {
   days: Array<{
@@ -86,7 +87,7 @@ export default function DailyProfitReport() {
           </div>
         ))}
       </div>
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm whitespace-nowrap">
             <thead className="bg-surface border-b border-line">
@@ -105,9 +106,9 @@ export default function DailyProfitReport() {
               {isLoading ? (
                 <TableSkeleton cols={8} rows={5} />
               ) : days.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-12 text-center text-ink/40">
-                    لا توجد بيانات في هذه الفترة
+                <tr className="erp-table-row">
+                  <td colSpan={8}>
+                    <EmptyTable variant="no-results" headline="لا توجد بيانات في هذه الفترة" />
                   </td>
                 </tr>
               ) : (

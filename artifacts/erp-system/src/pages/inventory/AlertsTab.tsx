@@ -22,6 +22,7 @@ import { ReorderPanel } from './alerts/components/ReorderPanel';
 
 import { Button } from '@/components/ui/button';
 import { SkeletonTable } from '@/components/ui/skeleton';
+import { Combobox } from '@/components/ui/combobox';
 
 function AlertsTab({
   warehouses: _warehouses,
@@ -213,21 +214,14 @@ function AlertsTab({
           <div className="flex gap-2 flex-wrap items-center">
             <span className="opacity-50 text-xs">تصفية:</span>
 
-            <select
-              value={filterWH}
-              onChange={(e) =>
-                setFilterWH(e.target.value === 'all' ? 'all' : Number(e.target.value))
-              }
-              className="erp-input h-8 w-auto cursor-pointer text-xs"
-              aria-label="تصفية حسب المخزن"
-            >
-              <option value="all">جميع المخازن</option>
-              {uniqueWarehouses.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
+            <Combobox
+              options={uniqueWarehouses.map((w) => ({ value: String(w.id), label: w.name }))}
+              value={filterWH === 'all' ? 'all' : String(filterWH)}
+              onChange={(v) => setFilterWH(v === 'all' ? 'all' : Number(v))}
+              placeholder="جميع المخازن"
+              className="w-auto"
+              searchable={false}
+            />
 
             <Button
               variant={showZeroOnly ? 'outline' : 'ghost'}

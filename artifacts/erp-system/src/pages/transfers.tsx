@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth';
 import { hasPermission } from '@/lib/permissions';
+import { Combobox } from '@/components/ui/combobox';
 import {
   ArrowRightLeft,
   Plus,
@@ -186,18 +187,13 @@ function RequestModal({
             <label className="text-ink/50 text-xs mb-1.5 block">
               المنتج <span className="text-red-400">*</span>
             </label>
-            <select
+            <Combobox
+              options={products.map((p) => ({ value: String(p.id), label: p.name }))}
               value={form.product_id}
-              onChange={(e) => setForm((f) => ({ ...f, product_id: e.target.value }))}
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50"
-            >
-              <option value="">— اختر منتجاً —</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id} className="bg-surface">
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm((f) => ({ ...f, product_id: v }))}
+              placeholder="— اختر منتجاً —"
+              className="w-full"
+            />
           </div>
 
           {/* الفروع */}
@@ -206,41 +202,33 @@ function RequestModal({
               <label className="text-ink/50 text-xs mb-1.5 block">
                 من فرع <span className="text-red-400">*</span>
               </label>
-              <select
+              <Combobox
+                options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
                 value={form.from_branch_id}
-                onChange={(e) => setForm((f) => ({ ...f, from_branch_id: e.target.value }))}
-                className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50"
-              >
-                <option value="">— اختر —</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id} className="bg-surface">
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setForm((f) => ({ ...f, from_branch_id: v }))}
+                placeholder="— اختر —"
+                className="w-full"
+                searchable={false}
+              />
             </div>
             <div>
               <label className="text-ink/50 text-xs mb-1.5 block">
                 إلى فرع <span className="text-red-400">*</span>
               </label>
-              <select
+              <Combobox
+                options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
                 value={form.to_branch_id}
-                onChange={(e) => setForm((f) => ({ ...f, to_branch_id: e.target.value }))}
-                className={`w-full bg-surface border rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50 ${
+                onChange={(v) => setForm((f) => ({ ...f, to_branch_id: v }))}
+                placeholder="— اختر —"
+                className={`w-full ${
                   form.from_branch_id &&
                   form.to_branch_id &&
                   form.from_branch_id === form.to_branch_id
                     ? 'border-red-500/40'
-                    : 'border-line'
+                    : ''
                 }`}
-              >
-                <option value="">— اختر —</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id} className="bg-surface">
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                searchable={false}
+              />
               {form.from_branch_id &&
                 form.to_branch_id &&
                 form.from_branch_id === form.to_branch_id && (
@@ -548,15 +536,6 @@ export default function Transfers() {
 
         {/* ── Header ── */}
         <div className="erp-page-header">
-          <div>
-            <h1 className="erp-page-title flex items-center gap-2">
-              <ArrowRightLeft className="w-5 h-5 text-amber-400" />
-              تحويل المخزون بين الفروع
-            </h1>
-            <p className="erp-page-subtitle">
-              {transfers.length} طلب {filterStatus ? `— ${STATUS_LABEL[filterStatus]}` : 'إجمالاً'}
-            </p>
-          </div>
           {canManage && (
             <div className="erp-page-actions">
               <button

@@ -53,22 +53,22 @@ export function CountHistory({
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-ink font-bold">جلسة #{s.id}</span>
                   <span
-                    className={`px-2 py-0.5 rounded-lg text-xs font-bold ${s.status === 'applied' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}
+                    className={s.status === 'applied' ? 'erp-status erp-status-paid' : 'erp-status erp-status-draft'}
                   >
                     {s.status === 'applied' ? '✓ مطبّق' : 'مسودة'}
                   </span>
                   {s.items_count > 0 && (
-                    <span className="px-2 py-0.5 rounded-lg text-xs bg-surface text-ink/50">
+                    <span className="erp-status erp-status-inactive">
                       {s.items_count} منتج
                     </span>
                   )}
                   {s.adjustments_count > 0 && (
-                    <span className="px-2 py-0.5 rounded-lg text-xs bg-amber-500/10 text-amber-400">
+                    <span className="erp-status erp-status-partial">
                       {s.adjustments_count} تسوية
                     </span>
                   )}
                   {s.items_count > 0 && s.adjustments_count === 0 && s.status === 'applied' && (
-                    <span className="px-2 py-0.5 rounded-lg text-xs bg-emerald-500/10 text-emerald-400">
+                    <span className="erp-status erp-status-active">
                       لا فروق
                     </span>
                   )}

@@ -161,12 +161,12 @@ function unifyVouchers(r: RV[], d: DV[], p: PV[], t: ST[]): UV[] {
 /* ─── Badges ─────────────────────────────────────────────────────────────── */
 function VTypeBadge({ type }: { type: 'قبض' | 'صرف' }) {
   return type === 'قبض' ? (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+    <span className="erp-status erp-status-paid">
       <HandCoins className="w-3 h-3" />
       قبض
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+    <span className="erp-status erp-status-pending">
       <ArrowUpFromLine className="w-3 h-3" />
       صرف
     </span>
@@ -190,22 +190,10 @@ function VSubBadge({ sub }: { sub: string }) {
 function VoucherStatusBadge({ status }: { status: string | null }) {
   if (!status) return <span className="text-xs text-ink/30">—</span>;
   if (status === 'posted')
-    return (
-      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">
-        مرحَّل
-      </span>
-    );
+    return <span className="erp-status erp-status-posted">مرحَّل</span>;
   if (status === 'cancelled')
-    return (
-      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
-        ملغى
-      </span>
-    );
-  return (
-    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface text-ink/50">
-      مسودة
-    </span>
-  );
+    return <span className="erp-status erp-status-cancelled">ملغى</span>;
+  return <span className="erp-status erp-status-draft">مسودة</span>;
 }
 
 /* ─── Pagination helper ───────────────────────────────────────────────────── */
@@ -500,7 +488,7 @@ export default function VouchersHistoryReport() {
         <div className="relative flex-1 min-w-48 max-w-sm">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
           <input
-            className="glass-input w-full icon-pr text-sm"
+            className="erp-input w-full icon-pr text-sm"
             placeholder="بحث برقم السند أو الطرف أو الخزينة..."
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
@@ -551,7 +539,7 @@ export default function VouchersHistoryReport() {
       </div>
 
       {/* ── Table ── */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-ink/80 whitespace-nowrap">
             <thead className="bg-surface border-b border-line">

@@ -69,19 +69,43 @@ export async function seedDefaults(): Promise<void> {
       }
     }
 
-    /* ── 3. Ensure default company_admin exists (dynamic company ID) */
-    const [companyUsers] = await db
-      .select({ id: erpUsersTable.id })
-      .from(erpUsersTable)
-      .where(eq(erpUsersTable.company_id, defaultCompanyId))
-      .limit(1);
+    /* ── 3. Ensure default company_admin exists & PIN is always in sync ── */
+    const defaultAdminPin = process.env.DEFAULT_ADMIN_PIN;
+    if (!defaultAdminPin) {
+      logger.warn("DEFAULT_ADMIN_PIN is not set — skipping default admin management.");
+    } else {
+      const hashed = await hashPin(defaultAdminPin);
 
-    if (!companyUsers) {
-      const defaultAdminPin = process.env.DEFAULT_ADMIN_PIN;
-      if (!defaultAdminPin) {
-        logger.warn("DEFAULT_ADMIN_PIN is not set — skipping default admin creation. Set the secret to create the account.");
-      } else {
-        const hashed = await hashPin(defaultAdminPin);
+      /* Remove duplicate users per username within this company (keep lowest id) */
+      const allAdmins = await db
+        .select({ id: erpUsersTable.id, username: erpUsersTable.username })
+        .from(erpUsersTable)
+        .where(eq(erpUsersTable.company_id, defaultCompanyId));
+
+      const usernameGroups: Record<string, number[]> = {};
+      for (const u of allAdmins) {
+        if (!usernameGroups[u.username]) usernameGroups[u.username] = [];
+        usernameGroups[u.username].push(u.id);
+      }
+      for (const [uname, ids] of Object.entries(usernameGroups)) {
+        if (ids.length > 1) {
+          // Keep lowest id, delete the rest
+          const [, ...deleteIds] = ids.sort((a, b) => a - b);
+          for (const delId of deleteIds) {
+            await db.delete(erpUsersTable).where(eq(erpUsersTable.id, delId));
+          }
+          logger.info({ uname, deleted: deleteIds.length }, "Removed duplicate users");
+        }
+      }
+
+      /* Upsert the default admin — always keep PIN in sync with DEFAULT_ADMIN_PIN */
+      const [existingAdmin] = await db
+        .select({ id: erpUsersTable.id })
+        .from(erpUsersTable)
+        .where(eq(erpUsersTable.company_id, defaultCompanyId))
+        .limit(1);
+
+      if (!existingAdmin) {
         await db.insert(erpUsersTable).values({
           name:       "المدير الافتراضي",
           username:   "admin",
@@ -91,6 +115,12 @@ export async function seedDefaults(): Promise<void> {
           active:     true,
         });
         logger.info(`Default company admin created — username: admin (company_id: ${defaultCompanyId})`);
+      } else {
+        await db
+          .update(erpUsersTable)
+          .set({ pin: hashed })
+          .where(eq(erpUsersTable.id, existingAdmin.id));
+        logger.info(`Default company admin PIN synced — id: ${existingAdmin.id}`);
       }
     }
 

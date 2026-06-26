@@ -89,7 +89,7 @@ export default function VatReport({ warehouseId }: { warehouseId?: number | null
       {/* Controls */}
       <div className="flex flex-wrap items-end gap-3 bg-surface rounded-2xl p-4 border border-line no-print">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-ink/50">من تاريخ</label>
+          <label className="erp-label">من تاريخ</label>
           <input
             type="date"
             value={dateFrom}
@@ -98,7 +98,7 @@ export default function VatReport({ warehouseId }: { warehouseId?: number | null
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-ink/50">إلى تاريخ</label>
+          <label className="erp-label">إلى تاريخ</label>
           <input
             type="date"
             value={dateTo}

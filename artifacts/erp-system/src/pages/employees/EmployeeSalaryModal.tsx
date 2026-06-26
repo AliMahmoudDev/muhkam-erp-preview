@@ -12,12 +12,13 @@ import { X, Banknote, MinusCircle, Award, Package, CheckCircle, UserX } from 'lu
 import type { Employee, AnyRec, SettleLine } from './types';
 import { fmt, dedLabel, blankSettleLine } from './salary-modal';
 import { useSalaryMutations } from './salary-modal';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ── Local helpers ──────────────────────────────────────────── */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <label className="text-xs text-ink/50">{label}</label>
+    <div className="erp-field">
+      <label className="erp-label">{label}</label>
       {children}
     </div>
   );
@@ -285,23 +286,19 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
                 <Field label="نوع السلفة">
-                  <select
-                    value={loanForm.advance_type}
-                    onChange={(e) => setLoanForm((p) => ({ ...p, advance_type: e.target.value }))}
-                    className="erp-input w-full"
-                  >
-                    {[
+                  <Combobox
+                    options={[
                       ['personal', 'شخصي'],
                       ['emergency', 'طارئ'],
                       ['medical', 'علاجي'],
                       ['educational', 'تعليمي'],
                       ['other', 'أخرى'],
-                    ].map(([v, l]) => (
-                      <option key={v} value={v}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
+                    ].map(([v, l]) => ({ value: v, label: l }))}
+                    value={loanForm.advance_type}
+                    onChange={(v) => setLoanForm((p) => ({ ...p, advance_type: v }))}
+                    className="w-full"
+                    searchable={false}
+                  />
                 </Field>
                 <Field label="السبب (اختياري)">
                   <input
@@ -312,38 +309,37 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
                 <Field label="خصم السلفة من">
-                  <select
+                  <Combobox
+                    options={[
+                      { value: 'fixed', label: 'الراتب الثابت' },
+                      { value: 'commission', label: 'العمولة' },
+                      { value: 'both', label: 'من الراتب الثابت والعمولة معاً' },
+                    ]}
                     value={loanForm.deduct_from}
-                    onChange={(e) =>
+                    onChange={(v) =>
                       setLoanForm((p) => ({
                         ...p,
-                        deduct_from: e.target.value as 'fixed' | 'commission' | 'both',
+                        deduct_from: v as 'fixed' | 'commission' | 'both',
                       }))
                     }
-                    className="erp-input w-full"
-                  >
-                    <option value="fixed">الراتب الثابت</option>
-                    <option value="commission">العمولة</option>
-                    <option value="both">من الراتب الثابت والعمولة معاً</option>
-                  </select>
+                    className="w-full"
+                    searchable={false}
+                  />
                 </Field>
                 {!isSelfService && (
                   <Field label="الخزينة (اختياري)">
-                    <select
-                      value={loanForm.safe_id}
-                      onChange={(e) => setLoanForm((p) => ({ ...p, safe_id: e.target.value }))}
-                      className="erp-input w-full"
-                    >
-                      <option value="">— بدون خزينة —</option>
-                      {safes.map((s) => (
-                        <option key={String(s.id)} value={String(s.id)}>
-                          {String(s.name)}
-                          {s.balance != null
-                            ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})`
-                            : ''}
-                        </option>
-                      ))}
-                    </select>
+                    <Combobox
+                      options={safes.map((s) => ({
+                        value: String(s.id),
+                        label: `${String(s.name)}${s.balance != null ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})` : ''}`,
+                      }))}
+                      value={String(loanForm.safe_id)}
+                      onChange={(v) => setLoanForm((p) => ({ ...p, safe_id: v }))}
+                      placeholder="— بدون خزينة —"
+                      className="w-full"
+                      clearable
+                      searchable={false}
+                    />
                     {selected?.branch_id && safes.length === 0 && (
                       <div className="text-xs text-amber-300/70 mt-1">
                         لا توجد خزائن متاحة لهذا الفرع
@@ -642,21 +638,18 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
                 <Field label="الخزينة (اختياري)">
-                  <select
-                    value={custodyForm.safe_id}
-                    onChange={(e) => setCustodyForm((p) => ({ ...p, safe_id: e.target.value }))}
-                    className="erp-input w-full"
-                  >
-                    <option value="">— بدون خزينة —</option>
-                    {safes.map((s) => (
-                      <option key={String(s.id)} value={String(s.id)}>
-                        {String(s.name)}
-                        {s.balance != null
-                          ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})`
-                          : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <Combobox
+                    options={safes.map((s) => ({
+                      value: String(s.id),
+                      label: `${String(s.name)}${s.balance != null ? ` (الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')})` : ''}`,
+                    }))}
+                    value={String(custodyForm.safe_id)}
+                    onChange={(v) => setCustodyForm((p) => ({ ...p, safe_id: v }))}
+                    placeholder="— بدون خزينة —"
+                    className="w-full"
+                    clearable
+                    searchable={false}
+                  />
                   {selected?.branch_id && safes.length === 0 && (
                     <div className="text-xs text-amber-300/70 mt-1">
                       لا توجد خزائن متاحة لهذا الفرع
@@ -764,24 +757,20 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                         </div>
                         <div className="col-span-3">
                           <label className="text-[10px] text-ink/50">نوع المصروف</label>
-                          <select
+                          <Combobox
+                            options={expenseCategories.map((c) => ({ value: String(c.name), label: String(c.name) }))}
                             value={line.category}
-                            onChange={(e) =>
+                            onChange={(v) =>
                               setSettleLines((arr) =>
                                 arr.map((l, i) =>
-                                  i === idx ? { ...l, category: e.target.value } : l
+                                  i === idx ? { ...l, category: v } : l
                                 )
                               )
                             }
-                            className="erp-input w-full text-sm"
-                          >
-                            <option value="">— اختر —</option>
-                            {expenseCategories.map((c) => (
-                              <option key={String(c.id)} value={String(c.name)}>
-                                {String(c.name)}
-                              </option>
-                            ))}
-                          </select>
+                            placeholder="— اختر —"
+                            className="w-full"
+                            searchable={false}
+                          />
                         </div>
                         <div className="col-span-2">
                           <label className="text-[10px] text-ink/50">التاريخ</label>
@@ -943,22 +932,21 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   </div>
                   <div className="space-y-2">
                     <div>
-                      <label className="text-xs text-ink/60 block mb-1">خزينة الصرف *</label>
-                      <select
+                      <label className="erp-label">خزينة الصرف *</label>
+                      <Combobox
+                        options={eligibleSafes.map((s) => ({
+                          value: String(s['id']),
+                          label: `${String(s['name'])} (الرصيد: ${fmt(s['balance'])})`,
+                        }))}
                         value={reimburseSafeId}
-                        onChange={(e) => setReimburseSafeId(e.target.value)}
-                        className="erp-input w-full text-xs"
-                      >
-                        <option value="">— اختر —</option>
-                        {eligibleSafes.map((s) => (
-                          <option key={String(s['id'])} value={String(s['id'])}>
-                            {String(s['name'])} (الرصيد: {fmt(s['balance'])})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => setReimburseSafeId(v)}
+                        placeholder="— اختر —"
+                        className="w-full"
+                        searchable={false}
+                      />
                     </div>
                     <div>
-                      <label className="text-xs text-ink/60 block mb-1">ملاحظات</label>
+                      <label className="erp-label">ملاحظات</label>
                       <input
                         value={reimburseNotes}
                         onChange={(e) => setReimburseNotes(e.target.value)}
@@ -1030,21 +1018,17 @@ export const EmployeeSalaryModal = forwardRef<EmployeeSalaryModalRef, EmployeeSa
                   />
                 </Field>
                 <Field label="الخزينة *">
-                  <select
+                  <Combobox
+                    options={safes.map((s) => ({
+                      value: String(s.id),
+                      label: `${String(s.name)}${s.balance != null ? ` — الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')}` : ''}`,
+                    }))}
                     value={approveForm.safe_id}
-                    onChange={(e) => setApproveForm((p) => ({ ...p, safe_id: e.target.value }))}
-                    className="erp-input w-full"
-                  >
-                    <option value="">— اختر الخزينة —</option>
-                    {safes.map((s) => (
-                      <option key={String(s.id)} value={String(s.id)}>
-                        {String(s.name)}
-                        {s.balance != null
-                          ? ` — الرصيد: ${Number(s.balance).toLocaleString('ar-EG-u-nu-latn')}`
-                          : ''}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setApproveForm((p) => ({ ...p, safe_id: v }))}
+                    placeholder="— اختر الخزينة —"
+                    className="w-full"
+                    searchable={false}
+                  />
                   <p className="text-xs text-amber-300/70 mt-1">
                     ⚠️ إلزامي — سيُخصم المبلغ من الخزينة المختارة فور الاعتماد
                   </p>

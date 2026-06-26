@@ -14,6 +14,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import { safeArray } from '@/lib/safe-data';
 import { useToast } from '@/hooks/use-toast';
 import { Field } from './AttendanceDeductionModals';
+import { Combobox } from '@/components/ui/combobox';
 
 type AnyRec = Record<string, unknown>;
 
@@ -213,33 +214,29 @@ export function AttendanceShiftsTab({
           {showAssignForm && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end p-4 bg-surface rounded-xl border border-line">
               <Field label="الموظف *">
-                <select
-                  className="erp-input w-full"
+                <Combobox
+                  options={empList.map((e) => ({
+                    value: String(e['id']),
+                    label: `${String(e['first_name_ar'] ?? '')} ${String(e['last_name_ar'] ?? '')} — ${String(e['employee_code'] ?? '')}`,
+                  }))}
                   value={assignForm.employee_id}
-                  onChange={(e) => setAssignForm((p) => ({ ...p, employee_id: e.target.value }))}
-                >
-                  <option value="">اختر الموظف</option>
-                  {empList.map((e) => (
-                    <option key={String(e['id'])} value={String(e['id'])}>
-                      {String(e['first_name_ar'] ?? '')} {String(e['last_name_ar'] ?? '')} —{' '}
-                      {String(e['employee_code'] ?? '')}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setAssignForm((p) => ({ ...p, employee_id: v }))}
+                  placeholder="اختر الموظف"
+                  className="w-full"
+                />
               </Field>
               <Field label="المناوبة *">
-                <select
-                  className="erp-input w-full"
+                <Combobox
+                  options={shifts.map((s) => ({
+                    value: String(s['id']),
+                    label: `${String(s['name_ar'])} (${String(s['start_time'])}–${String(s['end_time'])})`,
+                  }))}
                   value={assignForm.shift_id}
-                  onChange={(e) => setAssignForm((p) => ({ ...p, shift_id: e.target.value }))}
-                >
-                  <option value="">اختر المناوبة</option>
-                  {shifts.map((s) => (
-                    <option key={String(s['id'])} value={String(s['id'])}>
-                      {String(s['name_ar'])} ({String(s['start_time'])}–{String(s['end_time'])})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setAssignForm((p) => ({ ...p, shift_id: v }))}
+                  placeholder="اختر المناوبة"
+                  className="w-full"
+                  searchable={false}
+                />
               </Field>
               <Field label="تاريخ البدء">
                 <input

@@ -32,6 +32,7 @@ import { useGetSettingsSafes } from '@workspace/api-client-react';
 import { safeArray } from '@/lib/safe-data';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
+import { Combobox } from '@/components/ui/combobox';
 
 interface ServiceLine {
   id: number;
@@ -558,18 +559,16 @@ ${
                 <label className="block text-[10px] font-bold text-ink/55 mb-1">
                   الخزنة (لخصم تكلفة الشحن)
                 </label>
-                <select
+                <Combobox
+                  options={[
+                    { value: '', label: '— اختر الخزنة —' },
+                    ...safes.map((s) => ({ value: String(s.id), label: `${s.name} — رصيد: ${Number(s.balance).toFixed(2)}` })),
+                  ]}
                   value={safeId}
-                  onChange={(e) => setSafeId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-surface border border-line text-[11px] text-ink focus:outline-none focus:border-sky-400/40"
-                >
-                  <option value="">— اختر الخزنة —</option>
-                  {safes.map((s) => (
-                    <option key={s.id} value={s.id} className="bg-raised">
-                      {s.name} — رصيد: {Number(s.balance).toFixed(2)}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setSafeId(v)}
+                  className="w-full text-[11px]"
+                  searchable={false}
+                />
               </div>
             )}
 

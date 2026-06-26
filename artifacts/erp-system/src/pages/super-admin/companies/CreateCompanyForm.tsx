@@ -1,4 +1,4 @@
-/* eslint-disable erp/no-hardcoded-colors -- Legacy super-admin panel palette (C.* constants + inline rgba). Intentional fixed dark-theme colors outside the ERP token system; to be migrated to tokens in a future design pass. */
+import { Combobox } from '@/components/ui/combobox';
 import { C, FONT } from '../types';
 import type { CoMutate, CreateResult } from './types';
 
@@ -93,25 +93,17 @@ export function CreateCompanyForm({
           >
             نوع الاشتراك
           </label>
-          <select
+          <Combobox
+            options={[
+              { value: 'trial', label: 'تجريبي' },
+              { value: 'basic', label: 'أساسي' },
+              { value: 'professional', label: 'احترافي' },
+              { value: 'paid', label: 'مدفوع' },
+            ]}
             value={newPlan}
-            onChange={(e) => setNewPlan(e.target.value)}
-            style={{
-              width: '100%',
-              border: `1.5px solid ${C.border}`,
-              borderRadius: '10px',
-              padding: '10px 12px',
-              fontSize: '14px',
-              background: C.bg,
-              color: C.text,
-              fontFamily: FONT,
-            }}
-          >
-            <option value="trial">تجريبي</option>
-            <option value="basic">أساسي</option>
-            <option value="professional">احترافي</option>
-            <option value="paid">مدفوع</option>
-          </select>
+            onChange={(v) => setNewPlan(v)}
+            searchable={false}
+          />
         </div>
         <div style={{ flex: '1 1 150px' }}>
           <label
@@ -125,24 +117,15 @@ export function CreateCompanyForm({
           >
             🏷️ نسخة النظام
           </label>
-          <select
+          <Combobox
+            options={[
+              { value: 'ultimate', label: '⭐ MUHKAM ULTIMATE (كاملة)' },
+              { value: 'advanced', label: '🚀 MUHKAM ADVANCED (متوسطة)' },
+            ]}
             value={newEdition}
-            onChange={(e) => setNewEdition(e.target.value as 'advanced' | 'ultimate')}
-            style={{
-              width: '100%',
-              border: `1.5px solid ${newEdition === 'ultimate' ? 'var(--status-info)' : 'var(--status-warning)'}`,
-              borderRadius: '10px',
-              padding: '10px 12px',
-              fontSize: '14px',
-              background: C.bg,
-              color: newEdition === 'ultimate' ? '#a5b4fc' : '#fcd34d',
-              fontFamily: FONT,
-              fontWeight: 700,
-            }}
-          >
-            <option value="ultimate">⭐ MUHKAM ULTIMATE (كاملة)</option>
-            <option value="advanced">🚀 MUHKAM ADVANCED (متوسطة)</option>
-          </select>
+            onChange={(v) => setNewEdition(v as 'advanced' | 'ultimate')}
+            searchable={false}
+          />
         </div>
         <div style={{ flex: '1 1 110px' }}>
           <label
@@ -156,26 +139,15 @@ export function CreateCompanyForm({
           >
             المدة (أيام)
           </label>
-          <select
-            value={newDays}
-            onChange={(e) => setNewDays(Number(e.target.value))}
-            style={{
-              width: '100%',
-              border: `1.5px solid ${C.border}`,
-              borderRadius: '10px',
-              padding: '10px 12px',
-              fontSize: '14px',
-              background: C.bg,
-              color: C.text,
-              fontFamily: FONT,
-            }}
-          >
-            {[7, 14, 30, 60, 90, 180, 365].map((d) => (
-              <option key={d} value={d}>
-                {d} يوم
-              </option>
-            ))}
-          </select>
+          <Combobox
+            options={[7, 14, 30, 60, 90, 180, 365].map((d) => ({
+              value: String(d),
+              label: `${d} يوم`,
+            }))}
+            value={String(newDays)}
+            onChange={(v) => setNewDays(Number(v))}
+            searchable={false}
+          />
         </div>
         <div style={{ flex: '1 1 160px' }}>
           <label

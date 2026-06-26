@@ -193,12 +193,13 @@ function ImportPurchasesTab({
             <div>
               <FieldLabel>طريقة الدفع</FieldLabel>
               <SSelect
+                options={[
+                  { value: 'cash', label: 'نقدي' },
+                  { value: 'credit', label: 'آجل' },
+                ]}
                 value={purPayType}
-                onChange={(e) => onSetPurPayType(e.target.value as 'cash' | 'credit')}
-              >
-                <option value="cash">نقدي</option>
-                <option value="credit">آجل</option>
-              </SSelect>
+                onChange={(v) => onSetPurPayType(v as 'cash' | 'credit')}
+              />
             </div>
           </div>
 

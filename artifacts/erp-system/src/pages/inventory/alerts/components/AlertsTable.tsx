@@ -1,5 +1,6 @@
 import { AlertTriangle, TrendingDown, ArrowRightLeft } from 'lucide-react';
 import type { LowStockItem, TransferPrefill } from '../../_shared';
+import { EmptyTable } from '@/components/ui/empty-table';
 
 interface AlertsTableProps {
   filtered: LowStockItem[];
@@ -25,11 +26,12 @@ export function AlertsTable({ filtered, showZeroOnly, onTransferPrefill }: Alert
         </thead>
         <tbody>
           {filtered.length === 0 && (
-            <tr>
-              <td colSpan={8} className="text-center text-ink/30 py-10">
-                {showZeroOnly
-                  ? 'لا توجد منتجات نافدة في هذا المخزن'
-                  : 'لا توجد تنبيهات بهذه الفلاتر'}
+            <tr className="erp-table-row">
+              <td colSpan={8}>
+                <EmptyTable
+                  variant="no-results"
+                  headline={showZeroOnly ? 'لا توجد منتجات نافدة في هذا المخزن' : 'لا توجد تنبيهات بهذه الفلاتر'}
+                />
               </td>
             </tr>
           )}

@@ -26,6 +26,8 @@ import {
   Package,
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/skeletons';
+import { EmptyTable } from '@/components/ui/empty-table';
+import { Combobox } from '@/components/ui/combobox';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 interface SaleReturn {
@@ -689,16 +691,19 @@ export default function Returns() {
           />
         </div>
         {/* نوع الاسترداد */}
-        <select
+        <Combobox
+          options={[
+            { value: 'all', label: 'كل أنواع الاسترداد' },
+            { value: 'cash', label: 'نقدي' },
+            { value: 'credit', label: 'ذمة' },
+            { value: 'exchange', label: 'استبدال' },
+          ]}
           value={filterRefund}
-          onChange={(e) => setFilterRefund(e.target.value)}
-          className="erp-input text-sm"
-        >
-          <option value="all">كل أنواع الاسترداد</option>
-          <option value="cash">نقدي</option>
-          <option value="credit">ذمة</option>
-          <option value="exchange">استبدال</option>
-        </select>
+          onChange={(v) => setFilterRefund(v || 'all')}
+          placeholder="نوع الاسترداد"
+          className="w-44"
+          searchable={false}
+        />
         {/* مسح الفلاتر */}
         {isFiltered && (
           <button
@@ -726,7 +731,7 @@ export default function Returns() {
       )}
 
       {/* ── الجدول ── */}
-      <div className="glass-panel rounded-3xl overflow-hidden border border-line">
+      <div className="glass-panel overflow-hidden border border-line">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-ink/80 whitespace-nowrap">
             <thead className="bg-surface border-b border-line">
@@ -760,20 +765,19 @@ export default function Returns() {
               {isLoading ? (
                 <TableSkeleton cols={8} rows={5} />
               ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-12 text-center">
-                    <RotateCcw className="w-10 h-10 text-ink/10 mx-auto mb-3" />
-                    <div className="text-ink/40">
-                      {isFiltered ? 'لا توجد نتائج تطابق الفلتر' : 'لا توجد مرتجعات'}
-                    </div>
-                    {!isFiltered && (
-                      <div className="text-ink/25 text-sm mt-1 flex items-center justify-center gap-1">
-                        <ExternalLink className="w-3 h-3" />
-                        {tab === 'sales'
-                          ? 'أنشئ مرتجعاً من: المبيعات ← الفاتورة ← مرتجع'
-                          : 'أنشئ مرتجعاً من: المشتريات ← تبويب المرتجعات'}
-                      </div>
-                    )}
+                <tr className="erp-table-row">
+                  <td colSpan={8}>
+                    <EmptyTable
+                      variant={isFiltered ? 'no-results' : 'no-data'}
+                      headline={isFiltered ? 'لا توجد نتائج تطابق الفلتر' : 'لا توجد مرتجعات'}
+                      description={
+                        !isFiltered
+                          ? (tab === 'sales'
+                              ? 'أنشئ مرتجعاً من: المبيعات ← الفاتورة ← مرتجع'
+                              : 'أنشئ مرتجعاً من: المشتريات ← تبويب المرتجعات')
+                          : undefined
+                      }
+                    />
                   </td>
                 </tr>
               ) : (

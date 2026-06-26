@@ -109,7 +109,7 @@ export function PriceListFormModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="مثال: أسعار تجار الجملة"
-                className="w-full glass-input rounded-xl px-3 py-2.5 text-sm outline-none"
+                className="w-full erp-input rounded-xl px-3 py-2.5 text-sm outline-none"
               />
             </div>
 
@@ -122,7 +122,7 @@ export function PriceListFormModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="وصف مختصر للقائمة..."
-                className="w-full glass-input rounded-xl px-3 py-2.5 text-sm outline-none"
+                className="w-full erp-input rounded-xl px-3 py-2.5 text-sm outline-none"
               />
             </div>
 

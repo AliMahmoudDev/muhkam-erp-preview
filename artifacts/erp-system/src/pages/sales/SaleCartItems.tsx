@@ -9,6 +9,7 @@ import {
   Lock, Plus, Minus, Trash2, Tag,
 } from 'lucide-react';
 import { CartItem, HeldInvoice } from './salesTypes';
+import { Combobox } from '@/components/ui/combobox';
 
 interface SaleProduct {
   id: number;
@@ -136,17 +137,13 @@ export function SaleCartItems({
             <div className="sale-field-row flex items-center gap-2 rounded-xl px-3 py-2">
               <Vault className="w-3.5 h-3.5 sale-muted-text shrink-0" />
               <span className="sale-label-text text-xs shrink-0">المخزن</span>
-              <select
-                className="bg-transparent outline-none w-full appearance-none text-xs sale-text-primary"
+              <Combobox
+                options={warehouses.map((w) => ({ value: String(w.id), label: w.name }))}
                 value={warehouseId}
-                onChange={(e) => setWarehouseId(e.target.value)}
-              >
-                {warehouses.map((w) => (
-                  <option key={w.id} value={w.id} className="bg-slate-900">
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setWarehouseId(v)}
+                className="w-full text-xs sale-text-primary"
+                searchable={false}
+              />
             </div>
           )}
           <div className="sale-field-row border !border-amber-500/22 flex items-center gap-2 rounded-xl px-3 py-2">

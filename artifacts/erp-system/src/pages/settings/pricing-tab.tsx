@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { authFetch } from '../../lib/auth-fetch';
 import { api } from '../../lib/api';
-import { PageHeader, SectionCard, SectionTitle, PrimaryBtn, FieldLabel, SInput } from './_shared';
+import { PageHeader, SectionCard, SectionTitle, PrimaryBtn, FieldLabel, SInput, SSelect } from './_shared';
 
 type Category = { id: number; name: string };
 
@@ -106,19 +106,13 @@ export function PricingTab() {
           {/* فئة (اختياري) */}
           <div>
             <FieldLabel>تطبيق على فئة معينة (اختياري)</FieldLabel>
-            <select
+            <SSelect
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(v) => setCategoryId(v)}
               disabled={loadingCats}
-              className="glass-input w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all appearance-none cursor-pointer"
-            >
-              <option value="">كل المنتجات</option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              placeholder="كل المنتجات"
+              options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
+            />
           </div>
         </div>
 

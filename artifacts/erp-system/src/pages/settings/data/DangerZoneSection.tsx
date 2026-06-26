@@ -118,18 +118,13 @@ export default function DangerZoneSection({
                 <Warehouse className="w-3.5 h-3.5" /> اختر المخزن المراد تفريغه
               </p>
               <SSelect
+                options={[
+                  { value: '', label: '— كل المخازن —' },
+                  ...warehousesList.map((w) => ({ value: String(w.id), label: w.name })),
+                ]}
                 value={String(selectedWarehouseId)}
-                onChange={(e) =>
-                  onSetSelectedWarehouseId(e.target.value === '' ? '' : Number(e.target.value))
-                }
-              >
-                <option value="">— كل المخازن —</option>
-                {warehousesList.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </SSelect>
+                onChange={(v) => onSetSelectedWarehouseId(v === '' ? '' : Number(v))}
+              />
               <p className="text-ink/25 text-[10px]">
                 {selectedWarehouseId
                   ? `سيتم تفريغ حركات المخزن "${warehousesList.find((w) => w.id === selectedWarehouseId)?.name ?? ''}" فقط`

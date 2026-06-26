@@ -27,6 +27,7 @@ import CloseSafeModal from '@/components/modals/CloseSafeModal';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import SafeModals from '@/pages/treasury/SafeModals';
+import { Combobox } from '@/components/ui/combobox';
 
 type ModalType = 'receipt' | 'payment' | 'transfer' | 'safe-closing' | null;
 
@@ -233,23 +234,6 @@ export default function Treasury() {
         toast={toast}
       />
 
-      {/* ── Page title ── */}
-      <div className="erp-page-header">
-        <div>
-          <h1 className="erp-page-title flex items-center gap-3">
-            <Wallet className="w-7 h-7 text-amber-400" />
-            السندات والخزينة
-          </h1>
-          <p className="erp-page-subtitle">
-            {new Date().toLocaleDateString('ar-EG-u-nu-latn', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
-      </div>
 
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -349,11 +333,11 @@ export default function Treasury() {
                   <p className="text-ink font-bold text-sm mb-1 truncate">{s.name}</p>
                   {/* الفرع */}
                   {isAdmin && branches.length > 0 ? (
-                    <select
-                      className="mb-2 w-full text-[10px] rounded-lg px-2 py-1 bg-surface border border-line text-ink/50 hover:border-amber-500/30 transition-colors outline-none cursor-pointer"
-                      value={s.branch_id ?? ''}
-                      onChange={async (e) => {
-                        const bid = e.target.value;
+                    <Combobox
+                      options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
+                      value={s.branch_id != null ? String(s.branch_id) : ''}
+                      onChange={async (v) => {
+                        const bid = v;
                         await authFetch(api(`/api/settings/safes/${s.id}`), {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
@@ -362,14 +346,11 @@ export default function Treasury() {
                         invalidateSafes();
                         queryClient.invalidateQueries({ queryKey: ['/api/branches'] });
                       }}
-                    >
-                      <option value="">— بدون فرع —</option>
-                      {branches.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="— بدون فرع —"
+                      clearable
+                      className="mb-2 w-full"
+                      searchable={false}
+                    />
                   ) : s.branch_id ? (
                     <p className="text-amber-400/60 text-[10px] mb-2">
                       {branches.find((b) => b.id === s.branch_id)?.name ?? ''}

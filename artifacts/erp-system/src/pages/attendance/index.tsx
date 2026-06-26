@@ -117,10 +117,6 @@ export default function Attendance() {
   return (
     <div className="erp-page" dir="rtl">
       <div className="erp-page-header">
-        <div className="flex items-center gap-2">
-          <Clock size={22} className="text-amber-400" />
-          <h1 className="erp-page-title">الحضور والانصراف</h1>
-        </div>
         {canManage && (
           <div className="erp-page-actions">
             <button

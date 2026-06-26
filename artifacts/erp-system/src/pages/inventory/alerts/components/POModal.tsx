@@ -7,6 +7,7 @@ import { exportToExcel } from '@/lib/inventory-export';
 import { ClipboardList, X, Printer, FileSpreadsheet } from 'lucide-react';
 import { api } from '../../_shared';
 import type { ReorderSuggestion, Supplier } from '../types';
+import { Combobox } from '@/components/ui/combobox';
 
 interface POModalProps {
   selected: Set<number>;
@@ -204,30 +205,24 @@ ${notes ? `<div class="notes-box">📝 ${notes}</div>` : ''}
 
         <div className="space-y-4">
           <div>
-            <label className="block text-ink/50 text-xs mb-1.5">المورد</label>
-            <select
+            <label className="erp-label">المورد</label>
+            <Combobox
+              options={suppliersRaw.map((s) => ({ value: String(s.id), label: s.name }))}
               value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-ink text-sm focus:outline-none focus:border-amber-500/40"
-            >
-              <option value="" className="bg-surface">
-                — اختر المورد (اختياري) —
-              </option>
-              {suppliersRaw.map((s) => (
-                <option key={s.id} value={String(s.id)} className="bg-surface">
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setSupplierId(v)}
+              placeholder="— اختر المورد (اختياري) —"
+              clearable
+              className="w-full"
+            />
           </div>
           <div>
-            <label className="block text-ink/50 text-xs mb-1.5">ملاحظات (اختياري)</label>
+            <label className="erp-label">ملاحظات (اختياري)</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="مثال: توريد عاجل / مواصفات خاصة..."
-              className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:border-amber-500/40"
+              className="erp-input w-full text-sm"
             />
           </div>
 

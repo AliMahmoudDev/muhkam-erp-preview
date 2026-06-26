@@ -53,7 +53,7 @@ export function ReorderPanel({
             <ShoppingCart className="w-4 h-4 text-amber-400" />
           </div>
           <div>
-            <h3 className="text-ink font-bold text-sm">مقترحات إعادة الطلب</h3>
+            <h3 className="erp-section-title">مقترحات إعادة الطلب</h3>
             <p className="text-ink/40 text-xs">
               حسب سرعة المبيعات في آخر {reorderData?.days_analyzed ?? 30} يوم — تغطية{' '}
               {reorderData?.cover_days ?? 30} يوم

@@ -316,3 +316,13 @@ html.light .erp-search-bar:focus-within {
   box-shadow: var(--focus-ring) !important;
   border-color: var(--focus-edge) !important;
 }
+
+/* ══════════════════════════════════════════════════
+   LOADING ROW — spinner row inside tbody
+   erp-loading handles its own padding; cell padding
+   must be 0 to avoid doubling the space.
+   ══════════════════════════════════════════════════ */
+.erp-table-loading-cell {
+  padding: 0 !important;
+  border-bottom: none !important;
+}

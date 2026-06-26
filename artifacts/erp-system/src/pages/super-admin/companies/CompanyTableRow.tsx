@@ -1,5 +1,6 @@
 /* eslint-disable erp/no-hardcoded-colors -- Legacy super-admin panel palette (C.* constants + inline rgba). Intentional fixed dark-theme colors outside the ERP token system; to be migrated to tokens in a future design pass. */
 import { Trash2, ChevronRight } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
 import { C, STATUS, translatePlan, FONT } from '../types';
 import type { Company, CompanyFeatures } from '../types';
 import { ActionBtn } from '../ui';
@@ -215,32 +216,21 @@ export function CompanyTableRow({
               }}
             >
               <span style={{ fontSize: '11px', color: C.muted, fontWeight: 600 }}>النسخة:</span>
-              <select
+              <Combobox
+                options={[
+                  { value: 'ultimate', label: 'محكم برو' },
+                  { value: 'advanced', label: 'محكم المتقدم' },
+                ]}
                 value={co.edition ?? 'ultimate'}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  e.stopPropagation();
+                onChange={(v) => {
                   coMutate.mutate({
                     url: `/api/super/companies/${co.id}`,
                     method: 'PUT',
-                    body: { edition: e.target.value },
+                    body: { edition: v },
                   });
                 }}
-                style={{
-                  border: `1.5px solid ${co.edition === 'advanced' ? 'var(--status-warning)' : 'var(--status-info)'}`,
-                  borderRadius: '8px',
-                  padding: '5px 10px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  background: C.bg,
-                  color: co.edition === 'advanced' ? '#fcd34d' : '#a5b4fc',
-                  fontFamily: FONT,
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="ultimate">محكم برو</option>
-                <option value="advanced">محكم المتقدم</option>
-              </select>
+                searchable={false}
+              />
             </div>
             <ActionBtn
               label="إعادة تعيين كلمة المرور"
