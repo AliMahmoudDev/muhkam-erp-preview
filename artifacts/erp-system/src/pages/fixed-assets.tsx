@@ -105,7 +105,7 @@ export default function FixedAssetsPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-panel rounded-3xl border border-line overflow-hidden">
+      <div className="glass-panel border border-line overflow-hidden">
         {isLoading ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
