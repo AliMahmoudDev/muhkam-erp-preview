@@ -95,6 +95,16 @@
   border-block-end: none;
 }
 
+/* Open variant: transparent background for full-viewport page shells
+   (e.g. Sales POS). Frosted-glass backdrop keeps tabs legible when
+   content scrolls underneath. Apply via className at the callsite only.
+   Safe to combine with --with-tabs. */
+.erp-page-header--open {
+  background: transparent;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 /* Tabs slot — sits at the bottom of the sticky band */
 .erp-page-header-tabs {
   margin-block-start: var(--space-2, 0.5rem);

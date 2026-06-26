@@ -843,6 +843,7 @@ export function AppLayout({ children }: LayoutProps) {
                   <>
                     <PageIcon
                       aria-hidden
+                      className="erp-topbar-page-icon"
                       style={{ width: 16, height: 16, color: 'var(--erp-brand)', flexShrink: 0 }}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
@@ -855,24 +856,13 @@ export function AppLayout({ children }: LayoutProps) {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           lineHeight: 1.15,
+                          letterSpacing: '-0.3px',
                         }}
                       >
                         {match.name}
                       </span>
                       {match.subtitle && (
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 400,
-                            color: textMuted,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            lineHeight: 1,
-                          }}
-                        >
-                          {match.subtitle}
-                        </span>
+                        <span className="erp-topbar-subtitle">{match.subtitle}</span>
                       )}
                     </div>
                   </>

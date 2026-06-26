@@ -4,7 +4,6 @@
  */
 import {
   LayoutDashboard,
-  Receipt,
   CreditCard,
   Package,
   Users,
@@ -30,6 +29,7 @@ import {
   Smartphone,
   UserCircle,
   Tags,
+  ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -93,7 +93,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
   {
     name: 'المبيعات',
     href: '/sales',
-    icon: Receipt,
+    icon: ShoppingBag,
     roles: ['admin', 'manager', 'cashier', 'salesperson'],
     subtitle: 'تسجيل فواتير البيع ومتابعة المرتجعات',
   },

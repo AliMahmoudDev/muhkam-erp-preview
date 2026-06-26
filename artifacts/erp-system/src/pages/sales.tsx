@@ -38,6 +38,7 @@ export default function Sales() {
       <PageHeader
         title="المبيعات"
         subtitle="تسجيل فواتير البيع ومتابعة المرتجعات"
+        className="erp-page-header--open"
         tabsSlot={
           <div className="erp-tab-bar erp-tab-bar--underline">
             {canCreateSale && (
