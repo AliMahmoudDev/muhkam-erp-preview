@@ -74,7 +74,7 @@ export const ROUTE_PERMISSION: Record<string, string> = {
 };
 
 /* ── Nav items with role visibility + icons ─────────────── */
-export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: AppRole[] }[] = [
+export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: AppRole[]; subtitle?: string }[] = [
   /* ── القائمة ───────────────────────────────────────────── */
   {
     name: 'الرئيسية',
@@ -95,6 +95,7 @@ export const NAV_ITEMS: { name: string; href: string; icon: LucideIcon; roles: A
     href: '/sales',
     icon: Receipt,
     roles: ['admin', 'manager', 'cashier', 'salesperson'],
+    subtitle: 'تسجيل فواتير البيع ومتابعة المرتجعات',
   },
   { name: 'المرتجعات', href: '/returns', icon: RotateCcw, roles: ['admin', 'manager'] },
 

@@ -829,7 +829,7 @@ export function AppLayout({ children }: LayoutProps) {
             zIndex: 30,
           }}
         >
-          {/* Left: current page title + subtitle (auto-derived from route) */}
+          {/* Left: current page title + optional subtitle (auto-derived from route) */}
           {(() => {
             const match = NAV_ITEMS.find((i) =>
               i.href === '/'
@@ -845,19 +845,36 @@ export function AppLayout({ children }: LayoutProps) {
                       aria-hidden
                       style={{ width: 16, height: 16, color: 'var(--erp-brand)', flexShrink: 0 }}
                     />
-                    <span
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: textPrimary,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        lineHeight: 1,
-                      }}
-                    >
-                      {match.name}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                      <span
+                        style={{
+                          fontSize: match.subtitle ? 22 : 15,
+                          fontWeight: 700,
+                          color: textPrimary,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: 1.15,
+                        }}
+                      >
+                        {match.name}
+                      </span>
+                      {match.subtitle && (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 400,
+                            color: textMuted,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            lineHeight: 1,
+                          }}
+                        >
+                          {match.subtitle}
+                        </span>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
