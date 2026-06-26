@@ -68,3 +68,4 @@ erp-backups/
 # Generated export / archive artifacts
 ui-export.tar.gz
 *.tar.gz
+.vercel

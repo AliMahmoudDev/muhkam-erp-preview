@@ -1,19 +1,8 @@
-packages:
-  - artifacts/*
-  - lib/*
-  - lib/integrations/*
-  - scripts
-
+allowBuilds:
+  '@scarf/scarf': set this to true or false
+  core-js: set this to true or false
+  esbuild: set this to true or false
 autoInstallPeers: false
-
-packageExtensions:
-  '@expo/metro-config@*':
-    dependencies:
-      postcss: '^8.5.10'
-  'drizzle-orm@*':
-    peerDependencies:
-      '@opentelemetry/api': '>=1'
-
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1
   '@replit/vite-plugin-dev-banner': ^0.1.1
@@ -36,32 +25,18 @@ catalog:
   tsx: ^4.21.0
   vite: 7.3.2
   zod: 3.25.76
-
 minimumReleaseAge: 1440
-
 minimumReleaseAgeExclude:
   - '@replit/*'
   - stripe-replit-sync
-
 onlyBuiltDependencies:
-  - '@swc/core'
   - esbuild
-  - msw
-  - unrs-resolver
-
+  - core-js
+  - '@scarf/scarf'
 overrides:
-  # Collapse duplicate drizzle-orm instances caused by prom-client -> @opentelemetry/api peer
-  '@opentelemetry/api': '^1.9.1'
-  # Security fixes for vulnerable transitive dependencies
-  postcss: '^8.5.10'
-  '@expo/metro-config>postcss': '^8.5.10'
-  '@expo/cli>postcss': '^8.5.10'
-  lodash: '>=4.18.0'
-  path-to-regexp: '>=8.4.0'
-  picomatch: '>=4.0.4'
-  yaml: '>=2.8.3'
-  brace-expansion: '>=2.0.3'
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
+  '@expo/cli>postcss': ^8.5.10
+  '@expo/metro-config>postcss': ^8.5.10
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32': '-'
@@ -72,6 +47,7 @@ overrides:
   '@expo/ngrok-bin>@expo/ngrok-bin-sunos-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-win32-ia32': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-win32-x64': '-'
+  '@opentelemetry/api': ^1.9.1
   '@tailwindcss/oxide>@tailwindcss/oxide-android-arm64': '-'
   '@tailwindcss/oxide>@tailwindcss/oxide-darwin-arm64': '-'
   '@tailwindcss/oxide>@tailwindcss/oxide-darwin-x64': '-'
@@ -82,6 +58,7 @@ overrides:
   '@tailwindcss/oxide>@tailwindcss/oxide-linux-x64-musl': '-'
   '@tailwindcss/oxide>@tailwindcss/oxide-win32-arm64-msvc': '-'
   '@tailwindcss/oxide>@tailwindcss/oxide-win32-x64-msvc': '-'
+  brace-expansion: '>=2.0.3'
   esbuild: 0.27.3
   esbuild>@esbuild/aix-ppc64: '-'
   esbuild>@esbuild/android-arm: '-'
@@ -118,6 +95,10 @@ overrides:
   lightningcss>lightningcss-linux-x64-musl: '-'
   lightningcss>lightningcss-win32-arm64-msvc: '-'
   lightningcss>lightningcss-win32-x64-msvc: '-'
+  lodash: '>=4.18.0'
+  path-to-regexp: '>=8.4.0'
+  picomatch: '>=4.0.4'
+  postcss: ^8.5.10
   rollup>@rollup/rollup-android-arm-eabi: '-'
   rollup>@rollup/rollup-android-arm64: '-'
   rollup>@rollup/rollup-darwin-arm64: '-'
@@ -142,3 +123,16 @@ overrides:
   rollup>@rollup/rollup-win32-ia32-msvc: '-'
   rollup>@rollup/rollup-win32-x64-gnu: '-'
   rollup>@rollup/rollup-win32-x64-msvc: '-'
+  yaml: '>=2.8.3'
+packageExtensions:
+  '@expo/metro-config@*':
+    dependencies:
+      postcss: ^8.5.10
+  drizzle-orm@*:
+    peerDependencies:
+      '@opentelemetry/api': '>=1'
+packages:
+  - artifacts/*
+  - lib/*
+  - lib/integrations/*
+  - scripts
