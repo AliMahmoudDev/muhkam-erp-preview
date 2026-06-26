@@ -334,7 +334,7 @@ const FEATURES = [
     gradient: 'linear-gradient(135deg, #F59E0B 0%, #F57F17 100%)',
     icon: <Icon.POS />,
     title: 'نقطة البيع',
-    desc: 'إصدار الفواتير فوري لمحلات الجوال ونقاط البيع والتجار بكل سهولة',
+    desc: 'إصدار الفواتير فوري لجميع أنواع المحلات ونقاط البيع والتجار بكل سهولة',
   },
   {
     gradient: 'linear-gradient(135deg, #34C759 0%, #22C55E 100%)',
@@ -1091,7 +1091,7 @@ function HeroSection({ onRegister, onLogin }: { onRegister: () => void; onLogin:
             fontWeight: 400,
           }}
         >
-          من نقطة البيع إلى الميزانية — كل ما يحتاجه محل الموبايلات في منصة واحدة.
+          من نقطة البيع إلى الميزانية — كل ما يحتاجه محلك أو شركتك في منصة واحدة.
           <br />
           <span style={{ color: C.text, fontWeight: 500 }}>
             بياناتك آمنة. فواتيرك دقيقة. أعمالك تنمو.
@@ -1375,7 +1375,7 @@ function LogoMarquee() {
             fontWeight: 500,
           }}
         >
-          يدعم جميع ماركات الموبايلات والإكسسوارات
+          يدعم جميع الأنشطة التجارية والخدمية
         </p>
       </div>
       <div style={{ position: 'relative', padding: '12px 0' }}>
@@ -1420,7 +1420,7 @@ function LogoMarquee() {
 ══════════════════════════════════════════════ */
 function AnimatedStats() {
   const stats = [
-    { value: 150, suffix: '+', label: 'محل موبايلات', sub: 'في مصر والوطن العربي' },
+    { value: 150, suffix: '+', label: 'عميل نشط', sub: 'في مصر والوطن العربي' },
     { value: 4.9, suffix: '★', label: 'تقييم العملاء', sub: 'من ٥ نجوم', decimals: 1 },
     { value: 50000, suffix: '+', label: 'فاتورة شهرياً', sub: 'تتم معالجتها بأمان' },
     { value: 99.9, suffix: '%', label: 'وقت تشغيل', sub: 'توفر عالي وموثوقية', decimals: 1 },
@@ -2071,7 +2071,7 @@ function TestimonialsSection() {
       quote:
         'بعد ما بدأت أستخدم مُحكم، وفّرت ٣ ساعات يومياً من الدخول في الحسابات. كل حاجة بقت أتماتيك.',
       name: 'أحمد المصري',
-      role: 'صاحب محل موبايلات',
+      role: 'صاحب محل تجاري',
       location: 'القاهرة',
       photo: ahmedImg,
       color: '#F59E0B',
@@ -2535,7 +2535,7 @@ function FooterSection({
             <p
               style={{ fontSize: 14, color: C.sub, lineHeight: 1.7, marginTop: 16, maxWidth: 280 }}
             >
-              نظام ERP عربي متكامل لإدارة محلات الموبايلات والصيانة والمؤسسات التجارية.
+              نظام ERP عربي متكامل لإدارة المحلات التجارية والصيانة والمؤسسات بكافة أنواعها.
             </p>
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
               {/* WhatsApp */}

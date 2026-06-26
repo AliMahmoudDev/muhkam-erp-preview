@@ -709,7 +709,7 @@ export default function Login() {
           >
             نظام ERP عربي
             <br />
-            لإدارة محلات الموبايلات
+            لإدارة أعمالك بسهولة
           </h2>
           <p
             style={{
@@ -778,7 +778,7 @@ export default function Login() {
           {/* Stats */}
           <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginTop: 48 }}>
             {[
-              { v: '+١٥٠', l: 'محل موبايلات' },
+              { v: '+١٥٠', l: 'عميل نشط' },
               { v: '٤.٩★', l: 'تقييم العملاء' },
               { v: '٢٤/٧', l: 'دعم عربي' },
             ].map((s) => (
