@@ -34,10 +34,11 @@ export default function Sales() {
         : tab;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       <PageHeader
         title="المبيعات"
         subtitle="تسجيل فواتير البيع ومتابعة المرتجعات"
+        showIdentity
         tabsSlot={
           <div className="erp-tab-bar erp-tab-bar--underline">
             {canCreateSale && (
